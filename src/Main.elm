@@ -8,24 +8,42 @@ import Url exposing (Url)
 
 
 type alias Model =
-    { database : Database }
+    { database : Database
+    , url : Url
+    , key : Navigation.Key
+    }
 
 
 type Msg
-    = UrlRequest Browser.UrlRequest
-    | UrlChange Url
+    = ClickedLink Browser.UrlRequest
+    | UrlChanged Url
 
 
 init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { database = Database.init }
+    ( { database = Database.init
+      , url = url
+      , key = key
+      }
     , Cmd.none
     )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        ClickedLink (Browser.Internal url) ->
+            ( model
+            , Navigation.pushUrl model.key (Url.toString url)
+            )
+
+        ClickedLink (Browser.External url) ->
+            ( model
+            , Navigation.load url
+            )
+
+        UrlChanged url ->
+            ( model, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
@@ -46,7 +64,7 @@ main =
         { init = init
         , update = update
         , subscriptions = subscriptions
-        , onUrlRequest = UrlRequest
-        , onUrlChange = UrlChange
+        , onUrlRequest = ClickedLink
+        , onUrlChange = UrlChanged
         , view = view
         }
