@@ -23,17 +23,30 @@ init flags url key =
     )
 
 
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    ( model, Cmd.none )
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+view : Model -> Browser.Document Msg
+view model =
+    { title = "Notes"
+    , body = [ Html.toUnstyled (Html.text (Debug.toString model)) ]
+    }
+
+
 main : Program () Model Msg
 main =
     Browser.application
         { init = init
-        , update = \msg model -> ( model, Cmd.none )
-        , subscriptions = \model -> Sub.none
+        , update = update
+        , subscriptions = subscriptions
         , onUrlRequest = UrlRequest
         , onUrlChange = UrlChange
-        , view =
-            \model ->
-                { title = "Notes"
-                , body = [ Html.toUnstyled (Html.text "TODO") ]
-                }
+        , view = view
         }
