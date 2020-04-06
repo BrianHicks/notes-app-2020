@@ -37,6 +37,27 @@ It's also way easier to narrow a search to a specific node in an outline view; y
 I feel like a hybrid approach might be nice too: outline view by default, with the ability to break out into a document view, or focus into it.
 Roam does this, but I'm not really a fan of the UX for enabling/disabling it.
 
+Some other ideas...
+
+- It'd be cool to be able to select/export a group of notes.
+  These could either be viewed in a read-only mode or imported into someone else's database.
+  I guess it would also be possible to structure the export with CRDTs for easy merges.
+- It'd be cool to persistently save a database somewhere shared, but that potentially violates the "no formal structure" principle so it needs to be done carefully.
+
+## Technical Ideas
+
+Just jotting down some ideas prior to actually building this.
+
+I think it may make sense to store all note parts in a big dictionary.
+Pros: simple, uniform, `O(log n)` access for a single node.
+Cons: Potentially costly to retrieve all the nodes in the document.
+
+So I guess ideally I'd like to assign IDs in a way that are likely to be serial.
+Then selecting a subtree would maybe be easier.
+The [LSEQ](https://hal.archives-ouvertes.fr/hal-00921633/document) algorithm might be appropriate here?
+
+Of course, I could also keep a second index with all the contents by note ID...
+
 ## Prior Art
 
 - [Roam](https://roamresearch.com) does bidirectional links amazingly well.
