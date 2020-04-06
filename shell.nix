@@ -10,9 +10,8 @@ stdenv.mkDerivation {
     niv.niv
     git
 
-    # elm
-    elmPackages.elm
-    elmPackages.elm-format
-    elmPackages.elm-test
+    # building
+    nodejs-12_x
+    nodePackages.npm
   ];
 }

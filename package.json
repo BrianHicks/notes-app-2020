@@ -1,0 +1,21 @@
+{
+  "name": "notes",
+  "version": "1.0.0",
+  "description": "This is my implementation of a note-taking app, organized around the following principles:",
+  "main": "index.js",
+  "scripts": {
+    "run": "parcel src/index.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.bytes.zone:brian/notes.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "elm-hot": "^1.1.4",
+    "node-elm-compiler": "^5.0.4",
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^3.8.3"
+  }
+}
