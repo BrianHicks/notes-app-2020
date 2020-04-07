@@ -1,6 +1,7 @@
-module Node exposing (ID, Metadata(..), Node, idSorter)
+module Node exposing (ID(..), Metadata(..), Node, idSorter)
 
 import Sort exposing (Sorter)
+import Time exposing (Posix)
 import UUID exposing (UUID)
 
 
@@ -15,10 +16,12 @@ idSorter =
 
 type alias Node =
     { id : ID
-    , metadata : Metadata
+    , metadata : Maybe Metadata
     , content : String
+    , children : List ID
+    , updated : Posix
     }
 
 
 type Metadata
-    = Empty
+    = Note
