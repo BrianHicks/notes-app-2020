@@ -9,6 +9,7 @@ import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Node exposing (Node)
 import Random
+import Sort
 import Task
 import Time exposing (Posix)
 import UUID exposing (UUID)
@@ -170,6 +171,11 @@ view model =
                         [ Events.onClick ClickedNewNote ]
                         [ Html.text "New Note" ]
                     , Database.notes model.database
+                        |> Sort.list
+                            (Sort.increasing
+                                |> Sort.by (\{ updated } -> Time.posixToMillis updated)
+                                |> Sort.reverse
+                            )
                         |> List.map
                             (\node ->
                                 Html.li
