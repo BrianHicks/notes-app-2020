@@ -1,35 +1,40 @@
-module Database exposing (Database, get, init, insert, notes, update)
+module Database exposing (Database, get, init, insert, isEmpty)
 
+import Array exposing (Array)
 import Node exposing (Node)
-import Sort.Dict as Dict exposing (Dict)
+
+
+
+-- performance note: push/get to arrays is faster than dicts. https://ellie-app.com/8xpcZ9KbFRWa1
 
 
 type Database
-    = Database (Dict Node.ID Node)
+    = Database
+        { nodes : Array Node
+        , nextID : Int
+        }
 
 
 init : Database
 init =
-    Database (Dict.empty Node.idSorter)
+    Database { nodes = Array.empty, nextID = 0 }
 
 
-notes : Database -> List Node
-notes (Database database) =
-    database
-        |> Dict.values
-        |> List.filter (\node -> node.metadata == Just Node.Note)
+isEmpty : Database -> Bool
+isEmpty (Database database) =
+    Array.isEmpty database.nodes
 
 
-insert : Node -> Database -> Database
-insert ({ id } as node) (Database database) =
-    Database (Dict.insert id node database)
+insert : Node -> Database -> ( Int, Database )
+insert node (Database database) =
+    ( database.nextID
+    , Database
+        { nodes = Array.push { node | id = Just database.nextID } database.nodes
+        , nextID = database.nextID + 1
+        }
+    )
 
 
-get : Node.ID -> Database -> Maybe Node
+get : Int -> Database -> Maybe Node
 get id (Database database) =
-    Dict.get id database
-
-
-update : Node.ID -> (Node -> Node) -> Database -> Database
-update id fn (Database database) =
-    Database (Dict.update id (Maybe.map fn) database)
+    Array.get id database.nodes
