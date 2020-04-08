@@ -38,8 +38,7 @@ databaseTest =
                     in
                     database
                         |> get id
-                        |> Maybe.map Tuple.first
-                        |> Maybe.map Node.content
+                        |> Maybe.map (.node >> Node.content)
                         |> Expect.equal (Just "hey")
             , test "getting a node that doesn't exist returns Nothing" <|
                 \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
@@ -57,7 +56,7 @@ databaseTest =
                     database
                         |> appendChild parent child
                         |> get parent
-                        |> Maybe.map Tuple.second
+                        |> Maybe.map .children
                         |> Expect.equal (Just (Array.fromList [ child ]))
             , test "will not append a node to itself" <|
                 \_ ->
@@ -68,7 +67,7 @@ databaseTest =
                     database
                         |> appendChild id id
                         |> get id
-                        |> Maybe.map Tuple.second
+                        |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
             ]
         , describe "deleting"
