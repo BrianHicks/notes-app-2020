@@ -22,8 +22,7 @@ import Node exposing (Node)
 
 type Database
     = Database
-        { nodes : Array (Maybe Node)
-        , children : Array (Array ID)
+        { nodes : Array (Maybe ( Node, Array ID ))
         , nextID : ID
         }
 
@@ -32,7 +31,6 @@ empty : Database
 empty =
     Database
         { nodes = Array.empty
-        , children = Array.empty
         , nextID = ID 0
         }
 
@@ -46,8 +44,7 @@ insert : Node -> Database -> ( ID, Database )
 insert node (Database database) =
     ( database.nextID
     , Database
-        { nodes = Array.push (Just node) database.nodes
-        , children = Array.push Array.empty database.children
+        { nodes = Array.push (Just ( node, Array.empty )) database.nodes
         , nextID = nextID database.nextID
         }
     )
@@ -61,20 +58,16 @@ appendChild (ID parentID) ((ID childID) as child) (Database database) =
     else
         Database
             { database
-                | children =
+                | nodes =
                     Array.Extra.update parentID
-                        (Array.push child)
-                        database.children
+                        (Maybe.map (Tuple.mapSecond (Array.push child)))
+                        database.nodes
             }
 
 
 delete : ID -> Database -> Database
 delete (ID id) (Database database) =
-    Database
-        { database
-            | nodes = Array.set id Nothing database.nodes
-            , children = Array.set id Array.empty database.children
-        }
+    Database { database | nodes = Array.set id Nothing database.nodes }
 
 
 get : ID -> Database -> Maybe Node
@@ -82,12 +75,16 @@ get (ID id) (Database database) =
     database.nodes
         |> Array.get id
         |> Maybe.andThen identity
+        |> Maybe.map Tuple.first
 
 
 children : ID -> Database -> Array ID
 children (ID id) (Database database) =
-    database.children
+    -- TODO: this and get are pretty similar. Should they be combined?
+    database.nodes
         |> Array.get id
+        |> Maybe.andThen identity
+        |> Maybe.map Tuple.second
         |> Maybe.withDefault Array.empty
 
 
