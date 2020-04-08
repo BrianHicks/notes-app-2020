@@ -68,4 +68,30 @@ databaseTest =
                         |> children id
                         |> Expect.equal Array.empty
             ]
+        , describe "deleting"
+            [ test "deleting a node should remove it from the database" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> delete id
+                        |> get id
+                        |> Expect.equal Nothing
+            , test "deleting a node should remove its children" <|
+                \_ ->
+                    let
+                        ( parent, ( child, database ) ) =
+                            empty
+                                |> insert (Node.note "parent")
+                                -- TODO: this shouldn't be a note, though?
+                                |> Tuple.mapSecond (insert (Node.note "child"))
+                    in
+                    database
+                        |> appendChild parent child
+                        |> delete parent
+                        |> children parent
+                        |> Expect.equal Array.empty
+            ]
         ]

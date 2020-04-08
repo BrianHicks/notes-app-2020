@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, appendChild, get, children
+    ( Database, empty, isEmpty, insert, appendChild, delete, get, children
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, appendChild, get, children
+@docs Database, empty, isEmpty, insert, appendChild, delete, get, children
 
 @docs ID, idFromInt
 
@@ -22,7 +22,7 @@ import Node exposing (Node)
 
 type Database
     = Database
-        { nodes : Array Node
+        { nodes : Array (Maybe Node)
         , children : Array (Array ID)
         , nextID : ID
         }
@@ -46,7 +46,7 @@ insert : Node -> Database -> ( ID, Database )
 insert node (Database database) =
     ( database.nextID
     , Database
-        { nodes = Array.push node database.nodes
+        { nodes = Array.push (Just node) database.nodes
         , children = Array.push Array.empty database.children
         , nextID = nextID database.nextID
         }
@@ -68,9 +68,20 @@ appendChild (ID parentID) ((ID childID) as child) (Database database) =
             }
 
 
+delete : ID -> Database -> Database
+delete (ID id) (Database database) =
+    Database
+        { database
+            | nodes = Array.set id Nothing database.nodes
+            , children = Array.set id Array.empty database.children
+        }
+
+
 get : ID -> Database -> Maybe Node
 get (ID id) (Database database) =
-    Array.get id database.nodes
+    database.nodes
+        |> Array.get id
+        |> Maybe.andThen identity
 
 
 children : ID -> Database -> Array ID
