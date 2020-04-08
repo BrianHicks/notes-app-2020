@@ -1,21 +1,40 @@
-module Node exposing (Metadata(..), Node, fromString, withMetadata)
+module Node exposing (Metadata(..), Node, asNote, content, fromString, isNote)
 
 
-type alias Node =
-    { metadata : Maybe Metadata
-    , content : String
-    }
+type Node
+    = Node
+        { metadata : Maybe Metadata
+        , content : String
+        }
 
 
 fromString : String -> Node
-fromString =
-    Node Nothing
+fromString content_ =
+    Node
+        { metadata = Nothing
+        , content = content_
+        }
+
+
+content : Node -> String
+content (Node node) =
+    node.content
 
 
 type Metadata
     = Note
 
 
+asNote : Node -> Node
+asNote =
+    withMetadata Note
+
+
+isNote : Node -> Bool
+isNote (Node node) =
+    node.metadata == Just Note
+
+
 withMetadata : Metadata -> Node -> Node
-withMetadata metadata node =
-    { node | metadata = Just metadata }
+withMetadata metadata (Node node) =
+    Node { node | metadata = Just metadata }

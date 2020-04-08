@@ -9,23 +9,23 @@ nodeTest : Test
 nodeTest =
     describe "node"
         [ describe "fromString"
-            [ test "you can create a node from a string" <|
+            [ test "uses the content passed in" <|
                 \_ ->
                     fromString "Hey there!"
-                        |> .content
+                        |> content
                         |> Expect.equal "Hey there!"
-            , test "sets no metadata by default" <|
-                \_ ->
-                    fromString "Hey there!"
-                        |> .metadata
-                        |> Expect.equal Nothing
             ]
-        , describe "withMetadata"
-            [ test "sets metadata" <|
+        , describe "isNote"
+            [ test "is not true for a default note" <|
                 \_ ->
-                    fromString "Hey there!"
-                        |> withMetadata Note
-                        |> .metadata
-                        |> Expect.equal (Just Note)
+                    fromString "I'm not a note!"
+                        |> isNote
+                        |> Expect.equal False
+            , test "is true when a node is explicitly marekd as a note" <|
+                \_ ->
+                    fromString "I'm a note!"
+                        |> asNote
+                        |> isNote
+                        |> Expect.equal True
             ]
         ]

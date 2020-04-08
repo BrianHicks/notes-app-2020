@@ -38,7 +38,7 @@ databaseTest =
                     in
                     database
                         |> get id
-                        |> Maybe.map .content
+                        |> Maybe.map Node.content
                         |> Expect.equal (Just "hey")
             , test "getting a node that doesn't exist returns Nothing" <|
                 \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
@@ -48,15 +48,15 @@ databaseTest =
                 \_ ->
                     let
                         note =
-                            Node.fromString "hey" |> Node.withMetadata Node.Note
+                            Node.fromString "hey" |> Node.asNote
 
                         ( id, database ) =
                             insert note empty
                     in
                     database
                         |> notes
-                        |> List.map .content
-                        |> Expect.equal [ note.content ]
+                        |> List.map Node.content
+                        |> Expect.equal [ Node.content note ]
             , test "does not include non-note nodes" <|
                 \_ ->
                     empty

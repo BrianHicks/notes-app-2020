@@ -57,7 +57,7 @@ get (ID id) (Database database) =
 notes : Database -> List Node
 notes (Database database) =
     database.nodes
-        |> Array.filter (\{ metadata } -> metadata == Just Node.Note)
+        |> Array.filter Node.isNote
         |> Array.toList
 
 
