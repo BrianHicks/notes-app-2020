@@ -1,4 +1,4 @@
-module Database exposing (Database, get, init, insert, isEmpty, notes)
+module Database exposing (Database, empty, get, insert, isEmpty, notes)
 
 import Array exposing (Array)
 import Node exposing (Node)
@@ -15,8 +15,8 @@ type Database
         }
 
 
-init : Database
-init =
+empty : Database
+empty =
     Database { nodes = Array.empty, nextID = Node.ID 0 }
 
 

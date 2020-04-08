@@ -11,17 +11,17 @@ databaseTest : Test
 databaseTest =
     describe "Database"
         [ test "starts with a new, empty database" <|
-            \_ -> Expect.equal True (isEmpty init)
+            \_ -> Expect.equal True (isEmpty empty)
         , test "you can insert a node" <|
             \_ ->
-                init
+                empty
                     |> insert (Node.fromString "hey")
                     |> Tuple.second
                     |> isEmpty
                     |> Expect.equal False
         , test "inserting assigns an ID" <|
             \_ ->
-                init
+                empty
                     |> insert (Node.fromString "hey")
                     |> Tuple.first
                     |> Expect.equal (Node.ID 0)
@@ -29,7 +29,7 @@ databaseTest =
             \_ ->
                 let
                     ( id, database ) =
-                        insert (Node.fromString "hey") init
+                        insert (Node.fromString "hey") empty
                 in
                 database
                     |> get id
@@ -43,7 +43,7 @@ databaseTest =
                             Node.fromString "hey" |> Node.withMetadata Node.Note
 
                         ( id, database ) =
-                            insert note init
+                            insert note empty
                     in
                     database
                         |> notes
@@ -51,7 +51,7 @@ databaseTest =
                         |> Expect.equal [ note.content ]
             , test "does not include non-note nodes" <|
                 \_ ->
-                    init
+                    empty
                         |> insert (Node.fromString "hey")
                         |> Tuple.second
                         |> notes
