@@ -1,5 +1,6 @@
 module DatabaseTest exposing (..)
 
+import Array
 import Database exposing (..)
 import Expect
 import Node
@@ -34,4 +35,26 @@ databaseTest =
                     |> get id
                     |> Maybe.map .content
                     |> Expect.equal (Just "hey")
+        , describe "notes"
+            [ test "you can get a list of notes" <|
+                \_ ->
+                    let
+                        note =
+                            Node.fromString "hey" |> Node.withMetadata Node.Note
+
+                        ( id, database ) =
+                            insert note init
+                    in
+                    database
+                        |> notes
+                        |> List.map .content
+                        |> Expect.equal [ note.content ]
+            , test "does not include non-note nodes" <|
+                \_ ->
+                    init
+                        |> insert (Node.fromString "hey")
+                        |> Tuple.second
+                        |> notes
+                        |> Expect.equal []
+            ]
         ]

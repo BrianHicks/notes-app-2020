@@ -1,4 +1,4 @@
-module Database exposing (Database, get, init, insert, isEmpty)
+module Database exposing (Database, get, init, insert, isEmpty, notes)
 
 import Array exposing (Array)
 import Node exposing (Node)
@@ -38,3 +38,10 @@ insert node (Database database) =
 get : Node.ID -> Database -> Maybe Node
 get (Node.ID id) (Database database) =
     Array.get id database.nodes
+
+
+notes : Database -> List Node
+notes (Database database) =
+    database.nodes
+        |> Array.filter (\{ metadata } -> metadata == Just Node.Note)
+        |> Array.toList
