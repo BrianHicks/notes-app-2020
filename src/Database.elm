@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, get, children, insert, appendChild
+    ( Database, empty, isEmpty, insert, appendChild, get, children
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, get, children, insert, appendChild
+@docs Database, empty, isEmpty, insert, appendChild, get, children
 
 @docs ID, idFromInt
 
