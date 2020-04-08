@@ -11,13 +11,13 @@ import Node exposing (Node)
 type Database
     = Database
         { nodes : Array Node
-        , nextID : Int
+        , nextID : Node.ID
         }
 
 
 init : Database
 init =
-    Database { nodes = Array.empty, nextID = 0 }
+    Database { nodes = Array.empty, nextID = Node.ID 0 }
 
 
 isEmpty : Database -> Bool
@@ -25,16 +25,16 @@ isEmpty (Database database) =
     Array.isEmpty database.nodes
 
 
-insert : Node -> Database -> ( Int, Database )
+insert : Node -> Database -> ( Node.ID, Database )
 insert node (Database database) =
     ( database.nextID
     , Database
         { nodes = Array.push { node | id = Just database.nextID } database.nodes
-        , nextID = database.nextID + 1
+        , nextID = Node.nextID database.nextID
         }
     )
 
 
-get : Int -> Database -> Maybe Node
-get id (Database database) =
+get : Node.ID -> Database -> Maybe Node
+get (Node.ID id) (Database database) =
     Array.get id database.nodes

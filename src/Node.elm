@@ -1,8 +1,17 @@
-module Node exposing (Node, fromString)
+module Node exposing (ID(..), Node, fromString, nextID)
+
+
+type ID
+    = ID Int
+
+
+nextID : ID -> ID
+nextID (ID i) =
+    ID (i + 1)
 
 
 type alias Node =
-    { id : Maybe Int -- may not have been set yet
+    { id : Maybe ID -- may not have been set yet
     , content : String
     }
 

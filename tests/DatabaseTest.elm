@@ -23,13 +23,15 @@ databaseTest =
                 init
                     |> insert (Node.fromString "hey")
                     |> Tuple.first
-                    |> Expect.equal 0
+                    |> Expect.equal (Node.ID 0)
         , test "you can get a node again" <|
             \_ ->
-                init
-                    |> insert (Node.fromString "hey")
-                    |> Tuple.second
-                    |> get 0
+                let
+                    ( id, database ) =
+                        insert (Node.fromString "hey") init
+                in
+                database
+                    |> get id
                     |> Maybe.map .content
                     |> Expect.equal (Just "hey")
         ]

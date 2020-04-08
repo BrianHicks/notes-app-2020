@@ -13,4 +13,8 @@ nodeTest =
                 fromString "Hey there!"
                     |> .content
                     |> Expect.equal "Hey there!"
+        , test "you can get the next ID in the sequence" <|
+            \_ ->
+                nextID (ID 0)
+                    |> Expect.equal (ID 1)
         ]
