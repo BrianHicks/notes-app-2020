@@ -38,6 +38,7 @@ databaseTest =
                     in
                     database
                         |> get id
+                        |> Maybe.map Tuple.first
                         |> Maybe.map Node.content
                         |> Expect.equal (Just "hey")
             , test "getting a node that doesn't exist returns Nothing" <|
@@ -55,8 +56,9 @@ databaseTest =
                     in
                     database
                         |> appendChild parent child
-                        |> children parent
-                        |> Expect.equal (Array.fromList [ child ])
+                        |> get parent
+                        |> Maybe.map Tuple.second
+                        |> Expect.equal (Just (Array.fromList [ child ]))
             , test "will not append a node to itself" <|
                 \_ ->
                     let
@@ -65,8 +67,9 @@ databaseTest =
                     in
                     database
                         |> appendChild id id
-                        |> children id
-                        |> Expect.equal Array.empty
+                        |> get id
+                        |> Maybe.map Tuple.second
+                        |> Expect.equal (Just Array.empty)
             ]
         , describe "deleting"
             [ test "deleting a node should remove it from the database" <|
@@ -79,19 +82,5 @@ databaseTest =
                         |> delete id
                         |> get id
                         |> Expect.equal Nothing
-            , test "deleting a node should remove its children" <|
-                \_ ->
-                    let
-                        ( parent, ( child, database ) ) =
-                            empty
-                                |> insert (Node.note "parent")
-                                -- TODO: this shouldn't be a note, though?
-                                |> Tuple.mapSecond (insert (Node.note "child"))
-                    in
-                    database
-                        |> appendChild parent child
-                        |> delete parent
-                        |> children parent
-                        |> Expect.equal Array.empty
             ]
         ]

@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, appendChild, delete, get, children
+    ( Database, empty, isEmpty, insert, appendChild, delete, get
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, appendChild, delete, get, children
+@docs Database, empty, isEmpty, insert, appendChild, delete, get
 
 @docs ID, idFromInt
 
@@ -70,22 +70,11 @@ delete (ID id) (Database database) =
     Database { database | nodes = Array.set id Nothing database.nodes }
 
 
-get : ID -> Database -> Maybe Node
+get : ID -> Database -> Maybe ( Node, Array ID )
 get (ID id) (Database database) =
     database.nodes
         |> Array.get id
         |> Maybe.andThen identity
-        |> Maybe.map Tuple.first
-
-
-children : ID -> Database -> Array ID
-children (ID id) (Database database) =
-    -- TODO: this and get are pretty similar. Should they be combined?
-    database.nodes
-        |> Array.get id
-        |> Maybe.andThen identity
-        |> Maybe.map Tuple.second
-        |> Maybe.withDefault Array.empty
 
 
 
