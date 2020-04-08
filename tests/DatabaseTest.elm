@@ -43,4 +43,29 @@ databaseTest =
             , test "getting a node that doesn't exist returns Nothing" <|
                 \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
             ]
+        , describe "appending a child"
+            [ test "shows the relationship in children" <|
+                \_ ->
+                    let
+                        ( parent, ( child, database ) ) =
+                            empty
+                                |> insert (Node.note "parent")
+                                -- TODO: this shouldn't be a note, though?
+                                |> Tuple.mapSecond (insert (Node.note "child"))
+                    in
+                    database
+                        |> appendChild parent child
+                        |> children parent
+                        |> Expect.equal (Array.fromList [ child ])
+            , test "will not append a node to itself" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> appendChild id id
+                        |> children id
+                        |> Expect.equal Array.empty
+            ]
         ]
