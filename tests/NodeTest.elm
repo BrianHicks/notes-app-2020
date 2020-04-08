@@ -20,10 +20,6 @@ nodeTest =
                         |> .metadata
                         |> Expect.equal Nothing
             ]
-        , test "you can get the next ID in the sequence" <|
-            \_ ->
-                nextID (ID 0)
-                    |> Expect.equal (ID 1)
         , describe "withMetadata"
             [ test "sets metadata" <|
                 \_ ->

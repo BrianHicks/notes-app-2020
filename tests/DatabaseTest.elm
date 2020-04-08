@@ -10,31 +10,39 @@ import Test exposing (..)
 databaseTest : Test
 databaseTest =
     describe "Database"
-        [ test "starts with a new, empty database" <|
-            \_ -> Expect.equal True (isEmpty empty)
-        , test "you can insert a node" <|
-            \_ ->
-                empty
-                    |> insert (Node.fromString "hey")
-                    |> Tuple.second
-                    |> isEmpty
-                    |> Expect.equal False
-        , test "inserting assigns an ID" <|
-            \_ ->
-                empty
-                    |> insert (Node.fromString "hey")
-                    |> Tuple.first
-                    |> Expect.equal (Node.ID 0)
-        , test "you can get a node again" <|
-            \_ ->
-                let
-                    ( id, database ) =
-                        insert (Node.fromString "hey") empty
-                in
-                database
-                    |> get id
-                    |> Maybe.map .content
-                    |> Expect.equal (Just "hey")
+        [ describe "empty"
+            [ test "starts with a empty database" <|
+                \_ -> Expect.equal True (isEmpty empty)
+            ]
+        , describe "insert"
+            [ test "inserts a node" <|
+                \_ ->
+                    empty
+                        |> insert (Node.fromString "hey")
+                        |> Tuple.second
+                        |> isEmpty
+                        |> Expect.equal False
+            , test "assigns an ID" <|
+                \_ ->
+                    empty
+                        |> insert (Node.fromString "hey")
+                        |> Tuple.first
+                        |> Expect.equal (idFromInt 0)
+            ]
+        , describe "get"
+            [ test "you can get a node again" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.fromString "hey") empty
+                    in
+                    database
+                        |> get id
+                        |> Maybe.map .content
+                        |> Expect.equal (Just "hey")
+            , test "getting a node that doesn't exist returns Nothing" <|
+                \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
+            ]
         , describe "notes"
             [ test "you can get a list of notes" <|
                 \_ ->

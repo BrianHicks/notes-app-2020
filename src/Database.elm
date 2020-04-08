@@ -1,4 +1,15 @@
-module Database exposing (Database, empty, get, insert, isEmpty, notes)
+module Database exposing
+    ( Database, empty, isEmpty, get, insert, notes
+    , ID, idFromInt
+    )
+
+{-|
+
+@docs Database, empty, isEmpty, get, insert, notes
+
+@docs ID, idFromInt
+
+-}
 
 import Array exposing (Array)
 import Node exposing (Node)
@@ -11,13 +22,16 @@ import Node exposing (Node)
 type Database
     = Database
         { nodes : Array Node
-        , nextID : Node.ID
+        , nextID : ID
         }
 
 
 empty : Database
 empty =
-    Database { nodes = Array.empty, nextID = Node.ID 0 }
+    Database
+        { nodes = Array.empty
+        , nextID = ID 0
+        }
 
 
 isEmpty : Database -> Bool
@@ -25,18 +39,18 @@ isEmpty (Database database) =
     Array.isEmpty database.nodes
 
 
-insert : Node -> Database -> ( Node.ID, Database )
+insert : Node -> Database -> ( ID, Database )
 insert node (Database database) =
     ( database.nextID
     , Database
-        { nodes = Array.push { node | id = Just database.nextID } database.nodes
-        , nextID = Node.nextID database.nextID
+        { nodes = Array.push node database.nodes
+        , nextID = nextID database.nextID
         }
     )
 
 
-get : Node.ID -> Database -> Maybe Node
-get (Node.ID id) (Database database) =
+get : ID -> Database -> Maybe Node
+get (ID id) (Database database) =
     Array.get id database.nodes
 
 
@@ -45,3 +59,21 @@ notes (Database database) =
     database.nodes
         |> Array.filter (\{ metadata } -> metadata == Just Node.Note)
         |> Array.toList
+
+
+
+-- ID
+
+
+type ID
+    = ID Int
+
+
+nextID : ID -> ID
+nextID (ID id) =
+    ID (id + 1)
+
+
+idFromInt : Int -> ID
+idFromInt =
+    ID

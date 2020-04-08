@@ -1,25 +1,15 @@
-module Node exposing (ID(..), Metadata(..), Node, fromString, nextID, withMetadata)
-
-
-type ID
-    = ID Int
-
-
-nextID : ID -> ID
-nextID (ID i) =
-    ID (i + 1)
+module Node exposing (Metadata(..), Node, fromString, withMetadata)
 
 
 type alias Node =
-    { id : Maybe ID -- may not have been set yet
-    , metadata : Maybe Metadata
+    { metadata : Maybe Metadata
     , content : String
     }
 
 
 fromString : String -> Node
 fromString =
-    Node Nothing Nothing
+    Node Nothing
 
 
 type Metadata
