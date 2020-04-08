@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, get, insert, notes
+    ( Database, empty, isEmpty, get, insert
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, get, insert, notes
+@docs Database, empty, isEmpty, get, insert
 
 @docs ID, idFromInt
 
@@ -52,13 +52,6 @@ insert node (Database database) =
 get : ID -> Database -> Maybe Node
 get (ID id) (Database database) =
     Array.get id database.nodes
-
-
-notes : Database -> List Node
-notes (Database database) =
-    database.nodes
-        |> Array.filter Node.isNote
-        |> Array.toList
 
 
 

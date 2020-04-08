@@ -8,23 +8,15 @@ import Test exposing (..)
 nodeTest : Test
 nodeTest =
     describe "node"
-        [ describe "fromString"
-            [ test "uses the content passed in" <|
+        [ describe "note"
+            [ test "creates a note with the given content" <|
                 \_ ->
-                    fromString "Hey there!"
+                    note "Hey there!"
                         |> content
                         |> Expect.equal "Hey there!"
-            ]
-        , describe "isNote"
-            [ test "is not true for a default note" <|
+            , test "is a note" <|
                 \_ ->
-                    fromString "I'm not a note!"
-                        |> isNote
-                        |> Expect.equal False
-            , test "is true when a node is explicitly marekd as a note" <|
-                \_ ->
-                    fromString "I'm a note!"
-                        |> asNote
+                    note "Hey there!"
                         |> isNote
                         |> Expect.equal True
             ]

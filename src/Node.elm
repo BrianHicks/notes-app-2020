@@ -1,4 +1,15 @@
-module Node exposing (Metadata(..), Node, asNote, content, fromString, isNote)
+module Node exposing
+    ( Node, content
+    , note, isNote
+    )
+
+{-|
+
+@docs Node, content
+
+@docs note, isNote
+
+-}
 
 
 type Node
@@ -8,10 +19,10 @@ type Node
         }
 
 
-fromString : String -> Node
-fromString content_ =
+note : String -> Node
+note content_ =
     Node
-        { metadata = Nothing
+        { metadata = Just Note
         , content = content_
         }
 
@@ -23,11 +34,6 @@ content (Node node) =
 
 type Metadata
     = Note
-
-
-asNote : Node -> Node
-asNote =
-    withMetadata Note
 
 
 isNote : Node -> Bool
