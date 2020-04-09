@@ -64,8 +64,7 @@ databaseTest =
                         ( parent, ( child, database ) ) =
                             empty
                                 |> insert (Node.note "parent")
-                                -- TODO: this shouldn't be a note, though?
-                                |> Tuple.mapSecond (insert (Node.note "child"))
+                                |> Tuple.mapSecond (insert (Node.node "child"))
                     in
                     database
                         |> moveToLastChild parent child
@@ -78,8 +77,7 @@ databaseTest =
                         ( parent, ( child, database ) ) =
                             empty
                                 |> insert (Node.note "parent")
-                                -- TODO: this shouldn't be a note, though?
-                                |> Tuple.mapSecond (insert (Node.note "child"))
+                                |> Tuple.mapSecond (insert (Node.node "child"))
                     in
                     database
                         |> moveToLastChild parent child
@@ -106,8 +104,7 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.note "sibling B"))
 
                         ( child, database ) =
-                            -- TODO: shouldn't be a note
-                            insert (Node.note "child") dbTemp
+                            insert (Node.node "child") dbTemp
                     in
                     database
                         |> moveToLastChild siblingA child
