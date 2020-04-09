@@ -22,7 +22,14 @@ import Node exposing (Node)
 
 type Database
     = Database
-        { nodes : Array (Maybe { node : Node, children : Array ID })
+        { nodes :
+            Array
+                (Maybe
+                    { node : Node
+                    , parent : Maybe ID
+                    , children : Array ID
+                    }
+                )
         , nextID : ID
         }
 
@@ -48,6 +55,7 @@ insert node (Database database) =
             Array.push
                 (Just
                     { node = node
+                    , parent = Nothing
                     , children = Array.empty
                     }
                 )
@@ -66,9 +74,9 @@ appendChild (ID parentID) ((ID childID) as child) (Database database) =
         Database
             { database
                 | nodes =
-                    Array.Extra.update parentID
-                        (Maybe.map (\node -> { node | children = Array.push child node.children }))
-                        database.nodes
+                    database.nodes
+                        |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.push child node.children }))
+                        |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
             }
 
 
@@ -77,7 +85,7 @@ delete (ID id) (Database database) =
     Database { database | nodes = Array.set id Nothing database.nodes }
 
 
-get : ID -> Database -> Maybe { node : Node, children : Array ID }
+get : ID -> Database -> Maybe { node : Node, parent : Maybe ID, children : Array ID }
 get (ID id) (Database database) =
     database.nodes
         |> Array.get id

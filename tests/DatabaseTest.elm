@@ -28,6 +28,20 @@ databaseTest =
                         |> insert (Node.note "hey")
                         |> Tuple.first
                         |> Expect.equal (idFromInt 0)
+            , test "starts without children" <|
+                \_ ->
+                    empty
+                        |> insert (Node.note "hey")
+                        |> untuple get
+                        |> Maybe.map .children
+                        |> Expect.equal (Just Array.empty)
+            , test "starts without a parent" <|
+                \_ ->
+                    empty
+                        |> insert (Node.note "hey")
+                        |> untuple get
+                        |> Maybe.map .parent
+                        |> Expect.equal (Just Nothing)
             ]
         , describe "get"
             [ test "you can get a node again" <|
@@ -44,7 +58,7 @@ databaseTest =
                 \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
             ]
         , describe "appending a child"
-            [ test "shows the relationship in children" <|
+            [ test "shows the relationship in .children" <|
                 \_ ->
                     let
                         ( parent, ( child, database ) ) =
@@ -58,6 +72,20 @@ databaseTest =
                         |> get parent
                         |> Maybe.map .children
                         |> Expect.equal (Just (Array.fromList [ child ]))
+            , test "shows the relationship in .parent" <|
+                \_ ->
+                    let
+                        ( parent, ( child, database ) ) =
+                            empty
+                                |> insert (Node.note "parent")
+                                -- TODO: this shouldn't be a note, though?
+                                |> Tuple.mapSecond (insert (Node.note "child"))
+                    in
+                    database
+                        |> appendChild parent child
+                        |> get child
+                        |> Maybe.map .parent
+                        |> Expect.equal (Just (Just parent))
             , test "will not append a node to itself" <|
                 \_ ->
                     let
@@ -83,3 +111,8 @@ databaseTest =
                         |> Expect.equal Nothing
             ]
         ]
+
+
+untuple : (a -> b -> c) -> ( a, b ) -> c
+untuple fn ( a, b ) =
+    fn a b
