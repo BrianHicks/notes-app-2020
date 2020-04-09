@@ -1,6 +1,7 @@
 module Node exposing
     ( Node, content
     , note, isNote
+    , node
     )
 
 {-|
@@ -8,6 +9,8 @@ module Node exposing
 @docs Node, content
 
 @docs note, isNote
+
+@docs node
 
 -}
 
@@ -27,9 +30,17 @@ note content_ =
         }
 
 
+node : String -> Node
+node content_ =
+    Node
+        { metadata = Nothing
+        , content = content_
+        }
+
+
 content : Node -> String
-content (Node node) =
-    node.content
+content (Node guts) =
+    guts.content
 
 
 type Metadata
@@ -37,10 +48,5 @@ type Metadata
 
 
 isNote : Node -> Bool
-isNote (Node node) =
-    node.metadata == Just Note
-
-
-withMetadata : Metadata -> Node -> Node
-withMetadata metadata (Node node) =
-    Node { node | metadata = Just metadata }
+isNote (Node guts) =
+    guts.metadata == Just Note

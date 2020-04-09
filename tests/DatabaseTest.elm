@@ -97,6 +97,24 @@ databaseTest =
                         |> get id
                         |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
+            , test "remove the subject node from where it was before" <|
+                \_ ->
+                    let
+                        ( siblingA, ( siblingB, dbTemp ) ) =
+                            empty
+                                |> insert (Node.note "sibling A")
+                                |> Tuple.mapSecond (insert (Node.note "sibling B"))
+
+                        ( child, database ) =
+                            -- TODO: shouldn't be a note
+                            insert (Node.note "child") dbTemp
+                    in
+                    database
+                        |> moveToLastChild siblingA child
+                        |> moveToLastChild siblingB child
+                        |> get siblingA
+                        |> Maybe.map .children
+                        |> Expect.equal (Just Array.empty)
             , test "will not insert a bad child ID" <|
                 \_ ->
                     let
