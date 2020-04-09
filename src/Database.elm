@@ -66,8 +66,8 @@ insert node (Database database) =
 
 
 appendChild : ID -> ID -> Database -> Database
-appendChild (ID parentID) ((ID childID) as child) (Database database) =
-    if parentID == childID then
+appendChild ((ID parentID) as parent) ((ID childID) as child) ((Database database) as db) =
+    if parent == child || get parent db == Nothing || get child db == Nothing then
         Database database
 
     else

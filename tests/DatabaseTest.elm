@@ -97,6 +97,24 @@ databaseTest =
                         |> get id
                         |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
+            , test "will not insert a bad child ID" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> appendChild id (idFromInt 0x1BAD1DEA)
+                        |> Expect.equal database
+            , test "will not insert a bad parent ID" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> appendChild (idFromInt 0x1BAD1DEA) id
+                        |> Expect.equal database
             ]
         , describe "deleting"
             [ test "deleting a node should remove it from the database" <|
