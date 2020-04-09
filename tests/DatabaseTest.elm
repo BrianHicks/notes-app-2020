@@ -34,7 +34,7 @@ databaseTest =
                         |> insert (Node.note "hey")
                         |> untuple get
                         |> Maybe.map .children
-                        |> Expect.equal (Just Array.empty)
+                        |> Expect.equal (Just [])
             , test "starts without a parent" <|
                 \_ ->
                     empty
@@ -70,7 +70,7 @@ databaseTest =
                         |> moveInto parent child
                         |> get parent
                         |> Maybe.map .children
-                        |> Expect.equal (Just (Array.fromList [ child ]))
+                        |> Expect.equal (Just [ child ])
             , test "shows the relationship in .parent" <|
                 \_ ->
                     let
@@ -94,7 +94,7 @@ databaseTest =
                         |> moveInto id id
                         |> get id
                         |> Maybe.map .children
-                        |> Expect.equal (Just Array.empty)
+                        |> Expect.equal (Just [])
             , test "remove the subject node from where it was before" <|
                 \_ ->
                     let
@@ -111,7 +111,7 @@ databaseTest =
                         |> moveInto siblingB child
                         |> get siblingA
                         |> Maybe.map .children
-                        |> Expect.equal (Just Array.empty)
+                        |> Expect.equal (Just [])
             , test "will not insert a bad child ID" <|
                 \_ ->
                     let
@@ -175,7 +175,7 @@ databaseTest =
                         |> moveAfter second first
                         |> get parent
                         |> Maybe.map .children
-                        |> Expect.equal (Just (Array.fromList [ second, first, third ]))
+                        |> Expect.equal (Just [ second, first, third ])
             ]
         , describe "deleting"
             [ test "deleting a node should remove it from the database" <|

@@ -27,7 +27,7 @@ type Database
                 (Maybe
                     { node : Node
                     , parent : Maybe ID
-                    , children : Array ID
+                    , children : List ID
                     }
                 )
         , nextID : ID
@@ -56,7 +56,7 @@ insert node (Database database) =
                 (Just
                     { node = node
                     , parent = Nothing
-                    , children = Array.empty
+                    , children = []
                     }
                 )
                 database.nodes
@@ -106,7 +106,7 @@ detachChild ((ID childID) as child) (Database database) =
                             Array.Extra.update oldParentID
                                 (Maybe.map
                                     (\node ->
-                                        { node | children = Array.filter ((/=) child) node.children }
+                                        { node | children = List.filter ((/=) child) node.children }
                                     )
                                 )
                                 database.nodes
@@ -122,7 +122,7 @@ prependChild ((ID parentID) as parent) ((ID childID) as child) (Database databas
         { database
             | nodes =
                 database.nodes
-                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.append (Array.fromList [ child ]) node.children }))
+                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = child :: node.children }))
                     |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
         }
 
@@ -148,7 +148,7 @@ delete (ID id) (Database database) =
     Database { database | nodes = Array.set id Nothing database.nodes }
 
 
-get : ID -> Database -> Maybe { node : Node, parent : Maybe ID, children : Array ID }
+get : ID -> Database -> Maybe { node : Node, parent : Maybe ID, children : List ID }
 get (ID id) (Database database) =
     database.nodes
         |> Array.get id
@@ -177,32 +177,20 @@ idFromInt =
 -- UTILITY
 
 
-insertAfter : a -> a -> Array a -> Array a
+insertAfter : a -> a -> List a -> List a
 insertAfter target toInsert items =
-    case arrayFind target items of
-        Just index ->
-            Array.append
-                (Array.slice 0 (index + 1) items |> Array.push toInsert)
-                (Array.slice (index + 1) (Array.length items) items)
-
-        Nothing ->
-            items
+    insertAfterHelp target toInsert items []
 
 
-arrayFind : a -> Array a -> Maybe Int
-arrayFind item items =
-    arrayFindHelp 0 item (Array.toList items)
-
-
-arrayFindHelp : Int -> a -> List a -> Maybe Int
-arrayFindHelp index item items =
+insertAfterHelp : a -> a -> List a -> List a -> List a
+insertAfterHelp target toInsert items soFar =
     case items of
         [] ->
-            Nothing
+            List.reverse soFar
 
         candidate :: rest ->
-            if candidate == item then
-                Just index
+            if candidate == target then
+                List.reverse soFar ++ candidate :: toInsert :: rest
 
             else
-                arrayFindHelp (index + 1) item rest
+                insertAfterHelp target toInsert rest (candidate :: soFar)
