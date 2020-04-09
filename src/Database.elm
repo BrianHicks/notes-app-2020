@@ -66,35 +66,49 @@ insert node (Database database) =
 
 
 moveToLastChild : ID -> ID -> Database -> Database
-moveToLastChild ((ID parentID) as parent) ((ID childID) as child) ((Database database) as db) =
-    if parent == child || get parent db == Nothing || get child db == Nothing then
-        Database database
+moveToLastChild ((ID parentID) as parent) ((ID childID) as child) database =
+    if parent == child || get parent database == Nothing || get child database == Nothing then
+        database
 
     else
-        Database
-            { database
-                | nodes =
-                    database.nodes
-                        -- remove child from old parent
-                        |> Array.get childID
-                        |> Maybe.andThen identity
-                        |> Maybe.andThen .parent
-                        |> Maybe.map
-                            (\(ID oldParentID) ->
-                                Array.Extra.update oldParentID
-                                    (Maybe.map
-                                        (\node ->
-                                            { node | children = Array.filter ((/=) child) node.children }
-                                        )
+        database
+            |> detachChild child
+            |> appendChild parent child
+
+
+detachChild : ID -> Database -> Database
+detachChild ((ID childID) as child) (Database database) =
+    Database
+        { database
+            | nodes =
+                database.nodes
+                    |> Array.get childID
+                    |> Maybe.andThen identity
+                    |> Maybe.andThen .parent
+                    |> Maybe.map
+                        (\(ID oldParentID) ->
+                            Array.Extra.update oldParentID
+                                (Maybe.map
+                                    (\node ->
+                                        { node | children = Array.filter ((/=) child) node.children }
                                     )
-                                    database.nodes
-                            )
-                        |> Maybe.withDefault database.nodes
-                        -- add child to new parent
-                        |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.push child node.children }))
-                        -- set new parent in child
-                        |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
-            }
+                                )
+                                database.nodes
+                        )
+                    |> Maybe.withDefault database.nodes
+                    |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Nothing }))
+        }
+
+
+appendChild : ID -> ID -> Database -> Database
+appendChild ((ID parentID) as parent) ((ID childID) as child) (Database database) =
+    Database
+        { database
+            | nodes =
+                database.nodes
+                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.push child node.children }))
+                    |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+        }
 
 
 delete : ID -> Database -> Database
