@@ -66,7 +66,7 @@ insert node (Database database) =
 
 
 moveToLastChild : ID -> ID -> Database -> Database
-moveToLastChild ((ID parentID) as parent) ((ID childID) as child) database =
+moveToLastChild parent child database =
     if parent == child || get parent database == Nothing || get child database == Nothing then
         database
 
