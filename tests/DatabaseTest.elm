@@ -177,18 +177,6 @@ databaseTest =
                         |> Maybe.map .children
                         |> Expect.equal (Just [ second, first, third ])
             ]
-        , describe "deleting"
-            [ test "deleting a node should remove it from the database" <|
-                \_ ->
-                    let
-                        ( id, database ) =
-                            insert (Node.note "note") empty
-                    in
-                    database
-                        |> delete id
-                        |> get id
-                        |> Expect.equal Nothing
-            ]
         ]
 
 

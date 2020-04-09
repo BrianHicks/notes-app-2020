@@ -23,8 +23,8 @@ type alias Model =
     , seed : Random.Seed
 
     -- view state
-    , selected : Maybe Node.ID
-    , editing : Maybe Node.ID
+    , selected : Maybe Database.ID
+    , editing : Maybe Database.ID
     }
 
 
@@ -34,17 +34,17 @@ type Msg
     | ClickedNewNote
     | NewNote UUID Posix
     | NewRandomSeed Random.Seed
-    | ClickedToSelectNote Node.ID
-    | ClickedToEditNode Node.ID
+    | ClickedToSelectNote Database.ID
+    | ClickedToEditNode Database.ID
     | StoppedEditingNode
       -- TODO: better names for this distinction. EditedNodeContents is for editing, EditNodeContents is for getting the timestamp
     | EditedNodeContents String
-    | UpdatedNote Node.ID Posix
+    | UpdatedNote Database.ID Posix
 
 
 init : () -> Url -> Navigation.Key -> ( Model, Cmd Msg )
 init flags url key =
-    ( { database = Database.init
+    ( { database = Database.empty
       , url = url
       , key = key
       , seed = Random.initialSeed 0 -- TODO: current time?
@@ -91,15 +91,15 @@ update msg model =
             ( { model
                 | database =
                     Database.insert
-                        { id = Node.ID uuid
-                        , metadata = Just Node.Note
+                        { id = Database.ID uuid
+                        , metadata = Just Database.Note
                         , content = ""
                         , children = []
                         , updated = time
                         }
                         model.database
-                , selected = Just (Node.ID uuid)
-                , editing = Just (Node.ID uuid)
+                , selected = Just (Database.ID uuid)
+                , editing = Just (Database.ID uuid)
               }
             , Cmd.none
             )
@@ -201,7 +201,7 @@ view model =
 
 {-| LATER: this is the function to add lazy calls in!
 -}
-viewTree : Maybe Node.ID -> Node -> Database -> Html Msg
+viewTree : Maybe Database.ID -> Node -> Database -> Html Msg
 viewTree editing node database =
     Html.div []
         [ if editing == Just node.id then

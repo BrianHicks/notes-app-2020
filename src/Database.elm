@@ -1,5 +1,5 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, moveInto, moveAfter, delete, get
+    ( Database, empty, isEmpty, insert, moveInto, moveAfter, get
     , ID, idFromInt
     )
 
@@ -141,11 +141,6 @@ appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
                             |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
                             |> Array.Extra.update targetID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
                 }
-
-
-delete : ID -> Database -> Database
-delete (ID id) (Database database) =
-    Database { database | nodes = Array.set id Nothing database.nodes }
 
 
 get : ID -> Database -> Maybe { node : Node, parent : Maybe ID, children : List ID }
