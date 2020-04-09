@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, moveToLastChild, moveAfter, delete, get
+    ( Database, empty, isEmpty, insert, moveInto, moveAfter, delete, get
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, moveToLastChild, moveAfter, delete, get
+@docs Database, empty, isEmpty, insert, moveInto, moveAfter, delete, get
 
 @docs ID, idFromInt
 
@@ -65,17 +65,31 @@ insert node (Database database) =
     )
 
 
-{-| TODO: rename to... moveInside? moveUnder?
--}
-moveToLastChild : ID -> ID -> Database -> Database
-moveToLastChild parent child database =
+moveInto : ID -> ID -> Database -> Database
+moveInto parent child database =
     if parent == child || get parent database == Nothing || get child database == Nothing then
         database
 
     else
         database
             |> detachChild child
-            |> appendChild parent child
+            |> prependChild parent child
+
+
+moveAfter : ID -> ID -> Database -> Database
+moveAfter sibling target database =
+    if
+        (sibling == target)
+            || (get sibling database == Nothing)
+            || (get target database == Nothing)
+            || (Maybe.andThen .parent (get sibling database) == Nothing)
+    then
+        database
+
+    else
+        database
+            |> detachChild target
+            |> appendSibling sibling target
 
 
 detachChild : ID -> Database -> Database
@@ -102,31 +116,15 @@ detachChild ((ID childID) as child) (Database database) =
         }
 
 
-appendChild : ID -> ID -> Database -> Database
-appendChild ((ID parentID) as parent) ((ID childID) as child) (Database database) =
+prependChild : ID -> ID -> Database -> Database
+prependChild ((ID parentID) as parent) ((ID childID) as child) (Database database) =
     Database
         { database
             | nodes =
                 database.nodes
-                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.push child node.children }))
+                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.append (Array.fromList [ child ]) node.children }))
                     |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
         }
-
-
-moveAfter : ID -> ID -> Database -> Database
-moveAfter sibling target database =
-    if
-        (sibling == target)
-            || (get sibling database == Nothing)
-            || (get target database == Nothing)
-            || (Maybe.andThen .parent (get sibling database) == Nothing)
-    then
-        database
-
-    else
-        database
-            |> detachChild target
-            |> appendSibling sibling target
 
 
 appendSibling : ID -> ID -> Database -> Database

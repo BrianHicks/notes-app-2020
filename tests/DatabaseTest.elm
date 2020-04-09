@@ -67,7 +67,7 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.node "child"))
                     in
                     database
-                        |> moveToLastChild parent child
+                        |> moveInto parent child
                         |> get parent
                         |> Maybe.map .children
                         |> Expect.equal (Just (Array.fromList [ child ]))
@@ -80,7 +80,7 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.node "child"))
                     in
                     database
-                        |> moveToLastChild parent child
+                        |> moveInto parent child
                         |> get child
                         |> Maybe.map .parent
                         |> Expect.equal (Just (Just parent))
@@ -91,7 +91,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> moveToLastChild id id
+                        |> moveInto id id
                         |> get id
                         |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
@@ -107,8 +107,8 @@ databaseTest =
                             insert (Node.node "child") dbTemp
                     in
                     database
-                        |> moveToLastChild siblingA child
-                        |> moveToLastChild siblingB child
+                        |> moveInto siblingA child
+                        |> moveInto siblingB child
                         |> get siblingA
                         |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
@@ -119,7 +119,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> moveToLastChild id (idFromInt 0x1BAD1DEA)
+                        |> moveInto id (idFromInt 0x1BAD1DEA)
                         |> Expect.equal database
             , test "will not insert a bad parent ID" <|
                 \_ ->
@@ -128,7 +128,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> moveToLastChild (idFromInt 0x1BAD1DEA) id
+                        |> moveInto (idFromInt 0x1BAD1DEA) id
                         |> Expect.equal database
             ]
         , describe "moving after a sibling"
@@ -169,9 +169,9 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "third"))))
                     in
                     database
-                        |> moveToLastChild parent first
-                        |> moveToLastChild parent second
-                        |> moveToLastChild parent third
+                        |> moveInto parent third
+                        |> moveInto parent second
+                        |> moveInto parent first
                         |> moveAfter second first
                         |> get parent
                         |> Maybe.map .children
