@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, moveToLastChild, delete, get
+    ( Database, empty, isEmpty, insert, moveToLastChild, moveAfter, delete, get
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, moveToLastChild, delete, get
+@docs Database, empty, isEmpty, insert, moveToLastChild, moveAfter, delete, get
 
 @docs ID, idFromInt
 
@@ -65,6 +65,8 @@ insert node (Database database) =
     )
 
 
+{-| TODO: rename to... moveInside? moveUnder?
+-}
 moveToLastChild : ID -> ID -> Database -> Database
 moveToLastChild parent child database =
     if parent == child || get parent database == Nothing || get child database == Nothing then
@@ -111,6 +113,38 @@ appendChild ((ID parentID) as parent) ((ID childID) as child) (Database database
         }
 
 
+moveAfter : ID -> ID -> Database -> Database
+moveAfter sibling target database =
+    if
+        (sibling == target)
+            || (get sibling database == Nothing)
+            || (get target database == Nothing)
+            || (Maybe.andThen .parent (get sibling database) == Nothing)
+    then
+        database
+
+    else
+        database
+            |> detachChild target
+            |> appendSibling sibling target
+
+
+appendSibling : ID -> ID -> Database -> Database
+appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
+    case get sibling database |> Maybe.andThen .parent of
+        Nothing ->
+            database
+
+        Just (ID parentID) ->
+            Database
+                { db
+                    | nodes =
+                        db.nodes
+                            |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
+                            |> Array.Extra.update targetID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                }
+
+
 delete : ID -> Database -> Database
 delete (ID id) (Database database) =
     Database { database | nodes = Array.set id Nothing database.nodes }
@@ -139,3 +173,38 @@ nextID (ID id) =
 idFromInt : Int -> ID
 idFromInt =
     ID
+
+
+
+-- UTILITY
+
+
+insertAfter : a -> a -> Array a -> Array a
+insertAfter target toInsert items =
+    case arrayFind target items of
+        Just index ->
+            Array.append
+                (Array.slice 0 (index + 1) items |> Array.push toInsert)
+                (Array.slice (index + 1) (Array.length items) items)
+
+        Nothing ->
+            items
+
+
+arrayFind : a -> Array a -> Maybe Int
+arrayFind item items =
+    arrayFindHelp 0 item (Array.toList items)
+
+
+arrayFindHelp : Int -> a -> List a -> Maybe Int
+arrayFindHelp index item items =
+    case items of
+        [] ->
+            Nothing
+
+        candidate :: rest ->
+            if candidate == item then
+                Just index
+
+            else
+                arrayFindHelp (index + 1) item rest

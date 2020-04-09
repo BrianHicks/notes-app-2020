@@ -57,7 +57,7 @@ databaseTest =
             , test "getting a node that doesn't exist returns Nothing" <|
                 \_ -> Expect.equal Nothing (get (idFromInt 0) empty)
             ]
-        , describe "appending a child"
+        , describe "moving into a parent"
             [ test "shows the relationship in .children" <|
                 \_ ->
                     let
@@ -130,6 +130,52 @@ databaseTest =
                     database
                         |> moveToLastChild (idFromInt 0x1BAD1DEA) id
                         |> Expect.equal database
+            ]
+        , describe "moving after a sibling"
+            [ test "will not move a node after itself" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> moveAfter id id
+                        |> Expect.equal database
+            , test "will not move after a missing node" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> moveAfter (idFromInt 1000) id
+                        |> Expect.equal database
+            , test "will not move a missing node" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> moveAfter id (idFromInt 1000)
+                        |> Expect.equal database
+            , test "will move directly after the sibling" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, ( third, database ) ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "third"))))
+                    in
+                    database
+                        |> moveToLastChild parent first
+                        |> moveToLastChild parent second
+                        |> moveToLastChild parent third
+                        |> moveAfter second first
+                        |> get parent
+                        |> Maybe.map .children
+                        |> Expect.equal (Just (Array.fromList [ second, first, third ]))
             ]
         , describe "deleting"
             [ test "deleting a node should remove it from the database" <|
