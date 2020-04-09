@@ -68,7 +68,7 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.note "child"))
                     in
                     database
-                        |> appendChild parent child
+                        |> moveToLastChild parent child
                         |> get parent
                         |> Maybe.map .children
                         |> Expect.equal (Just (Array.fromList [ child ]))
@@ -82,7 +82,7 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.note "child"))
                     in
                     database
-                        |> appendChild parent child
+                        |> moveToLastChild parent child
                         |> get child
                         |> Maybe.map .parent
                         |> Expect.equal (Just (Just parent))
@@ -93,7 +93,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> appendChild id id
+                        |> moveToLastChild id id
                         |> get id
                         |> Maybe.map .children
                         |> Expect.equal (Just Array.empty)
@@ -104,7 +104,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> appendChild id (idFromInt 0x1BAD1DEA)
+                        |> moveToLastChild id (idFromInt 0x1BAD1DEA)
                         |> Expect.equal database
             , test "will not insert a bad parent ID" <|
                 \_ ->
@@ -113,7 +113,7 @@ databaseTest =
                             insert (Node.note "note") empty
                     in
                     database
-                        |> appendChild (idFromInt 0x1BAD1DEA) id
+                        |> moveToLastChild (idFromInt 0x1BAD1DEA) id
                         |> Expect.equal database
             ]
         , describe "deleting"

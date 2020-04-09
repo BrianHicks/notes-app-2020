@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, appendChild, delete, get
+    ( Database, empty, isEmpty, insert, moveToLastChild, delete, get
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, appendChild, delete, get
+@docs Database, empty, isEmpty, insert, moveToLastChild, delete, get
 
 @docs ID, idFromInt
 
@@ -65,8 +65,8 @@ insert node (Database database) =
     )
 
 
-appendChild : ID -> ID -> Database -> Database
-appendChild ((ID parentID) as parent) ((ID childID) as child) ((Database database) as db) =
+moveToLastChild : ID -> ID -> Database -> Database
+moveToLastChild ((ID parentID) as parent) ((ID childID) as child) ((Database database) as db) =
     if parent == child || get parent db == Nothing || get child db == Nothing then
         Database database
 
