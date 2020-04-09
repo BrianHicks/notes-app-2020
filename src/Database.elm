@@ -75,7 +75,24 @@ moveToLastChild ((ID parentID) as parent) ((ID childID) as child) ((Database dat
             { database
                 | nodes =
                     database.nodes
+                        -- remove child from old parent
+                        |> Array.get childID
+                        |> Maybe.andThen identity
+                        |> Maybe.andThen .parent
+                        |> Maybe.map
+                            (\(ID oldParentID) ->
+                                Array.Extra.update oldParentID
+                                    (Maybe.map
+                                        (\node ->
+                                            { node | children = Array.filter ((/=) child) node.children }
+                                        )
+                                    )
+                                    database.nodes
+                            )
+                        |> Maybe.withDefault database.nodes
+                        -- add child to new parent
                         |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = Array.push child node.children }))
+                        -- set new parent in child
                         |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
             }
 
