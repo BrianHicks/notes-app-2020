@@ -1,12 +1,12 @@
 module Node exposing
-    ( Node, content
+    ( Node, content, setContent
     , note, isNote
     , node
     )
 
 {-|
 
-@docs Node, content
+@docs Node, content, setContent
 
 @docs note, isNote
 
@@ -41,6 +41,11 @@ node content_ =
 content : Node -> String
 content (Node guts) =
     guts.content
+
+
+setContent : String -> Node -> Node
+setContent content_ (Node guts) =
+    Node { guts | content = content_ }
 
 
 type Metadata

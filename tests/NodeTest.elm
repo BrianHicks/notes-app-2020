@@ -32,4 +32,12 @@ nodeTest =
                         |> isNote
                         |> Expect.equal False
             ]
+        , describe "setting content"
+            [ test "setContent sets the content" <|
+                \_ ->
+                    note "Hey there!"
+                        |> setContent "Bye!"
+                        |> content
+                        |> Expect.equal "Bye!"
+            ]
         ]
