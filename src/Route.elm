@@ -22,7 +22,7 @@ toString route =
             Builder.absolute [ "404" ] []
 
         Note id ->
-            Builder.absolute [ "notes", String.fromInt (Database.intFromId id) ] []
+            Builder.absolute [ "notes", Database.idToString id ] []
 
 
 parse : Url -> Route

@@ -150,7 +150,7 @@ viewNote model id =
             if model.editing == Just id then
                 Html.input
                     [ Attrs.attribute "aria-label" "Title"
-                    , Attrs.id ("node-" ++ String.fromInt (Database.intFromId id))
+                    , Attrs.id "title"
                     , Attrs.value (Node.content note.node)
                     , Events.onInput UserEditedNode
                     ]

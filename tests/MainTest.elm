@@ -1,8 +1,9 @@
 module MainTest exposing (..)
 
+import Database
 import Expect
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, clickButton, done, ensureBrowserUrl, expectViewHas, fillIn)
+import ProgramTest exposing (ProgramTest, clickButton, done, ensureBrowserUrl, ensureViewHas, fillIn)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -10,7 +11,11 @@ import Test exposing (..)
 import Test.Html.Selector as Selector
 
 
-start : ProgramTest (Model ()) Msg Effect
+type alias NotesTest =
+    ProgramTest (Model ()) Msg Effect
+
+
+start : NotesTest
 start =
     ProgramTest.createApplication
         { init = init
@@ -41,8 +46,14 @@ programTest =
         [ test "it should be possible to add a note and see it in the sidebar after adding" <|
             \_ ->
                 start
-                    |> clickButton "New Note"
-                    |> ensureBrowserUrl (Expect.equal "https://localhost/notes/0")
-                    |> fillIn "node-0" "Title" "What's up?"
-                    |> expectViewHas [ Selector.text "What's up?" ]
+                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> done
         ]
+
+
+addNote : Database.ID -> String -> NotesTest -> NotesTest
+addNote id text =
+    clickButton "New Note"
+        >> ensureBrowserUrl (Expect.equal ("https://localhost/notes/" ++ Database.idToString id))
+        >> fillIn "title" "Title" text
+        >> ensureViewHas [ Selector.text text ]

@@ -1,13 +1,13 @@
 module Database exposing
     ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get, filter
-    , ID, idFromInt, intFromId
+    , ID, idFromInt, idToString
     )
 
 {-|
 
 @docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get, filter
 
-@docs ID, idFromInt, intFromId
+@docs ID, idFromInt, idToString
 
 -}
 
@@ -189,9 +189,9 @@ idFromInt =
     ID
 
 
-intFromId : ID -> Int
-intFromId (ID id) =
-    id
+idToString : ID -> String
+idToString (ID id) =
+    String.fromInt id
 
 
 
