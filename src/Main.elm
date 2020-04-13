@@ -37,6 +37,7 @@ type Msg
     | UserFinishedEditingNode
     | Focused (Result Dom.Error ())
     | UserSelectedNode Database.ID
+    | UserHitEnterOnNode Database.ID
 
 
 type Effect
@@ -44,7 +45,7 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
-    | Focus String
+    | FocusOnContent
 
 
 init : () -> Url -> key -> ( Model key, Effect )
@@ -90,7 +91,7 @@ update msg model =
               }
             , Batch
                 [ PushUrl (Route.Node id)
-                , Focus "title"
+                , FocusOnContent
                 ]
             )
 
@@ -116,6 +117,31 @@ update msg model =
             , PushUrl (Route.Node id)
             )
 
+        UserHitEnterOnNode id ->
+            let
+                ( newId, database ) =
+                    Database.insert (Node.node "") model.database
+            in
+            case Database.get id model.database |> Maybe.map (Node.isNote << .node) of
+                Just True ->
+                    ( { model
+                        | database = Database.moveInto id newId database
+                        , editing = Just newId
+                      }
+                    , FocusOnContent
+                    )
+
+                Just False ->
+                    ( { model
+                        | database = Database.moveAfter id newId database
+                        , editing = Just newId
+                      }
+                    , FocusOnContent
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -132,8 +158,8 @@ perform model effect =
         PushUrl url ->
             Navigation.pushUrl model.key (Route.toString url)
 
-        Focus id ->
-            Task.attempt Focused (Dom.focus id)
+        FocusOnContent ->
+            Task.attempt Focused (Dom.focus "content")
 
 
 subscriptions : Model key -> Sub Msg
@@ -188,37 +214,53 @@ viewNode model id =
         Nothing ->
             Html.text "Note not found."
 
-        Just note ->
-            if model.editing == Just id then
-                Html.input
-                    [ Attrs.attribute "aria-label" "Content"
-                    , Attrs.id "content"
-                    , Attrs.value (Node.content note.node)
-                    , Events.onInput UserEditedNode
-                    , Events.onBlur UserFinishedEditingNode
-                    , Events.on "keydown"
-                        (Decode.andThen
-                            (\key ->
-                                case key of
-                                    -- return
-                                    -- TODO: add a next sibling node from this
-                                    13 ->
-                                        Decode.succeed UserFinishedEditingNode
+        Just { node, children } ->
+            let
+                tag =
+                    if Node.isNote node then
+                        Html.section
 
-                                    -- escape
-                                    27 ->
-                                        Decode.succeed UserFinishedEditingNode
+                    else
+                        Html.li
+            in
+            tag []
+                [ if model.editing == Just id then
+                    Html.input
+                        [ Attrs.attribute "aria-label" "Content"
+                        , Attrs.id "content"
+                        , Attrs.value (Node.content node)
+                        , Events.onInput UserEditedNode
+                        , Events.onBlur UserFinishedEditingNode
+                        , Events.on "keydown"
+                            (Decode.andThen
+                                (\key ->
+                                    case key of
+                                        -- return
+                                        -- TODO: add a next sibling node from this
+                                        13 ->
+                                            Decode.succeed (UserHitEnterOnNode id)
 
-                                    _ ->
-                                        Decode.fail ""
+                                        -- escape
+                                        27 ->
+                                            Decode.succeed UserFinishedEditingNode
+
+                                        _ ->
+                                            Decode.fail ""
+                                )
+                                Events.keyCode
                             )
-                            Events.keyCode
-                        )
-                    ]
-                    []
+                        ]
+                        []
 
-            else
-                Html.text (Node.content note.node)
+                  else if Node.isNote node then
+                    Html.h1 [] [ Html.text (Node.content node) ]
+
+                  else
+                    Html.text (Node.content node)
+                , children
+                    |> List.map (viewNode model)
+                    |> Html.ul []
+                ]
 
 
 main : Program () (Model Navigation.Key) Msg

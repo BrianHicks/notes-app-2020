@@ -46,7 +46,7 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
-        Focus _ ->
+        FocusOnContent ->
             SCmd.none
 
 
@@ -68,16 +68,23 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> simulateDomEvent
-                        (Query.find [ Selector.id "content" ])
-                        ( "keydown", Encode.object [ ( "keyCode", Encode.int 27 ) ] )
+                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 27)
                     |> expectViewHasNot [ Selector.id "content" ]
+        , test "after editing a note, hitting enter creates a new child note" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 13)
+                    |> fillIn "content" "Content" "Not much, you?"
+                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 27)
+                    |> expectViewHas [ Selector.text "Not much, you?" ]
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> addNote (Database.idFromInt 1) "Not much."
                     |> clickButton "What's up?"
+                    -- TODO: expectation that the thing gets selected
                     |> done
         ]
 
@@ -87,3 +94,8 @@ addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
         >> fillIn "content" "Content" text
+
+
+keyDown : Int -> ( String, Encode.Value )
+keyDown key =
+    ( "keydown", Encode.object [ ( "keyCode", Encode.int key ) ] )
