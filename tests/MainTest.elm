@@ -2,12 +2,14 @@ module MainTest exposing (..)
 
 import Database
 import Expect
+import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectViewHas, fillIn)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
 import Test exposing (..)
+import Test.Html.Query as Query
 import Test.Html.Selector as Selector
 
 
@@ -56,6 +58,20 @@ programTest =
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> expectViewHas [ Selector.text "What's up?" ]
+        , test "after editing, blurring finalizes the note" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) ( "blur", Encode.object [] )
+                    |> expectViewHasNot [ Selector.id "content" ]
+        , test "after editing, hitting escape finalizes the note" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> simulateDomEvent
+                        (Query.find [ Selector.id "content" ])
+                        ( "keydown", Encode.object [ ( "keyCode", Encode.int 27 ) ] )
+                    |> expectViewHasNot [ Selector.id "content" ]
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
                 start
@@ -70,4 +86,4 @@ addNote : Database.ID -> String -> NotesTest -> NotesTest
 addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
-        >> fillIn "title" "Title" text
+        >> fillIn "content" "Content" text

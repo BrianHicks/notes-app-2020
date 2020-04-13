@@ -8,6 +8,7 @@ import Database exposing (Database)
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
+import Json.Decode as Decode
 import Node exposing (Node)
 import Route exposing (Route)
 import Sort
@@ -33,6 +34,7 @@ type Msg
     | UrlChanged Url
     | ClickedNewNote
     | UserEditedNode String
+    | UserFinishedEditingNode
     | Focused (Result Dom.Error ())
     | UserSelectedNode Database.ID
 
@@ -102,6 +104,9 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserFinishedEditingNode ->
+            ( { model | editing = Nothing }, NoEffect )
+
         Focused _ ->
             -- TODO: report this?
             ( model, NoEffect )
@@ -156,6 +161,7 @@ viewApplication model =
                         , Events.onClick (UserSelectedNode id)
 
                         -- TODO: trigger on space and enter
+                        -- TODO: put this in the tabbing order
                         ]
                         [ Html.text (Node.content node) ]
                 )
@@ -185,10 +191,29 @@ viewNode model id =
         Just note ->
             if model.editing == Just id then
                 Html.input
-                    [ Attrs.attribute "aria-label" "Title"
-                    , Attrs.id "title"
+                    [ Attrs.attribute "aria-label" "Content"
+                    , Attrs.id "content"
                     , Attrs.value (Node.content note.node)
                     , Events.onInput UserEditedNode
+                    , Events.onBlur UserFinishedEditingNode
+                    , Events.on "keydown"
+                        (Decode.andThen
+                            (\key ->
+                                case key of
+                                    -- return
+                                    -- TODO: add a next sibling node from this
+                                    13 ->
+                                        Decode.succeed UserFinishedEditingNode
+
+                                    -- escape
+                                    27 ->
+                                        Decode.succeed UserFinishedEditingNode
+
+                                    _ ->
+                                        Decode.fail ""
+                            )
+                            Events.keyCode
+                        )
                     ]
                     []
 
