@@ -34,6 +34,7 @@ type Msg
     | ClickedNewNote
     | UserEditedNode String
     | Focused (Result Dom.Error ())
+    | UserSelectedNode Database.ID
 
 
 type Effect
@@ -86,7 +87,7 @@ update msg model =
                 , editing = Just id
               }
             , Batch
-                [ PushUrl (Route.Note id)
+                [ PushUrl (Route.Node id)
                 , Focus "title"
                 ]
             )
@@ -104,6 +105,11 @@ update msg model =
         Focused _ ->
             -- TODO: report this?
             ( model, NoEffect )
+
+        UserSelectedNode id ->
+            ( model
+            , PushUrl (Route.Node id)
+            )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
@@ -143,7 +149,16 @@ viewApplication model =
         [ Html.button [ Events.onClick ClickedNewNote ] [ Html.text "New Note" ]
         , model.database
             |> Database.filter Node.isNote
-            |> List.map (\{ node } -> Html.li [] [ Html.text (Node.content node) ])
+            |> List.map
+                (\{ id, node } ->
+                    Html.li
+                        [ Attrs.attribute "role" "button"
+                        , Events.onClick (UserSelectedNode id)
+
+                        -- TODO: trigger on space and enter
+                        ]
+                        [ Html.text (Node.content node) ]
+                )
             |> Html.ul []
         , case model.route of
             Route.NotFound ->
@@ -152,17 +167,17 @@ viewApplication model =
             Route.Root ->
                 Html.text "Select or create a note!"
 
-            Route.Note id ->
-                viewNote model id
+            Route.Node id ->
+                viewNode model id
         , Html.text (Debug.toString model.route)
         ]
 
 
-viewNote :
+viewNode :
     Model key
     -> Database.ID
     -> Html Msg
-viewNote model id =
+viewNode model id =
     case Database.get id model.database of
         Nothing ->
             Html.text "Note not found."

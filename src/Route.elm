@@ -9,7 +9,7 @@ import Url.Parser as Parser exposing ((</>), int, map, oneOf, s, top)
 type Route
     = NotFound
     | Root
-    | Note Database.ID
+    | Node Database.ID
 
 
 toString : Route -> String
@@ -21,8 +21,8 @@ toString route =
         NotFound ->
             Builder.absolute [ "404" ] []
 
-        Note id ->
-            Builder.absolute [ "notes", Database.idToString id ] []
+        Node id ->
+            Builder.absolute [ "node", Database.idToString id ] []
 
 
 parse : Url -> Route
@@ -33,5 +33,5 @@ parse url =
 parser =
     oneOf
         [ map Root top
-        , map Note (s "notes" </> map Database.idFromInt int)
+        , map Node (s "node" </> map Database.idFromInt int)
         ]

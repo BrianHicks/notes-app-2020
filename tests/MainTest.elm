@@ -56,11 +56,18 @@ programTest =
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> expectViewHas [ Selector.text "What's up?" ]
+        , test "after adding two notes, you should be able to click to select either" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> addNote (Database.idFromInt 1) "Not much."
+                    |> clickButton "What's up?"
+                    |> done
         ]
 
 
 addNote : Database.ID -> String -> NotesTest -> NotesTest
 addNote id text =
     clickButton "New Note"
-        >> ensureBrowserUrl (Expect.equal ("https://localhost/notes/" ++ Database.idToString id))
+        >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
         >> fillIn "title" "Title" text

@@ -25,7 +25,8 @@ type Database
         { nodes :
             Array
                 (Maybe
-                    { node : Node
+                    { id : ID
+                    , node : Node
                     , parent : Maybe ID
                     , children : List ID
                     }
@@ -54,7 +55,8 @@ insert node (Database database) =
         { nodes =
             Array.push
                 (Just
-                    { node = node
+                    { id = database.nextID
+                    , node = node
                     , parent = Nothing
                     , children = []
                     }
@@ -143,7 +145,7 @@ appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
                 }
 
 
-get : ID -> Database -> Maybe { node : Node, parent : Maybe ID, children : List ID }
+get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
 get (ID id) (Database database) =
     database.nodes
         |> Array.get id
@@ -155,7 +157,7 @@ update (ID id) updater (Database database) =
     Database { database | nodes = Array.Extra.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
 
 
-filter : (Node -> Bool) -> Database -> List { node : Node, parent : Maybe ID, children : List ID }
+filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
 filter shouldInclude (Database database) =
     database.nodes
         |> Array.Extra.filterMap
