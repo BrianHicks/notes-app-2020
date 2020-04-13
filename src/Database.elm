@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get
+    ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get, filter
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get
+@docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get, filter
 
 @docs ID, idFromInt
 
@@ -153,6 +153,22 @@ get (ID id) (Database database) =
 update : ID -> (Node -> Node) -> Database -> Database
 update (ID id) updater (Database database) =
     Database { database | nodes = Array.Extra.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
+
+
+filter : (Node -> Bool) -> Database -> List { node : Node, parent : Maybe ID, children : List ID }
+filter shouldInclude (Database database) =
+    database.nodes
+        |> Array.Extra.filterMap
+            (Maybe.andThen
+                (\node ->
+                    if shouldInclude node.node then
+                        Just node
+
+                    else
+                        Nothing
+                )
+            )
+        |> Array.toList
 
 
 

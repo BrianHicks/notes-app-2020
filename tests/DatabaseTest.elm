@@ -196,6 +196,29 @@ databaseTest =
                         |> update (idFromInt 1000) (Node.setContent "Hey!")
                         |> Expect.equal empty
             ]
+        , describe "filter nodes"
+            [ test "if my filter never matches, the list will be empty" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "hey") empty
+                    in
+                    database
+                        |> filter (always False)
+                        |> Expect.equal []
+            , test "only nodes matching my filter will be returned" <|
+                \_ ->
+                    let
+                        ( id, ( _, database ) ) =
+                            empty
+                                |> insert (Node.note "yes")
+                                |> Tuple.mapSecond (insert (Node.node "no"))
+                    in
+                    database
+                        |> filter Node.isNote
+                        |> List.map .node
+                        |> Expect.equal [ Node.note "yes" ]
+            ]
         ]
 
 
