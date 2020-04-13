@@ -97,11 +97,15 @@ update msg model =
 
 perform : ( Model Navigation.Key, Effect ) -> ( Model Navigation.Key, Cmd Msg )
 perform ( model, effect ) =
-    let
-        _ =
-            Debug.log "effect" effect
-    in
-    ( model, Cmd.none )
+    case effect of
+        NoEffect ->
+            ( model, Cmd.none )
+
+        LoadUrl url ->
+            ( model, Navigation.load url )
+
+        PushUrl url ->
+            ( model, Navigation.pushUrl model.key (Route.toString url) )
 
 
 subscriptions : Model key -> Sub Msg
