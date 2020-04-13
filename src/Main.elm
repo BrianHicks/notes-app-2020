@@ -36,6 +36,7 @@ type Msg
 
 type Effect
     = NoEffect
+    | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
 
@@ -100,6 +101,15 @@ perform ( model, effect ) =
     case effect of
         NoEffect ->
             ( model, Cmd.none )
+
+        Batch effects ->
+            ( model
+            , Cmd.batch
+                (List.map
+                    (\eff -> Tuple.second <| perform ( model, eff ))
+                    effects
+                )
+            )
 
         LoadUrl url ->
             ( model, Navigation.load url )

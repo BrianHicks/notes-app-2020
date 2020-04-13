@@ -3,7 +3,7 @@ module MainTest exposing (..)
 import Database
 import Expect
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, clickButton, done, ensureBrowserUrl, ensureViewHas, fillIn)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, ensureViewHas, fillIn)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -25,19 +25,24 @@ start =
         , view = view
         }
         |> ProgramTest.withBaseUrl "https://localhost/"
-        |> ProgramTest.withSimulatedEffects
-            (\effect ->
-                case effect of
-                    NoEffect ->
-                        SCmd.none
-
-                    LoadUrl url ->
-                        SCmd.none
-
-                    PushUrl url ->
-                        Navigation.pushUrl (Route.toString url)
-            )
+        |> ProgramTest.withSimulatedEffects testPerform
         |> ProgramTest.start ()
+
+
+testPerform : Effect -> SimulatedEffect Msg
+testPerform effect =
+    case effect of
+        NoEffect ->
+            SCmd.none
+
+        Batch effects ->
+            SCmd.batch (List.map testPerform effects)
+
+        LoadUrl url ->
+            SCmd.none
+
+        PushUrl url ->
+            Navigation.pushUrl (Route.toString url)
 
 
 programTest : Test
