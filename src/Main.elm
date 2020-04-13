@@ -66,14 +66,10 @@ update : Msg -> Model key -> ( Model key, Effect )
 update msg model =
     case msg of
         ClickedLink (Browser.Internal url) ->
-            ( model
-            , PushUrl (Route.parse url)
-            )
+            ( model, PushUrl (Route.parse url) )
 
         ClickedLink (Browser.External url) ->
-            ( model
-            , LoadUrl url
-            )
+            ( model, LoadUrl url )
 
         UrlChanged url ->
             ( { model | route = Route.parse url }
@@ -155,8 +151,12 @@ perform model effect =
         LoadUrl url ->
             Navigation.load url
 
-        PushUrl url ->
-            Navigation.pushUrl model.key (Route.toString url)
+        PushUrl route ->
+            if model.route == route then
+                Cmd.none
+
+            else
+                Navigation.pushUrl model.key (Route.toString route)
 
         FocusOnContent ->
             Task.attempt Focused (Dom.focus "content")
