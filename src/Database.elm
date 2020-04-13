@@ -1,13 +1,13 @@
 module Database exposing
     ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get, filter
-    , ID, idFromInt
+    , ID, idFromInt, intFromId
     )
 
 {-|
 
 @docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get, filter
 
-@docs ID, idFromInt
+@docs ID, idFromInt, intFromId
 
 -}
 
@@ -187,6 +187,11 @@ nextID (ID id) =
 idFromInt : Int -> ID
 idFromInt =
     ID
+
+
+intFromId : ID -> Int
+intFromId (ID id) =
+    id
 
 
 
