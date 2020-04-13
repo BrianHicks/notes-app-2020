@@ -3,7 +3,7 @@ module MainTest exposing (..)
 import Database
 import Expect
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, ensureViewHas, fillIn)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectViewHas, fillIn)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -44,6 +44,9 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
+        Focus _ ->
+            SCmd.none
+
 
 programTest : Test
 programTest =
@@ -52,7 +55,7 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> done
+                    |> expectViewHas [ Selector.text "What's up?" ]
         ]
 
 
@@ -61,4 +64,3 @@ addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/notes/" ++ Database.idToString id))
         >> fillIn "title" "Title" text
-        >> ensureViewHas [ Selector.text text ]

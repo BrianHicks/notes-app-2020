@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Browser.Dom as Dom
 import Browser.Navigation as Navigation
 import Css
 import Database exposing (Database)
@@ -32,6 +33,7 @@ type Msg
     | UrlChanged Url
     | ClickedNewNote
     | UserEditedNode String
+    | Focused (Result Dom.Error ())
 
 
 type Effect
@@ -39,6 +41,7 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
+    | Focus String
 
 
 init : () -> Url -> key -> ( Model key, Effect )
@@ -82,7 +85,10 @@ update msg model =
                 | database = database
                 , editing = Just id
               }
-            , PushUrl (Route.Note id)
+            , Batch
+                [ PushUrl (Route.Note id)
+                , Focus "title"
+                ]
             )
 
         UserEditedNode content ->
@@ -95,27 +101,28 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        Focused _ ->
+            -- TODO: report this?
+            ( model, NoEffect )
 
-perform : ( Model Navigation.Key, Effect ) -> ( Model Navigation.Key, Cmd Msg )
-perform ( model, effect ) =
+
+perform : Model Navigation.Key -> Effect -> Cmd Msg
+perform model effect =
     case effect of
         NoEffect ->
-            ( model, Cmd.none )
+            Cmd.none
 
         Batch effects ->
-            ( model
-            , Cmd.batch
-                (List.map
-                    (\eff -> Tuple.second <| perform ( model, eff ))
-                    effects
-                )
-            )
+            Cmd.batch (List.map (perform model) effects)
 
         LoadUrl url ->
-            ( model, Navigation.load url )
+            Navigation.load url
 
         PushUrl url ->
-            ( model, Navigation.pushUrl model.key (Route.toString url) )
+            Navigation.pushUrl model.key (Route.toString url)
+
+        Focus id ->
+            Task.attempt Focused (Dom.focus id)
 
 
 subscriptions : Model key -> Sub Msg
@@ -177,8 +184,22 @@ viewNote model id =
 main : Program () (Model Navigation.Key) Msg
 main =
     Browser.application
-        { init = \flags url key -> init flags url key |> perform
-        , update = \model msg -> update model msg |> perform
+        { init =
+            \flags url key ->
+                let
+                    ( model, effect ) =
+                        init flags url key
+                in
+                ( model, perform model effect )
+        , update =
+            \model msg ->
+                let
+                    ( newModel, effect ) =
+                        update model msg
+                in
+                ( newModel
+                , perform newModel effect
+                )
         , subscriptions = subscriptions
         , onUrlRequest = ClickedLink
         , onUrlChange = UrlChanged
