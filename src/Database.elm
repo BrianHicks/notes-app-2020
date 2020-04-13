@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, moveInto, moveAfter, get
+    ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get
     , ID, idFromInt
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, moveInto, moveAfter, delete, get
+@docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get
 
 @docs ID, idFromInt
 
@@ -148,6 +148,11 @@ get (ID id) (Database database) =
     database.nodes
         |> Array.get id
         |> Maybe.andThen identity
+
+
+update : ID -> (Node -> Node) -> Database -> Database
+update (ID id) updater (Database database) =
+    Database { database | nodes = Array.Extra.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
 
 
 

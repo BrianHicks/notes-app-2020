@@ -177,6 +177,25 @@ databaseTest =
                         |> Maybe.map .children
                         |> Expect.equal (Just [ second, first, third ])
             ]
+        , describe "updating nodes"
+            [ test "I can update a node's content" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "") empty
+                    in
+                    database
+                        |> update id (Node.setContent "Hey!")
+                        |> get id
+                        |> Maybe.map .node
+                        |> Maybe.map Node.content
+                        |> Expect.equal (Just "Hey!")
+            , test "trying to update a non-existent node doesn't change anything" <|
+                \_ ->
+                    empty
+                        |> update (idFromInt 1000) (Node.setContent "Hey!")
+                        |> Expect.equal empty
+            ]
         ]
 
 
