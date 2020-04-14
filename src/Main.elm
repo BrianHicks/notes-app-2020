@@ -257,9 +257,13 @@ viewNode model id =
 
                   else
                     Html.text (Node.content node)
-                , children
-                    |> List.map (viewNode model)
-                    |> Html.ul []
+                , if List.isEmpty children then
+                    Html.text ""
+
+                  else
+                    children
+                        |> List.map (viewNode model)
+                        |> Html.ul []
                 ]
 
 
