@@ -245,7 +245,7 @@ viewNode model id =
                                             Decode.succeed UserFinishedEditingNode
 
                                         _ ->
-                                            Decode.fail ""
+                                            Decode.fail "unhandled key"
                                 )
                                 Events.keyCode
                             )
