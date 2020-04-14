@@ -140,7 +140,14 @@ update msg model =
                     ( model, NoEffect )
 
         UserHitTabToIndent id ->
-            ( model, NoEffect )
+            case Database.previousSibling id model.database of
+                Just newParent ->
+                    ( { model | database = Database.moveInto newParent id model.database }
+                    , FocusOnContent
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
@@ -235,22 +242,22 @@ viewNode model id =
                         , Attrs.value (Node.content node)
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
-                        , Events.on "keydown"
+                        , Events.preventDefaultOn "keydown"
                             (Decode.andThen
                                 (\key ->
                                     case key of
                                         -- tab
                                         9 ->
-                                            Decode.succeed (UserHitTabToIndent id)
+                                            Decode.succeed ( UserHitTabToIndent id, True )
 
                                         -- return
                                         -- TODO: add a next sibling node from this
                                         13 ->
-                                            Decode.succeed (UserHitEnterOnNode id)
+                                            Decode.succeed ( UserHitEnterOnNode id, False )
 
                                         -- escape
                                         27 ->
-                                            Decode.succeed UserFinishedEditingNode
+                                            Decode.succeed ( UserFinishedEditingNode, False )
 
                                         _ ->
                                             Decode.fail "unhandled key"

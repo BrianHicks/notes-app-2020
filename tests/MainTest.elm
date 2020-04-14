@@ -86,17 +86,20 @@ programTest =
                     |> clickButton "What's up?"
                     -- TODO: expectation that the thing gets selected
                     |> done
-
-        -- , test "when adding a note, tab indents further" <|
-        --     \_ ->
-        --         start
-        --             |> addNote (Database.idFromInt 0) "Note"
-        --             |> hitShortcutKey Enter
-        --             |> fillIn "content" "Content" "Parent"
-        --             |> hitShortcutKey Enter
-        --             |> hitShortcutKey Tab
-        --             |> fillIn "content" "Content" "Child"
-        --             |> expectViewHas [ Selector.text "Hum" ]
+        , test "when adding a note, tab indents further" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey Enter
+                    |> fillIn "content" "Content" "Parent"
+                    |> hitShortcutKey Enter
+                    |> hitShortcutKey Tab
+                    |> fillIn "content" "Content" "Child"
+                    |> hitShortcutKey Esc
+                    |> expectViewHas
+                        [ Selector.text "Parent"
+                        , Selector.containing [ Selector.text "Child" ]
+                        ]
         ]
 
 
