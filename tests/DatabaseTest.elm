@@ -177,6 +177,45 @@ databaseTest =
                         |> Maybe.map .children
                         |> Expect.equal (Just [ second, first, third ])
             ]
+        , describe "finding a sibling"
+            [ test "won't work for the only note in the database" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "note") empty
+                    in
+                    database
+                        |> previousSibling id
+                        |> Expect.equal Nothing
+            , test "won't work for the first node in a sibling group" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, database ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                    in
+                    database
+                        |> moveInto parent second
+                        |> moveInto parent first
+                        -----
+                        |> previousSibling first
+                        |> Expect.equal Nothing
+            , test "will work for the second node in a sibling group" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, database ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                    in
+                    database
+                        |> moveInto parent second
+                        |> moveInto parent first
+                        -----
+                        |> previousSibling second
+                        |> Expect.equal (Just first)
+            ]
         , describe "updating nodes"
             [ test "I can update a node's content" <|
                 \_ ->
