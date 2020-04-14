@@ -38,6 +38,7 @@ type Msg
     | Focused (Result Dom.Error ())
     | UserSelectedNode Database.ID
     | UserHitEnterOnNode Database.ID
+    | UserHitTabToIndent Database.ID
 
 
 type Effect
@@ -138,6 +139,9 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserHitTabToIndent id ->
+            ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -235,6 +239,10 @@ viewNode model id =
                             (Decode.andThen
                                 (\key ->
                                     case key of
+                                        -- tab
+                                        9 ->
+                                            Decode.succeed (UserHitTabToIndent id)
+
                                         -- return
                                         -- TODO: add a next sibling node from this
                                         13 ->

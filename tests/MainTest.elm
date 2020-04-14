@@ -68,15 +68,15 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 27)
+                    |> hitShortcutKey Esc
                     |> expectViewHasNot [ Selector.id "content" ]
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 13)
+                    |> hitShortcutKey Enter
                     |> fillIn "content" "Content" "Not much, you?"
-                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown 27)
+                    |> hitShortcutKey Esc
                     |> expectViewHas [ Selector.text "Not much, you?" ]
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
@@ -86,6 +86,17 @@ programTest =
                     |> clickButton "What's up?"
                     -- TODO: expectation that the thing gets selected
                     |> done
+
+        -- , test "when adding a note, tab indents further" <|
+        --     \_ ->
+        --         start
+        --             |> addNote (Database.idFromInt 0) "Note"
+        --             |> hitShortcutKey Enter
+        --             |> fillIn "content" "Content" "Parent"
+        --             |> hitShortcutKey Enter
+        --             |> hitShortcutKey Tab
+        --             |> fillIn "content" "Content" "Child"
+        --             |> expectViewHas [ Selector.text "Hum" ]
         ]
 
 
@@ -94,6 +105,29 @@ addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
         >> fillIn "content" "Content" text
+
+
+type Key
+    = Enter
+    | Esc
+    | Tab
+
+
+hitShortcutKey : Key -> NotesTest -> NotesTest
+hitShortcutKey key =
+    let
+        code =
+            case key of
+                Enter ->
+                    13
+
+                Esc ->
+                    27
+
+                Tab ->
+                    9
+    in
+    simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown code)
 
 
 keyDown : Int -> ( String, Encode.Value )
