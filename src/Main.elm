@@ -272,7 +272,9 @@ viewNode model id =
                         [ Html.h1 [] [ Html.text (Node.content node) ] ]
 
                   else
-                    Html.text (Node.content node)
+                    Html.button
+                        [ Events.onClick (UserWantsToEditNode id) ]
+                        [ Html.text (Node.content node) ]
                 , if List.isEmpty children then
                     Html.text ""
 
