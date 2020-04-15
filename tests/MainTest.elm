@@ -68,15 +68,15 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> hitShortcutKey Esc
+                    |> hitShortcutKey [] Esc
                     |> expectViewHasNot [ Selector.id "content" ]
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> hitShortcutKey Enter
+                    |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Not much, you?"
-                    |> hitShortcutKey Esc
+                    |> hitShortcutKey [] Esc
                     |> expectViewHas [ Selector.text "Not much, you?" ]
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
@@ -90,12 +90,12 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey Enter
+                    |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Parent"
-                    |> hitShortcutKey Enter
-                    |> hitShortcutKey Tab
+                    |> hitShortcutKey [] Enter
+                    |> hitShortcutKey [] Tab
                     |> fillIn "content" "Content" "Child"
-                    |> hitShortcutKey Esc
+                    |> hitShortcutKey [] Esc
                     |> expectViewHas
                         [ Selector.text "Parent"
                         , Selector.containing [ Selector.text "Child" ]
@@ -116,8 +116,17 @@ type Key
     | Tab
 
 
-hitShortcutKey : Key -> NotesTest -> NotesTest
-hitShortcutKey key =
+type Modifier
+    = Shift
+
+
+hitShortcutKey : List Modifier -> Key -> NotesTest -> NotesTest
+hitShortcutKey modifiers key =
+    simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown modifiers key)
+
+
+keyDown : List Modifier -> Key -> ( String, Encode.Value )
+keyDown modifiers key =
     let
         code =
             case key of
@@ -130,9 +139,9 @@ hitShortcutKey key =
                 Tab ->
                     9
     in
-    simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown code)
-
-
-keyDown : Int -> ( String, Encode.Value )
-keyDown key =
-    ( "keydown", Encode.object [ ( "keyCode", Encode.int key ) ] )
+    ( "keydown"
+    , Encode.object
+        [ ( "keyCode", Encode.int code )
+        , ( "shiftKey", Encode.bool (List.member Shift modifiers) )
+        ]
+    )
