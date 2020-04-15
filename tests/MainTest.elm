@@ -100,6 +100,21 @@ programTest =
                         [ Selector.text "Parent"
                         , Selector.containing [ Selector.text "Child" ]
                         ]
+        , test "when adding a note, shift-tab dedents" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Parent"
+                    |> hitShortcutKey [] Enter
+                    |> hitShortcutKey [] Tab
+                    |> fillIn "content" "Content" "Child"
+                    |> hitShortcutKey [ Shift ] Tab
+                    |> hitShortcutKey [] Esc
+                    |> expectViewHasNot
+                        [ Selector.text "Parent"
+                        , Selector.text "Child"
+                        ]
         ]
 
 

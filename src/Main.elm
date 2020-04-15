@@ -8,7 +8,7 @@ import Database exposing (Database)
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Decoder)
 import Node exposing (Node)
 import Route exposing (Route)
 import Sort
@@ -39,6 +39,7 @@ type Msg
     | UserSelectedNode Database.ID
     | UserHitEnterOnNode Database.ID
     | UserHitTabToIndent Database.ID
+    | UserHitShiftTabToDedent Database.ID
 
 
 type Effect
@@ -149,6 +150,16 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserHitShiftTabToDedent id ->
+            case Database.get id model.database |> Maybe.andThen .parent of
+                Just parent ->
+                    ( { model | database = Database.moveAfter parent id model.database }
+                    , FocusOnContent
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -242,28 +253,7 @@ viewNode model id =
                         , Attrs.value (Node.content node)
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
-                        , Events.preventDefaultOn "keydown"
-                            (Decode.andThen
-                                (\key ->
-                                    case key of
-                                        -- tab
-                                        9 ->
-                                            Decode.succeed ( UserHitTabToIndent id, True )
-
-                                        -- return
-                                        -- TODO: add a next sibling node from this
-                                        13 ->
-                                            Decode.succeed ( UserHitEnterOnNode id, False )
-
-                                        -- escape
-                                        27 ->
-                                            Decode.succeed ( UserFinishedEditingNode, False )
-
-                                        _ ->
-                                            Decode.fail "unhandled key"
-                                )
-                                Events.keyCode
-                            )
+                        , Events.custom "keydown" (nodeHotkeysDecoder id)
                         ]
                         []
 
@@ -280,6 +270,49 @@ viewNode model id =
                         |> List.map (viewNode model)
                         |> Html.ul []
                 ]
+
+
+nodeHotkeysDecoder : Database.ID -> Decoder { message : Msg, stopPropagation : Bool, preventDefault : Bool }
+nodeHotkeysDecoder id =
+    Decode.map2 Tuple.pair
+        Events.keyCode
+        (Decode.field "shiftKey" Decode.bool)
+        |> Decode.andThen
+            (\( key, shift ) ->
+                case key of
+                    -- tab
+                    9 ->
+                        Decode.succeed
+                            { message =
+                                if shift then
+                                    UserHitShiftTabToDedent id
+
+                                else
+                                    UserHitTabToIndent id
+                            , stopPropagation = True
+                            , preventDefault = True
+                            }
+
+                    -- return
+                    -- TODO: add a next sibling node from this
+                    13 ->
+                        Decode.succeed
+                            { message = UserHitEnterOnNode id
+                            , stopPropagation = False
+                            , preventDefault = False
+                            }
+
+                    -- escape
+                    27 ->
+                        Decode.succeed
+                            { message = UserFinishedEditingNode
+                            , stopPropagation = False
+                            , preventDefault = False
+                            }
+
+                    _ ->
+                        Decode.fail "unhandled key"
+            )
 
 
 main : Program () (Model Navigation.Key) Msg
