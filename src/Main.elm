@@ -33,6 +33,7 @@ type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
     | ClickedNewNote
+    | UserWantsToEditNode Database.ID
     | UserEditedNode String
     | UserFinishedEditingNode
     | Focused (Result Dom.Error ())
@@ -92,6 +93,14 @@ update msg model =
                 , FocusOnContent
                 ]
             )
+
+        UserWantsToEditNode id ->
+            case Database.get id model.database of
+                Just _ ->
+                    ( { model | editing = Just id }, FocusOnContent )
+
+                Nothing ->
+                    ( model, NoEffect )
 
         UserEditedNode content ->
             case model.editing of
@@ -258,7 +267,9 @@ viewNode model id =
                         []
 
                   else if Node.isNote node then
-                    Html.h1 [] [ Html.text (Node.content node) ]
+                    Html.button
+                        [ Events.onClick (UserWantsToEditNode id) ]
+                        [ Html.h1 [] [ Html.text (Node.content node) ] ]
 
                   else
                     Html.text (Node.content node)

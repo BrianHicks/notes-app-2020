@@ -115,6 +115,18 @@ programTest =
                         [ Selector.text "Parent"
                         , Selector.text "Child"
                         ]
+        , test "after a node has been edited, clicking it repoens it for editing" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Hey I'm a Note"
+                    |> hitShortcutKey [] Esc
+                    |> clickButton "Hey I'm a Note"
+                    |> expectViewHas
+                        [ Selector.all
+                            [ Selector.tag "input"
+                            , Selector.id "content"
+                            ]
+                        ]
         ]
 
 
