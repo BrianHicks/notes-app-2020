@@ -84,8 +84,10 @@ programTest =
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> addNote (Database.idFromInt 1) "Not much."
                     |> clickButton "What's up?"
-                    -- TODO: expectation that the thing gets selected
-                    |> done
+                    |> expectView
+                        (Query.find [ Selector.tag "h1" ]
+                            >> Query.has [ Selector.text "What's up?" ]
+                        )
         , test "when adding a note, tab indents further" <|
             \_ ->
                 start
