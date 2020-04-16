@@ -140,6 +140,41 @@ programTest =
                     |> hitShortcutKey [] Esc
                     |> clickButton "I'm a child!"
                     |> expectViewHasInput
+        , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Child"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Grandchild 1"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Grandchild 2"
+                    |> clickButton "Grandchild 1"
+                    |> hitShortcutKey [] Tab
+                    |> clickButton "Grandchild 2"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [] Esc
+                    |> Expect.all
+                        [ expectNote
+                            (Query.find
+                                [ Selector.tag "li"
+                                , Selector.containing [ Selector.text "Child" ]
+                                ]
+                                >> Query.children [ Selector.tag "li" ]
+                                >> Query.index 0
+                                >> Query.has [ Selector.text "Grandchild 1" ]
+                            )
+                        , expectNote
+                            (Query.find
+                                [ Selector.tag "li"
+                                , Selector.containing [ Selector.text "Child" ]
+                                ]
+                                >> Query.children [ Selector.tag "li" ]
+                                >> Query.index 1
+                                >> Query.has [ Selector.text "Grandchild 2" ]
+                            )
+                        ]
         ]
 
 

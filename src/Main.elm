@@ -150,11 +150,22 @@ update msg model =
                     ( model, NoEffect )
 
         UserHitTabToIndent id ->
-            case Database.previousSibling id model.database of
-                Just newParent ->
-                    ( { model | database = Database.moveInto newParent id model.database }
-                    , FocusOnContent
-                    )
+            case
+                model.database
+                    |> Database.previousSibling id
+                    |> Maybe.andThen (\siblingId -> Database.get siblingId model.database)
+            of
+                Just previousSibling ->
+                    case previousSibling.children |> List.reverse |> List.head of
+                        Nothing ->
+                            ( { model | database = Database.moveInto previousSibling.id id model.database }
+                            , FocusOnContent
+                            )
+
+                        Just lastChild ->
+                            ( { model | database = Database.moveAfter lastChild id model.database }
+                            , FocusOnContent
+                            )
 
                 Nothing ->
                     ( model, NoEffect )
@@ -223,6 +234,8 @@ viewApplication model =
                         [ Html.text (Node.content node) ]
                 )
             |> Html.ul []
+            |> List.singleton
+            |> Html.nav []
         , case model.route of
             Route.NotFound ->
                 Html.text "Not found!"
