@@ -156,16 +156,17 @@ update msg model =
                     |> Maybe.andThen (\siblingId -> Database.get siblingId model.database)
             of
                 Just previousSibling ->
-                    case previousSibling.children |> List.reverse |> List.head of
-                        Nothing ->
-                            ( { model | database = Database.moveInto previousSibling.id id model.database }
-                            , FocusOnContent
-                            )
+                    ( { model
+                        | database =
+                            case previousSibling.children |> List.reverse |> List.head of
+                                Nothing ->
+                                    Database.moveInto previousSibling.id id model.database
 
-                        Just lastChild ->
-                            ( { model | database = Database.moveAfter lastChild id model.database }
-                            , FocusOnContent
-                            )
+                                Just lastChild ->
+                                    Database.moveAfter lastChild id model.database
+                      }
+                    , FocusOnContent
+                    )
 
                 Nothing ->
                     ( model, NoEffect )
