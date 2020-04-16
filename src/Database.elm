@@ -1,11 +1,11 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, moveInto, moveAfter, get, filter, previousSibling
+    ( Database, empty, isEmpty, insert, update, delete, moveInto, moveAfter, get, filter, previousSibling
     , ID, idFromInt, idToString
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, moveInto, moveAfter, delete, get, filter, previousSibling
+@docs Database, empty, isEmpty, insert, update, delete, moveInto, moveAfter, delete, get, filter, previousSibling
 
 @docs ID, idFromInt, idToString
 
@@ -65,6 +65,29 @@ insert node (Database database) =
         , nextID = nextID database.nextID
         }
     )
+
+
+delete : ID -> Database -> Database
+delete ((ID id) as toDelete) ((Database database) as db) =
+    case get toDelete db of
+        Just node ->
+            let
+                withParentHandled =
+                    case node.parent of
+                        Just (ID parentID) ->
+                            Array.Extra.update
+                                parentID
+                                (Maybe.map (\parent -> { parent | children = List.filter ((/=) toDelete) parent.children }))
+                                database.nodes
+
+                        Nothing ->
+                            database.nodes
+            in
+            Database
+                { database | nodes = Array.set id Nothing withParentHandled }
+
+        Nothing ->
+            db
 
 
 moveInto : ID -> ID -> Database -> Database

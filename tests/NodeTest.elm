@@ -40,4 +40,16 @@ nodeTest =
                         |> content
                         |> Expect.equal "Bye!"
             ]
+        , describe "isEmpty"
+            [ test "is true when there's no content" <|
+                \_ ->
+                    node ""
+                        |> isEmpty
+                        |> Expect.equal True
+            , test "is false when there's content" <|
+                \_ ->
+                    node "hey"
+                        |> isEmpty
+                        |> Expect.equal False
+            ]
         ]

@@ -175,6 +175,20 @@ programTest =
                                 >> Query.has [ Selector.text "Grandchild 2" ]
                             )
                         ]
+        , test "hitting backspace in an empty node removes it from the note" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> hitShortcutKey [] Backspace
+                    |> expectNote
+                        (Query.find
+                            [ Selector.tag "h1"
+                            , Selector.containing [ Selector.text "Note" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.count (Expect.equal 0)
+                        )
         ]
 
 
@@ -189,6 +203,7 @@ type Key
     = Enter
     | Esc
     | Tab
+    | Backspace
 
 
 type Modifier
@@ -213,6 +228,9 @@ keyDown modifiers key =
 
                 Tab ->
                     9
+
+                Backspace ->
+                    8
     in
     ( "keydown"
     , Encode.object

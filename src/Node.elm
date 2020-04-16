@@ -1,12 +1,12 @@
 module Node exposing
-    ( Node, content, setContent
+    ( Node, content, setContent, isEmpty
     , note, isNote
     , node
     )
 
 {-|
 
-@docs Node, content, setContent
+@docs Node, content, setContent, isEmpty
 
 @docs note, isNote
 
@@ -41,6 +41,11 @@ node content_ =
 content : Node -> String
 content (Node guts) =
     guts.content
+
+
+isEmpty : Node -> Bool
+isEmpty (Node guts) =
+    String.isEmpty guts.content
 
 
 setContent : String -> Node -> Node

@@ -41,6 +41,7 @@ type Msg
     | UserHitEnterOnNode Database.ID
     | UserHitTabToIndent Database.ID
     | UserHitShiftTabToDedent Database.ID
+    | UserWantsToDeleteNode Database.ID
 
 
 type Effect
@@ -181,6 +182,11 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserWantsToDeleteNode id ->
+            ( { model | database = Database.delete id model.database }
+            , NoEffect
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -276,7 +282,7 @@ viewNode model id =
                         , Attrs.value (Node.content node)
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
-                        , Events.custom "keydown" (nodeHotkeysDecoder id)
+                        , Events.custom "keydown" (nodeHotkeysDecoder id node)
                         ]
                         []
 
@@ -299,8 +305,8 @@ viewNode model id =
                 ]
 
 
-nodeHotkeysDecoder : Database.ID -> Decoder { message : Msg, stopPropagation : Bool, preventDefault : Bool }
-nodeHotkeysDecoder id =
+nodeHotkeysDecoder : Database.ID -> Node -> Decoder { message : Msg, stopPropagation : Bool, preventDefault : Bool }
+nodeHotkeysDecoder id node =
     Decode.map2 Tuple.pair
         Events.keyCode
         (Decode.field "shiftKey" Decode.bool)
@@ -336,6 +342,18 @@ nodeHotkeysDecoder id =
                             , stopPropagation = False
                             , preventDefault = False
                             }
+
+                    -- backspace
+                    8 ->
+                        if Node.isEmpty node then
+                            Decode.succeed
+                                { message = UserWantsToDeleteNode id
+                                , stopPropagation = False
+                                , preventDefault = False
+                                }
+
+                        else
+                            Decode.fail "ignoring backspace on non-empty node"
 
                     _ ->
                         Decode.fail "unhandled key"

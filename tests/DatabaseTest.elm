@@ -258,6 +258,40 @@ databaseTest =
                         |> List.map .node
                         |> Expect.equal [ Node.note "yes" ]
             ]
+        , describe "deleting nodes"
+            [ test "should make them non-gettable" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "hey") empty
+                    in
+                    database
+                        |> delete id
+                        |> get id
+                        |> Expect.equal Nothing
+            , test "should remove nodes from their parent" <|
+                \_ ->
+                    let
+                        ( parent, ( child, database ) ) =
+                            insert (Node.note "hey") empty
+                                |> Tuple.mapSecond (insert (Node.node "bye!"))
+                    in
+                    database
+                        |> moveInto parent child
+                        |> delete child
+                        |> get parent
+                        |> Maybe.map .children
+                        |> Expect.equal (Just [])
+            , test "when given an invalid ID, should do nothing" <|
+                \_ ->
+                    let
+                        ( id, database ) =
+                            insert (Node.note "hey") empty
+                    in
+                    database
+                        |> delete (idFromInt 1000)
+                        |> Expect.equal database
+            ]
         ]
 
 
