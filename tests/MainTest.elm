@@ -4,7 +4,7 @@ import Database
 import Expect
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -96,10 +96,15 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [] Esc
-                    |> expectViewHas
-                        [ Selector.text "Parent"
-                        , Selector.containing [ Selector.text "Child" ]
-                        ]
+                    |> expectView
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Parent" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.first
+                            >> Query.has [ Selector.text "Child" ]
+                        )
         , test "when adding a note, shift-tab dedents" <|
             \_ ->
                 start
@@ -111,10 +116,15 @@ programTest =
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [ Shift ] Tab
                     |> hitShortcutKey [] Esc
-                    |> expectViewHasNot
-                        [ Selector.text "Parent"
-                        , Selector.text "Child"
-                        ]
+                    |> expectView
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Parent" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.first
+                            >> Query.hasNot [ Selector.text "Child" ]
+                        )
         , test "after a note has been edited, clicking it repoens it for editing" <|
             \_ ->
                 start
