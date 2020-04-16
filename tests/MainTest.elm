@@ -1,7 +1,7 @@
 module MainTest exposing (..)
 
 import Database
-import Expect
+import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
 import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
@@ -10,7 +10,7 @@ import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
 import Test exposing (..)
 import Test.Html.Query as Query
-import Test.Html.Selector as Selector
+import Test.Html.Selector as Selector exposing (Selector)
 
 
 type alias NotesTest =
@@ -57,19 +57,19 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> expectViewHas [ Selector.text "What's up?" ]
+                    |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
         , test "after editing, blurring finalizes the note" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> simulateDomEvent (Query.find [ Selector.id "content" ]) ( "blur", Encode.object [] )
-                    |> expectViewHasNot [ Selector.id "content" ]
+                    |> simulateDomEvent (Query.find [ input ]) ( "blur", Encode.object [] )
+                    |> expectViewDoesntHaveInput
         , test "after editing, hitting escape finalizes the note" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> hitShortcutKey [] Esc
-                    |> expectViewHasNot [ Selector.id "content" ]
+                    |> expectViewDoesntHaveInput
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
                 start
@@ -77,17 +77,14 @@ programTest =
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Not much, you?"
                     |> hitShortcutKey [] Esc
-                    |> expectViewHas [ Selector.text "Not much, you?" ]
+                    |> expectNote (Query.has [ Selector.text "Not much, you?" ])
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> addNote (Database.idFromInt 1) "Not much."
                     |> clickButton "What's up?"
-                    |> expectView
-                        (Query.find [ Selector.tag "h1" ]
-                            >> Query.has [ Selector.text "What's up?" ]
-                        )
+                    |> expectSidebar (Query.has [ Selector.text "What's up?" ])
         , test "when adding a note, tab indents further" <|
             \_ ->
                 start
@@ -98,7 +95,7 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [] Esc
-                    |> expectView
+                    |> expectNote
                         (Query.find
                             [ Selector.tag "li"
                             , Selector.containing [ Selector.text "Parent" ]
@@ -118,7 +115,7 @@ programTest =
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [ Shift ] Tab
                     |> hitShortcutKey [] Esc
-                    |> expectView
+                    |> expectNote
                         (Query.find
                             [ Selector.tag "li"
                             , Selector.containing [ Selector.text "Parent" ]
@@ -133,12 +130,7 @@ programTest =
                     |> addNote (Database.idFromInt 0) "Hey I'm a Note"
                     |> hitShortcutKey [] Esc
                     |> clickButton "Hey I'm a Note"
-                    |> expectViewHas
-                        [ Selector.all
-                            [ Selector.tag "input"
-                            , Selector.id "content"
-                            ]
-                        ]
+                    |> expectViewHasInput
         , test "after a child has been edited, clicking it reopens it for editing" <|
             \_ ->
                 start
@@ -147,12 +139,7 @@ programTest =
                     |> fillIn "content" "Content" "I'm a child!"
                     |> hitShortcutKey [] Esc
                     |> clickButton "I'm a child!"
-                    |> expectViewHas
-                        [ Selector.all
-                            [ Selector.tag "input"
-                            , Selector.id "content"
-                            ]
-                        ]
+                    |> expectViewHasInput
         ]
 
 
@@ -198,3 +185,31 @@ keyDown modifiers key =
         , ( "shiftKey", Encode.bool (List.member Shift modifiers) )
         ]
     )
+
+
+expectSidebar : (Query.Single Msg -> Expectation) -> NotesTest -> Expectation
+expectSidebar expect notesTest =
+    expectView (Query.find [ Selector.tag "nav" ] >> expect) notesTest
+
+
+expectNote : (Query.Single Msg -> Expectation) -> NotesTest -> Expectation
+expectNote expect notesTest =
+    expectView (Query.find [ Selector.tag "section" ] >> expect) notesTest
+
+
+expectViewHasInput : NotesTest -> Expectation
+expectViewHasInput =
+    expectView (Query.has [ input ])
+
+
+expectViewDoesntHaveInput : NotesTest -> Expectation
+expectViewDoesntHaveInput =
+    expectView (Query.hasNot [ input ])
+
+
+input : Selector
+input =
+    Selector.all
+        [ Selector.tag "input"
+        , Selector.id "content"
+        ]
