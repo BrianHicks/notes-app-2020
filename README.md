@@ -58,6 +58,24 @@ The [LSEQ](https://hal.archives-ouvertes.fr/hal-00921633/document) algorithm mig
 
 Of course, I could also keep a second index with all the contents by note ID...
 
+## Next things to do
+
+- [ ] tree editing
+  - [ ] ability to move a node up and down as well as in and out
+  - [ ] hitting up and down keys should go to the previous/next sibling
+  - [ ] move to the previous sibling when I backspace through a node
+  - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
+    - Html.Keyed? Blocking keyup defaults as well as keydown?
+- [ ] nice searching for the links
+- [ ] persistence
+- [ ] nice design
+
+Someday/maybe
+
+- [ ] metadata
+- [ ] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
+- [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
+
 ## Layout
 
 
