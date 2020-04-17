@@ -190,24 +190,28 @@ update msg model =
             )
 
         UserWantsToMoveNodeUp id ->
-            ( case Database.previousSibling id model.database of
+            case Database.previousSibling id model.database of
                 Just previousSibling ->
-                    { model | database = Database.moveBefore previousSibling id model.database }
+                    ( { model | database = Database.moveBefore previousSibling id model.database }
+                    , FocusOnContent
+                    )
 
                 Nothing ->
-                    model
-            , NoEffect
-            )
+                    ( model
+                    , NoEffect
+                    )
 
         UserWantsToMoveNodeDown id ->
-            ( case Database.nextSibling id model.database of
+            case Database.nextSibling id model.database of
                 Just previousSibling ->
-                    { model | database = Database.moveAfter previousSibling id model.database }
+                    ( { model | database = Database.moveAfter previousSibling id model.database }
+                    , FocusOnContent
+                    )
 
                 Nothing ->
-                    model
-            , NoEffect
-            )
+                    ( model
+                    , NoEffect
+                    )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
