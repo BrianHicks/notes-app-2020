@@ -62,10 +62,15 @@ Of course, I could also keep a second index with all the contents by note ID...
 
 - [ ] tree editing
   - [ ] ability to move a node up and down as well as in and out
-  - [ ] hitting up and down keys should go to the previous/next sibling
-  - [ ] move to the previous sibling when I backspace through a node
-  - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
-    - Html.Keyed? Blocking keyup defaults as well as keydown?
+    - [ ] moving up and down to siblings. Uncontroversial!
+    - [ ] if you're at the first child, moving up goes to the parent.
+    - [ ] if you're at the last child, moving down goes to the parent's next sibling.
+  - [ ] moving non-edit focus around
+    - [ ] hitting up and down keys should go to the previous/next sibling
+  - refinements on existing behavior
+    - [ ] move to the previous sibling when I backspace through a node
+    - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
+      - Html.Keyed? Blocking keyup defaults as well as keydown?
 - [ ] nice searching for the links
 - [ ] persistence
 - [ ] nice design
