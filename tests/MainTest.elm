@@ -235,7 +235,7 @@ programTest =
                                 >> Query.has [ Selector.text "First" ]
                             )
                         ]
-        , test "hitting alt-up when the child is the first child move it above the parent" <|
+        , test "hitting alt-up when the child is the first child moves it above the parent" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "Note"
@@ -256,6 +256,38 @@ programTest =
                             (Query.findAll [ Selector.tag "li" ]
                                 >> Query.index 1
                                 >> Query.has [ Selector.text "Parent" ]
+                            )
+                        ]
+        , test "hitting alt-down when the child is the last child moves it below the parent's next sibling" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Parent"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Child"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Aunt"
+                    |> hitShortcutKey [] Esc
+                    |> clickButton "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [ Alt ] Down
+                    |> hitShortcutKey [] Esc
+                    |> Expect.all
+                        [ expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 0
+                                >> Query.has [ Selector.text "Parent" ]
+                            )
+                        , expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 1
+                                >> Query.has [ Selector.text "Aunt" ]
+                            )
+                        , expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 2
+                                >> Query.has [ Selector.text "Child" ]
                             )
                         ]
         ]

@@ -216,9 +216,20 @@ update msg model =
                     )
 
                 Nothing ->
-                    ( model
-                    , NoEffect
-                    )
+                    case
+                        Database.get id model.database
+                            |> Maybe.andThen .parent
+                            |> Maybe.andThen (\parentId -> Database.nextSibling parentId model.database)
+                    of
+                        Just parentId ->
+                            ( { model | database = Database.moveAfter parentId id model.database }
+                            , FocusOnContent
+                            )
+
+                        Nothing ->
+                            ( model
+                            , NoEffect
+                            )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
