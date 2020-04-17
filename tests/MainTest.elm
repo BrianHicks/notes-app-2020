@@ -189,6 +189,28 @@ programTest =
                             >> Query.children [ Selector.tag "li" ]
                             >> Query.count (Expect.equal 0)
                         )
+        , test "hitting meta-up while editing moves the node up" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "First"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Second"
+                    |> hitShortcutKey [ Alt ] Up
+                    |> hitShortcutKey [] Esc
+                    |> Expect.all
+                        [ expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 0
+                                >> Query.has [ Selector.text "Second" ]
+                            )
+                        , expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 1
+                                >> Query.has [ Selector.text "First" ]
+                            )
+                        ]
         ]
 
 
@@ -204,10 +226,12 @@ type Key
     | Esc
     | Tab
     | Backspace
+    | Up
 
 
 type Modifier
     = Shift
+    | Alt
 
 
 hitShortcutKey : List Modifier -> Key -> NotesTest -> NotesTest
@@ -231,11 +255,15 @@ keyDown modifiers key =
 
                 Backspace ->
                     8
+
+                Up ->
+                    38
     in
     ( "keydown"
     , Encode.object
         [ ( "keyCode", Encode.int code )
         , ( "shiftKey", Encode.bool (List.member Shift modifiers) )
+        , ( "altKey", Encode.bool (List.member Alt modifiers) )
         ]
     )
 

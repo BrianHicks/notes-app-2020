@@ -1,11 +1,14 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, delete, moveInto, moveAfter, get, filter, previousSibling
+    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling
+    , moveInto, moveBefore, moveAfter
     , ID, idFromInt, idToString
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, delete, moveInto, moveAfter, delete, get, filter, previousSibling
+@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling
+
+@docs moveInto, moveBefore, moveAfter
 
 @docs ID, idFromInt, idToString
 
@@ -117,6 +120,22 @@ moveAfter sibling target database =
             |> appendSibling sibling target
 
 
+moveBefore : ID -> ID -> Database -> Database
+moveBefore sibling target database =
+    if
+        (sibling == target)
+            || (get sibling database == Nothing)
+            || (get target database == Nothing)
+            || (Maybe.andThen .parent (get sibling database) == Nothing)
+    then
+        database
+
+    else
+        database
+            |> detachChild target
+            |> prependSibling sibling target
+
+
 previousSibling : ID -> Database -> Maybe ID
 previousSibling id database =
     get id database
@@ -193,6 +212,22 @@ appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
                 }
 
 
+prependSibling : ID -> ID -> Database -> Database
+prependSibling sibling ((ID targetID) as target) ((Database db) as database) =
+    case get sibling database |> Maybe.andThen .parent of
+        Nothing ->
+            database
+
+        Just (ID parentID) ->
+            Database
+                { db
+                    | nodes =
+                        db.nodes
+                            |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
+                            |> Array.Extra.update targetID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                }
+
+
 get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
 get (ID id) (Database database) =
     database.nodes
@@ -265,3 +300,22 @@ insertAfterHelp target toInsert items soFar =
 
             else
                 insertAfterHelp target toInsert rest (candidate :: soFar)
+
+
+insertBefore : a -> a -> List a -> List a
+insertBefore target toInsert items =
+    insertBeforeHelp target toInsert items []
+
+
+insertBeforeHelp : a -> a -> List a -> List a -> List a
+insertBeforeHelp target toInsert items soFar =
+    case items of
+        [] ->
+            List.reverse soFar
+
+        candidate :: rest ->
+            if candidate == target then
+                List.reverse soFar ++ toInsert :: candidate :: rest
+
+            else
+                insertBeforeHelp target toInsert rest (candidate :: soFar)

@@ -42,6 +42,7 @@ type Msg
     | UserHitTabToIndent Database.ID
     | UserHitShiftTabToDedent Database.ID
     | UserWantsToDeleteNode Database.ID
+    | UserWantsToMoveNodeUp Database.ID
 
 
 type Effect
@@ -187,6 +188,16 @@ update msg model =
             , NoEffect
             )
 
+        UserWantsToMoveNodeUp id ->
+            ( case Database.previousSibling id model.database of
+                Just previousSibling ->
+                    { model | database = Database.moveBefore previousSibling id model.database }
+
+                Nothing ->
+                    model
+            , NoEffect
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -307,11 +318,18 @@ viewNode model id =
 
 nodeHotkeysDecoder : Database.ID -> Node -> Decoder { message : Msg, stopPropagation : Bool, preventDefault : Bool }
 nodeHotkeysDecoder id node =
-    Decode.map2 Tuple.pair
+    Decode.map3
+        (\key shift alt ->
+            { key = key
+            , shift = shift
+            , alt = alt
+            }
+        )
         Events.keyCode
         (Decode.field "shiftKey" Decode.bool)
+        (Decode.field "altKey" Decode.bool)
         |> Decode.andThen
-            (\( key, shift ) ->
+            (\{ key, shift, alt } ->
                 case key of
                     -- tab
                     9 ->
@@ -354,6 +372,18 @@ nodeHotkeysDecoder id node =
 
                         else
                             Decode.fail "ignoring backspace on non-empty node"
+
+                    -- up
+                    38 ->
+                        if alt then
+                            Decode.succeed
+                                { message = UserWantsToMoveNodeUp id
+                                , stopPropagation = True
+                                , preventDefault = True
+                                }
+
+                        else
+                            Decode.fail "ignoring up without alt key"
 
                     _ ->
                         Decode.fail "unhandled key"
