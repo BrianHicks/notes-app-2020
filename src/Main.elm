@@ -197,9 +197,16 @@ update msg model =
                     )
 
                 Nothing ->
-                    ( model
-                    , NoEffect
-                    )
+                    case Database.get id model.database |> Maybe.andThen .parent of
+                        Just parentId ->
+                            ( { model | database = Database.moveBefore parentId id model.database }
+                            , FocusOnContent
+                            )
+
+                        Nothing ->
+                            ( model
+                            , NoEffect
+                            )
 
         UserWantsToMoveNodeDown id ->
             case Database.nextSibling id model.database of

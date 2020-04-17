@@ -235,6 +235,29 @@ programTest =
                                 >> Query.has [ Selector.text "First" ]
                             )
                         ]
+        , test "hitting alt-up when the child is the first child move it above the parent" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Parent"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [ Alt ] Up
+                    |> hitShortcutKey [] Esc
+                    |> Expect.all
+                        [ expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 0
+                                >> Query.has [ Selector.text "Child" ]
+                            )
+                        , expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 1
+                                >> Query.has [ Selector.text "Parent" ]
+                            )
+                        ]
         ]
 
 

@@ -63,7 +63,7 @@ Of course, I could also keep a second index with all the contents by note ID...
 - [ ] tree editing
    - [ ] ability to move a node up and down as well as in and out
        - [x] moving up and down to siblings. Uncontroversial!
-       - [ ] if you're at the first child, moving up goes to the parent.
+       - [x] if you're at the first child, moving up goes to the parent.
        - [ ] if you're at the last child, moving down goes to the parent's next sibling.
    - [ ] moving non-edit focus around
        - [ ] hitting up and down keys should go to the previous/next sibling
