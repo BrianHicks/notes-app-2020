@@ -72,6 +72,9 @@ Of course, I could also keep a second index with all the contents by note ID...
 
 Someday/maybe
 
+- [ ] exporting to
+  - (likely) markdown
+  - (less likely) rich text of some kind
 - [ ] metadata
 - [ ] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
 - [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
