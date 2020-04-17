@@ -189,7 +189,7 @@ programTest =
                             >> Query.children [ Selector.tag "li" ]
                             >> Query.count (Expect.equal 0)
                         )
-        , test "hitting meta-up while editing moves the node up" <|
+        , test "hitting alt-up while editing moves the node up" <|
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "Note"
@@ -198,6 +198,30 @@ programTest =
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Second"
                     |> hitShortcutKey [ Alt ] Up
+                    |> hitShortcutKey [] Esc
+                    |> Expect.all
+                        [ expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 0
+                                >> Query.has [ Selector.text "Second" ]
+                            )
+                        , expectNote
+                            (Query.findAll [ Selector.tag "li" ]
+                                >> Query.index 1
+                                >> Query.has [ Selector.text "First" ]
+                            )
+                        ]
+        , test "hitting alt-down while editing moves the node down" <|
+            \_ ->
+                start
+                    |> addNote (Database.idFromInt 0) "Note"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "First"
+                    |> hitShortcutKey [] Enter
+                    |> fillIn "content" "Content" "Second"
+                    |> hitShortcutKey [] Esc
+                    |> clickButton "First"
+                    |> hitShortcutKey [ Alt ] Down
                     |> hitShortcutKey [] Esc
                     |> Expect.all
                         [ expectNote
@@ -227,6 +251,7 @@ type Key
     | Tab
     | Backspace
     | Up
+    | Down
 
 
 type Modifier
@@ -258,6 +283,9 @@ keyDown modifiers key =
 
                 Up ->
                     38
+
+                Down ->
+                    40
     in
     ( "keydown"
     , Encode.object

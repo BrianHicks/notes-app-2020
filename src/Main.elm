@@ -43,6 +43,7 @@ type Msg
     | UserHitShiftTabToDedent Database.ID
     | UserWantsToDeleteNode Database.ID
     | UserWantsToMoveNodeUp Database.ID
+    | UserWantsToMoveNodeDown Database.ID
 
 
 type Effect
@@ -192,6 +193,16 @@ update msg model =
             ( case Database.previousSibling id model.database of
                 Just previousSibling ->
                     { model | database = Database.moveBefore previousSibling id model.database }
+
+                Nothing ->
+                    model
+            , NoEffect
+            )
+
+        UserWantsToMoveNodeDown id ->
+            ( case Database.nextSibling id model.database of
+                Just previousSibling ->
+                    { model | database = Database.moveAfter previousSibling id model.database }
 
                 Nothing ->
                     model
@@ -384,6 +395,18 @@ nodeHotkeysDecoder id node =
 
                         else
                             Decode.fail "ignoring up without alt key"
+
+                    -- down
+                    40 ->
+                        if alt then
+                            Decode.succeed
+                                { message = UserWantsToMoveNodeDown id
+                                , stopPropagation = True
+                                , preventDefault = True
+                                }
+
+                        else
+                            Decode.fail "ignoring down without alt key"
 
                     _ ->
                         Decode.fail "unhandled key"

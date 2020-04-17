@@ -2,6 +2,7 @@ module Database exposing
     ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling
     , moveInto, moveBefore, moveAfter
     , ID, idFromInt, idToString
+    , nextSibling
     )
 
 {-|
@@ -153,6 +154,31 @@ previousSibling id database =
                             nextChild :: restChildren ->
                                 if nextChild == id then
                                     current
+
+                                else
+                                    helper (Just nextChild) restChildren
+                in
+                helper Nothing children
+            )
+
+
+nextSibling : ID -> Database -> Maybe ID
+nextSibling id database =
+    get id database
+        |> Maybe.andThen .parent
+        |> Maybe.andThen (\parentID -> get parentID database)
+        |> Maybe.andThen
+            (\{ children } ->
+                let
+                    helper : Maybe ID -> List ID -> Maybe ID
+                    helper current nextChildren =
+                        case nextChildren of
+                            [] ->
+                                Nothing
+
+                            nextChild :: restChildren ->
+                                if current == Just id then
+                                    Just nextChild
 
                                 else
                                     helper (Just nextChild) restChildren
