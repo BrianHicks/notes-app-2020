@@ -68,7 +68,7 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> expectViewDoesntHaveInput
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
@@ -76,7 +76,7 @@ programTest =
                     |> addNote (Database.idFromInt 0) "What's up?"
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Not much, you?"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> expectNote (Query.has [ Selector.text "Not much, you?" ])
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
@@ -94,7 +94,7 @@ programTest =
                     |> hitShortcutKey [] Enter
                     |> hitShortcutKey [] Tab
                     |> fillIn "content" "Content" "Child"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> expectNote
                         (Query.find
                             [ Selector.tag "li"
@@ -114,7 +114,7 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [ Shift ] Tab
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> expectNote
                         (Query.find
                             [ Selector.tag "li"
@@ -128,7 +128,7 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "Hey I'm a Note"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> clickButton "Hey I'm a Note"
                     |> expectViewHasInput
         , test "after a child has been edited, clicking it reopens it for editing" <|
@@ -137,7 +137,7 @@ programTest =
                     |> addNote (Database.idFromInt 0) "Note"
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "I'm a child!"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> clickButton "I'm a child!"
                     |> expectViewHasInput
         , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
@@ -154,7 +154,7 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> clickButton "Grandchild 2"
                     |> hitShortcutKey [] Tab
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> Expect.all
                         [ expectNote
                             (Query.find
@@ -198,7 +198,7 @@ programTest =
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Second"
                     |> hitShortcutKey [ Alt ] Up
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> Expect.all
                         [ expectNote
                             (Query.findAll [ Selector.tag "li" ]
@@ -219,10 +219,10 @@ programTest =
                     |> fillIn "content" "Content" "First"
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Second"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> clickButton "First"
                     |> hitShortcutKey [ Alt ] Down
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> Expect.all
                         [ expectNote
                             (Query.findAll [ Selector.tag "li" ]
@@ -245,7 +245,7 @@ programTest =
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Up
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> Expect.all
                         [ expectNote
                             (Query.findAll [ Selector.tag "li" ]
@@ -268,11 +268,11 @@ programTest =
                     |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [] Enter
                     |> fillIn "content" "Content" "Aunt"
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> clickButton "Child"
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Down
-                    |> hitShortcutKey [] Esc
+                    |> hitShortcutKey [] Escape
                     |> Expect.all
                         [ expectNote
                             (Query.findAll [ Selector.tag "li" ]
@@ -302,7 +302,7 @@ addNote id text =
 
 type Key
     = Enter
-    | Esc
+    | Escape
     | Tab
     | Backspace
     | Up
@@ -321,30 +321,9 @@ hitShortcutKey modifiers key =
 
 keyDown : List Modifier -> Key -> ( String, Encode.Value )
 keyDown modifiers key =
-    let
-        code =
-            case key of
-                Enter ->
-                    13
-
-                Esc ->
-                    27
-
-                Tab ->
-                    9
-
-                Backspace ->
-                    8
-
-                Up ->
-                    38
-
-                Down ->
-                    40
-    in
     ( "keydown"
     , Encode.object
-        [ ( "keyCode", Encode.int code )
+        [ ( "key", Encode.string (Debug.toString key) )
         , ( "shiftKey", Encode.bool (List.member Shift modifiers) )
         , ( "altKey", Encode.bool (List.member Alt modifiers) )
         ]

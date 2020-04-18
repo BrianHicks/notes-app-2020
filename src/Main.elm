@@ -5,7 +5,7 @@ import Browser.Dom as Dom
 import Browser.Navigation as Navigation
 import Css
 import Database exposing (Database)
-import Html.Styled as Html exposing (Html)
+import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
@@ -361,14 +361,13 @@ nodeHotkeysDecoder id node =
             , alt = alt
             }
         )
-        Events.keyCode
+        (Decode.field "key" Decode.string)
         (Decode.field "shiftKey" Decode.bool)
         (Decode.field "altKey" Decode.bool)
         |> Decode.andThen
             (\{ key, shift, alt } ->
                 case key of
-                    -- tab
-                    9 ->
+                    "Tab" ->
                         Decode.succeed
                             { message =
                                 if shift then
@@ -380,24 +379,21 @@ nodeHotkeysDecoder id node =
                             , preventDefault = True
                             }
 
-                    -- return
-                    13 ->
+                    "Enter" ->
                         Decode.succeed
                             { message = UserHitEnterOnNode id
                             , stopPropagation = False
                             , preventDefault = False
                             }
 
-                    -- escape
-                    27 ->
+                    "Escape" ->
                         Decode.succeed
                             { message = UserFinishedEditingNode
                             , stopPropagation = False
                             , preventDefault = False
                             }
 
-                    -- backspace
-                    8 ->
+                    "Backspace" ->
                         if Node.isEmpty node then
                             Decode.succeed
                                 { message = UserWantsToDeleteNode id
@@ -408,8 +404,7 @@ nodeHotkeysDecoder id node =
                         else
                             Decode.fail "ignoring backspace on non-empty node"
 
-                    -- up
-                    38 ->
+                    "Up" ->
                         if alt then
                             Decode.succeed
                                 { message = UserWantsToMoveNodeUp id
@@ -420,8 +415,7 @@ nodeHotkeysDecoder id node =
                         else
                             Decode.fail "ignoring up without alt key"
 
-                    -- down
-                    40 ->
+                    "Down" ->
                         if alt then
                             Decode.succeed
                                 { message = UserWantsToMoveNodeDown id
