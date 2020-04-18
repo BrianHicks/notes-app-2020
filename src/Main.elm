@@ -381,7 +381,6 @@ nodeHotkeysDecoder id node =
                             }
 
                     -- return
-                    -- TODO: add a next sibling node from this
                     13 ->
                         Decode.succeed
                             { message = UserHitEnterOnNode id
