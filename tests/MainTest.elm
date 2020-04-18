@@ -62,7 +62,7 @@ programTest =
             \_ ->
                 start
                     |> addNote (Database.idFromInt 0) "What's up?"
-                    |> simulateDomEvent (Query.find [ input ]) ( "blur", Encode.object [] )
+                    |> blur
                     |> expectViewDoesntHaveInput
         , test "after editing, hitting escape finalizes the note" <|
             \_ ->
@@ -298,6 +298,11 @@ addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
         >> fillIn "content" "Content" text
+
+
+blur : NotesTest -> NotesTest
+blur =
+    simulateDomEvent (Query.find [ input ]) ( "blur", Encode.object [] )
 
 
 type Key
