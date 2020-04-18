@@ -9,6 +9,7 @@ import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
+import Maybe.Extra
 import Node exposing (Node)
 import Route exposing (Route)
 import Sort
@@ -190,51 +191,48 @@ update msg model =
                     ( model, NoEffect )
 
         UserWantsToDeleteNode id ->
+            -- TODO: if we were focused on editing this comment, change focus
+            -- to the previous sibling.
             ( { model | database = Database.delete id model.database }
             , NoEffect
             )
 
         UserWantsToMoveNodeUp id ->
-            case Database.previousSibling id model.database of
-                Just previousSibling ->
-                    ( { model | database = Database.moveBefore previousSibling id model.database }
+            case
+                Maybe.Extra.orListLazy
+                    [ \_ -> Database.previousSibling id model.database
+                    , \_ -> Database.get id model.database |> Maybe.andThen .parent
+                    ]
+            of
+                Just target ->
+                    ( { model | database = Database.moveBefore target id model.database }
                     , FocusOnContent
                     )
 
                 Nothing ->
-                    case Database.get id model.database |> Maybe.andThen .parent of
-                        Just parentId ->
-                            ( { model | database = Database.moveBefore parentId id model.database }
-                            , FocusOnContent
-                            )
-
-                        Nothing ->
-                            ( model
-                            , NoEffect
-                            )
+                    ( model
+                    , NoEffect
+                    )
 
         UserWantsToMoveNodeDown id ->
-            case Database.nextSibling id model.database of
-                Just previousSibling ->
-                    ( { model | database = Database.moveAfter previousSibling id model.database }
-                    , FocusOnContent
-                    )
-
-                Nothing ->
-                    case
+            case
+                Maybe.Extra.orListLazy
+                    [ \_ -> Database.nextSibling id model.database
+                    , \_ ->
                         Database.get id model.database
                             |> Maybe.andThen .parent
                             |> Maybe.andThen (\parentId -> Database.nextSibling parentId model.database)
-                    of
-                        Just parentId ->
-                            ( { model | database = Database.moveAfter parentId id model.database }
-                            , FocusOnContent
-                            )
+                    ]
+            of
+                Just target ->
+                    ( { model | database = Database.moveAfter target id model.database }
+                    , FocusOnContent
+                    )
 
-                        Nothing ->
-                            ( model
-                            , NoEffect
-                            )
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
