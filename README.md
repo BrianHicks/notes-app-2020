@@ -67,6 +67,7 @@ Of course, I could also keep a second index with all the contents by note ID...
        - [x] if you're at the last child, moving down goes to the parent's next sibling.
    - [ ] moving non-edit focus around
        - [ ] hitting up and down keys should go to the previous/next sibling
+           - [ ] this might mean adding rich text support with like elm-rte
    - refinements on existing behavior
      - [ ] move to the previous sibling when I backspace through a node
      - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
