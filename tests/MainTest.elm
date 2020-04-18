@@ -73,10 +73,7 @@ programTest =
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "What's up?"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Not much, you?"
-                    |> hitShortcutKey [] Escape
+                    |> addNoteAndChildren "What's up?" [ "Not much, you?" ]
                     |> expectNote (Query.has [ Selector.text "Not much, you?" ])
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
@@ -85,15 +82,24 @@ programTest =
                     |> addNote (Database.idFromInt 1) "Not much."
                     |> clickButton "What's up?"
                     |> expectSidebar (Query.has [ Selector.text "What's up?" ])
-        , test "when adding a note, tab indents further" <|
+        , test "after a note has been edited, clicking it repoens it for editing" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Parent"
-                    |> hitShortcutKey [] Enter
+                    |> addNoteAndChildren "Hey, I'm a Note!" []
+                    |> clickButton "Hey, I'm a Note!"
+                    |> expectViewHasInput
+        , test "after a child has been edited, clicking it reopens it for editing" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "I'm a child!" ]
+                    |> clickButton "I'm a child!"
+                    |> expectViewHasInput
+        , test "when adding a note, tab indents" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
                     |> hitShortcutKey [] Tab
-                    |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [] Escape
                     |> expectNote
                         (Query.find
@@ -107,12 +113,9 @@ programTest =
         , test "when adding a note, shift-tab dedents" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Parent"
-                    |> hitShortcutKey [] Enter
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
                     |> hitShortcutKey [] Tab
-                    |> fillIn "content" "Content" "Child"
                     |> hitShortcutKey [ Shift ] Tab
                     |> hitShortcutKey [] Escape
                     |> expectNote
@@ -124,32 +127,10 @@ programTest =
                             >> Query.first
                             >> Query.hasNot [ Selector.text "Child" ]
                         )
-        , test "after a note has been edited, clicking it repoens it for editing" <|
-            \_ ->
-                start
-                    |> addNote (Database.idFromInt 0) "Hey I'm a Note"
-                    |> hitShortcutKey [] Escape
-                    |> clickButton "Hey I'm a Note"
-                    |> expectViewHasInput
-        , test "after a child has been edited, clicking it reopens it for editing" <|
-            \_ ->
-                start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "I'm a child!"
-                    |> hitShortcutKey [] Escape
-                    |> clickButton "I'm a child!"
-                    |> expectViewHasInput
         , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Child"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Grandchild 1"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Grandchild 2"
+                    |> addNoteAndChildren "Note" [ "Child", "Grandchild 1", "Grandchild 2" ]
                     |> clickButton "Grandchild 1"
                     |> hitShortcutKey [] Tab
                     |> clickButton "Grandchild 2"
@@ -192,11 +173,8 @@ programTest =
         , test "hitting alt-up while editing moves the node up" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "First"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Second"
+                    |> addNoteAndChildren "Note" [ "First", "Second" ]
+                    |> clickButton "Second"
                     |> hitShortcutKey [ Alt ] Up
                     |> hitShortcutKey [] Escape
                     |> Expect.all
@@ -214,12 +192,7 @@ programTest =
         , test "hitting alt-down while editing moves the node down" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "First"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Second"
-                    |> hitShortcutKey [] Escape
+                    |> addNoteAndChildren "Note" [ "First", "Second" ]
                     |> clickButton "First"
                     |> hitShortcutKey [ Alt ] Down
                     |> hitShortcutKey [] Escape
@@ -238,11 +211,8 @@ programTest =
         , test "hitting alt-up when the child is the first child moves it above the parent" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Parent"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Child"
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Up
                     |> hitShortcutKey [] Escape
@@ -261,14 +231,7 @@ programTest =
         , test "hitting alt-down when the child is the last child moves it below the parent's next sibling" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Parent"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Child"
-                    |> hitShortcutKey [] Enter
-                    |> fillIn "content" "Content" "Aunt"
-                    |> hitShortcutKey [] Escape
+                    |> addNoteAndChildren "Note" [ "Parent", "Child", "Aunt" ]
                     |> clickButton "Child"
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Down
@@ -298,6 +261,23 @@ addNote id text =
     clickButton "New Note"
         >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
         >> fillIn "content" "Content" text
+
+
+addNoteAndChildren : String -> List String -> NotesTest -> NotesTest
+addNoteAndChildren note siblings test =
+    let
+        withNote =
+            test
+                |> addNote (Database.idFromInt 0) note
+                |> hitShortcutKey [] Enter
+
+        addSiblings =
+            siblings
+                |> List.map (fillIn "content" "Content")
+                |> List.intersperse (hitShortcutKey [] Enter)
+    in
+    List.foldl (\action progress -> action progress) withNote addSiblings
+        |> hitShortcutKey [] Escape
 
 
 blur : NotesTest -> NotesTest
