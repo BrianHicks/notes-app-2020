@@ -136,25 +136,15 @@ programTest =
                     |> clickButton "Grandchild 2"
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [] Escape
-                    |> Expect.all
-                        [ expectNote
-                            (Query.find
-                                [ Selector.tag "li"
-                                , Selector.containing [ Selector.text "Child" ]
-                                ]
-                                >> Query.children [ Selector.tag "li" ]
-                                >> Query.index 0
-                                >> Query.has [ Selector.text "Grandchild 1" ]
-                            )
-                        , expectNote
-                            (Query.find
-                                [ Selector.tag "li"
-                                , Selector.containing [ Selector.text "Child" ]
-                                ]
-                                >> Query.children [ Selector.tag "li" ]
-                                >> Query.index 1
-                                >> Query.has [ Selector.text "Grandchild 2" ]
-                            )
+                    |> expectSiblingsIn
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Child" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                        )
+                        [ Selector.text "Grandchild 1"
+                        , Selector.text "Grandchild 2"
                         ]
         , test "hitting backspace in an empty node removes it from the note" <|
             \_ ->
@@ -177,17 +167,10 @@ programTest =
                     |> clickButton "Second"
                     |> hitShortcutKey [ Alt ] Up
                     |> hitShortcutKey [] Escape
-                    |> Expect.all
-                        [ expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 0
-                                >> Query.has [ Selector.text "Second" ]
-                            )
-                        , expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 1
-                                >> Query.has [ Selector.text "First" ]
-                            )
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Second"
+                        , Selector.text "First"
                         ]
         , test "hitting alt-down while editing moves the node down" <|
             \_ ->
@@ -196,17 +179,10 @@ programTest =
                     |> clickButton "First"
                     |> hitShortcutKey [ Alt ] Down
                     |> hitShortcutKey [] Escape
-                    |> Expect.all
-                        [ expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 0
-                                >> Query.has [ Selector.text "Second" ]
-                            )
-                        , expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 1
-                                >> Query.has [ Selector.text "First" ]
-                            )
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Second"
+                        , Selector.text "First"
                         ]
         , test "hitting alt-up when the child is the first child moves it above the parent" <|
             \_ ->
@@ -216,17 +192,10 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Up
                     |> hitShortcutKey [] Escape
-                    |> Expect.all
-                        [ expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 0
-                                >> Query.has [ Selector.text "Child" ]
-                            )
-                        , expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 1
-                                >> Query.has [ Selector.text "Parent" ]
-                            )
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Child"
+                        , Selector.text "Parent"
                         ]
         , test "hitting alt-down when the child is the last child moves it below the parent's next sibling" <|
             \_ ->
@@ -236,22 +205,11 @@ programTest =
                     |> hitShortcutKey [] Tab
                     |> hitShortcutKey [ Alt ] Down
                     |> hitShortcutKey [] Escape
-                    |> Expect.all
-                        [ expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 0
-                                >> Query.has [ Selector.text "Parent" ]
-                            )
-                        , expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 1
-                                >> Query.has [ Selector.text "Aunt" ]
-                            )
-                        , expectNote
-                            (Query.findAll [ Selector.tag "li" ]
-                                >> Query.index 2
-                                >> Query.has [ Selector.text "Child" ]
-                            )
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Parent"
+                        , Selector.text "Aunt"
+                        , Selector.text "Child"
                         ]
         ]
 
@@ -278,6 +236,20 @@ addNoteAndChildren note siblings test =
     in
     List.foldl (\action progress -> action progress) withNote addSiblings
         |> hitShortcutKey [] Escape
+
+
+expectSiblingsIn : (Query.Single Msg -> Query.Multiple Msg) -> List Selector -> NotesTest -> Expectation
+expectSiblingsIn parent assertions =
+    assertions
+        |> List.indexedMap
+            (\i selector ->
+                expectView
+                    (parent
+                        >> Query.index i
+                        >> Query.has [ selector ]
+                    )
+            )
+        |> Expect.all
 
 
 blur : NotesTest -> NotesTest
