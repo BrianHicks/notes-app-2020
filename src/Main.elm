@@ -161,6 +161,11 @@ update msg model =
                 Just previousSibling ->
                     ( { model
                         | database =
+                            -- TODO: this looks like some logic that
+                            -- should live inside Database.elm. It's making
+                            -- a decision where to move something based on
+                            -- the field values when the intent could be
+                            -- clearer as "moveToLastChild" or similar.
                             case previousSibling.children |> List.reverse |> List.head of
                                 Nothing ->
                                     Database.moveInto previousSibling.id id model.database
