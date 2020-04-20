@@ -323,15 +323,16 @@ viewNode model id =
             in
             tag []
                 [ if model.editing == Just id then
-                    Html.input
+                    Html.textarea
                         [ Attrs.attribute "aria-label" "Content"
+                        , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
-                        , Attrs.value (Node.content node)
                         , Events.onInput UserEditedNode
-                        , Events.onBlur UserFinishedEditingNode
+
+                        -- , Events.onBlur UserFinishedEditingNode
                         , Events.custom "keydown" (nodeHotkeysDecoder id node)
                         ]
-                        []
+                        [ Html.text (Node.content node) ]
 
                   else if Node.isNote node then
                     Html.button
