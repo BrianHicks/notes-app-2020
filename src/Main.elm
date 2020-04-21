@@ -12,6 +12,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Maybe.Extra
 import Node exposing (Node)
 import Route exposing (Route)
+import Selection exposing (Selection)
 import Sort
 import Task
 import Time exposing (Posix)
@@ -27,6 +28,7 @@ type alias Model key =
 
     -- view state
     , editing : Maybe Database.ID
+    , selection : Maybe Selection
     }
 
 
@@ -39,6 +41,7 @@ type Msg
     | UserFinishedEditingNode
     | Focused (Result Dom.Error ())
     | UserSelectedNode Database.ID
+    | UserChangedSelection Selection
     | UserHitEnterOnNode Database.ID
     | UserHitTabToIndent Database.ID
     | UserHitShiftTabToDedent Database.ID
@@ -66,6 +69,7 @@ init flags url key =
 
       -- view state
       , editing = Nothing
+      , selection = Nothing
       }
     , NoEffect
     )
@@ -119,7 +123,12 @@ update msg model =
                     ( model, NoEffect )
 
         UserFinishedEditingNode ->
-            ( { model | editing = Nothing }, NoEffect )
+            ( { model
+                | editing = Nothing
+                , selection = Nothing
+              }
+            , NoEffect
+            )
 
         Focused _ ->
             -- TODO: report errors that happen?
@@ -128,6 +137,11 @@ update msg model =
         UserSelectedNode id ->
             ( model
             , PushUrl (Route.Node id)
+            )
+
+        UserChangedSelection selection ->
+            ( { model | selection = Just selection }
+            , NoEffect
             )
 
         UserHitEnterOnNode id ->
@@ -339,7 +353,7 @@ viewApplication model =
 
             Route.Node id ->
                 viewNode model id
-        , Html.text (Debug.toString model.route)
+        , Html.text (Debug.toString model.selection)
         ]
 
 
@@ -371,7 +385,7 @@ viewNode model id =
 
                         -- , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys id node
-                        , nodeInputKeyupHotkeys
+                        , nodeInputKeyupHotkeys model.selection
                         , nodeInputSelectionChange
                         ]
                         [ Html.text (Node.content node) ]
@@ -475,41 +489,39 @@ nodeInputKeydownHotkeys id node =
         |> Events.custom "keydown"
 
 
-nodeInputKeyupHotkeys : Attribute Msg
-nodeInputKeyupHotkeys =
-    Decode.map2 Tuple.pair
-        (Decode.field "key" Decode.string)
-        (Decode.field "shiftKey" Decode.bool)
-        |> Decode.andThen
-            (\keys ->
-                case keys of
-                    ( "ArrowUp", False ) ->
-                        Decode.succeed UserWantsToNavigateUp
+nodeInputKeyupHotkeys : Maybe Selection -> Attribute Msg
+nodeInputKeyupHotkeys maybeSelection =
+    Events.on "keyup" <|
+        case maybeSelection of
+            Nothing ->
+                Decode.fail "no selection"
 
-                    ( "ArrowDown", False ) ->
-                        Decode.succeed UserWantsToNavigateDown
+            Just selection ->
+                Decode.map2 Tuple.pair
+                    (Decode.field "key" Decode.string)
+                    (Decode.field "shiftKey" Decode.bool)
+                    |> Decode.andThen
+                        (\( key, shiftKey ) ->
+                            if shiftKey then
+                                Decode.fail "don't mess with while selecting"
 
-                    _ ->
-                        Decode.fail "unhandled key"
-            )
-        |> Events.on "keyup"
+                            else if key == "ArrowUp" && Selection.atStart selection then
+                                Decode.succeed UserWantsToNavigateUp
+
+                            else if key == "ArrowDown" && Selection.atEnd selection then
+                                Decode.succeed UserWantsToNavigateDown
+
+                            else
+                                Decode.fail "nothing to do"
+                        )
 
 
 nodeInputSelectionChange : Attribute Msg
 nodeInputSelectionChange =
-    Decode.map3 (\start end length -> ( start, end, length ))
-        (Decode.at [ "detail", "selectionStart" ] Decode.int)
-        (Decode.at [ "detail", "selectionEnd" ] Decode.int)
-        (Decode.at [ "detail", "length" ] Decode.int)
-        |> Decode.andThen
-            (\values ->
-                let
-                    _ =
-                        Debug.log "selection" values
-                in
-                Decode.fail "no"
-            )
-        |> Events.custom "note-input-selectionchange"
+    Selection.decoder
+        |> Decode.field "detail"
+        |> Decode.map UserChangedSelection
+        |> Events.on "note-input-selectionchange"
 
 
 main : Program () (Model Navigation.Key) Msg
