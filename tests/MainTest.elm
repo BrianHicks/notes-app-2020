@@ -87,13 +87,13 @@ programTest =
                 start
                     |> addNoteAndChildren "Hey, I'm a Note!" []
                     |> clickButton "Hey, I'm a Note!"
-                    |> expectViewHasInput
+                    |> expectAnEditingNode
         , test "after a child has been edited, clicking it reopens it for editing" <|
             \_ ->
                 start
                     |> addNoteAndChildren "Note" [ "I'm a child!" ]
                     |> clickButton "I'm a child!"
-                    |> expectViewHasInput
+                    |> expectAnEditingNode
         , test "when adding a note, tab indents" <|
             \_ ->
                 start
@@ -297,8 +297,8 @@ expectNote expect notesTest =
     expectView (Query.find [ Selector.tag "section" ] >> expect) notesTest
 
 
-expectViewHasInput : NotesTest -> Expectation
-expectViewHasInput =
+expectAnEditingNode : NotesTest -> Expectation
+expectAnEditingNode =
     expectView (Query.has [ input ])
 
 
@@ -310,6 +310,6 @@ expectViewDoesntHaveInput =
 input : Selector
 input =
     Selector.all
-        [ Selector.tag "input"
+        [ Selector.tag "textarea"
         , Selector.id "content"
         ]

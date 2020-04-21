@@ -382,8 +382,7 @@ viewNode model id =
                         , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
                         , Events.onInput UserEditedNode
-
-                        -- , Events.onBlur UserFinishedEditingNode
+                        , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys id node
                         , nodeInputKeyupHotkeys model.selection
                         , nodeInputSelectionChange
