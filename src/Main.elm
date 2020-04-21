@@ -122,7 +122,7 @@ update msg model =
             ( { model | editing = Nothing }, NoEffect )
 
         Focused _ ->
-            -- TODO: report erros that happen?
+            -- TODO: report errors that happen?
             ( model, NoEffect )
 
         UserSelectedNode id ->
