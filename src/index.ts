@@ -1,25 +1,16 @@
 // custom element
 class NoteInput extends HTMLTextAreaElement {
   connectedCallback() {
-    console.log('connected');
-    console.log(this);
     var self = this;
     
     document.addEventListener('selectionchange', function(event) {
-      // if (event.target.activeElement !== self) { return; }
-      const range = document.getSelection().getRangeAt(0);
-      console.log(range.getBoundingClientRect());
-      // self.dispatchEvent(new CustomEvent('select', { detail: {
-      //     start: {
-      //         node: range.startContainer,
-      //         offset: self.offsetUntil(range.startContainer) + range.startOffset
-      //     },
-      //     end: {
-      //         node: range.endContainer,
-      //         offset: self.offsetUntil(range.endContainer) + range.endOffset
-      //     },
-      //     originalEvent: range,
-      // }}));
+      if (event.target.activeElement !== self) { return; }
+
+      self.dispatchEvent(new CustomEvent('note-input-selectionchange', { detail: {
+        selectionStart: self.selectionStart,
+        selectionEnd: self.selectionEnd,
+        length: self.textLength
+      })});
     });
   }
 }

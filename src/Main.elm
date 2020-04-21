@@ -45,6 +45,8 @@ type Msg
     | UserWantsToDeleteNode Database.ID
     | UserWantsToMoveNodeUp Database.ID
     | UserWantsToMoveNodeDown Database.ID
+    | UserWantsToNavigateUp
+    | UserWantsToNavigateDown
 
 
 type Effect
@@ -214,6 +216,23 @@ update msg model =
                     , NoEffect
                     )
 
+        UserWantsToNavigateUp ->
+            case
+                Maybe.Extra.orListLazy
+                    [ \_ -> model.editing |> Maybe.andThen (\id -> Database.previousSibling id model.database)
+                    , \_ -> model.editing |> Maybe.andThen (\id -> Database.get id model.database) |> Maybe.andThen .parent
+                    ]
+            of
+                Just target ->
+                    ( { model | editing = Just target }
+                    , FocusOnContent
+                    )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
         UserWantsToMoveNodeDown id ->
             case
                 Maybe.Extra.orListLazy
@@ -226,6 +245,27 @@ update msg model =
             of
                 Just target ->
                     ( { model | database = Database.moveAfter target id model.database }
+                    , FocusOnContent
+                    )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
+        UserWantsToNavigateDown ->
+            case
+                Maybe.Extra.orListLazy
+                    [ \_ -> model.editing |> Maybe.andThen (\id -> Database.nextSibling id model.database)
+                    , \_ ->
+                        model.editing
+                            |> Maybe.andThen (\id -> Database.get id model.database)
+                            |> Maybe.andThen .parent
+                            |> Maybe.andThen (\id -> Database.nextSibling id model.database)
+                    ]
+            of
+                Just target ->
+                    ( { model | editing = Just target }
                     , FocusOnContent
                     )
 
@@ -330,7 +370,9 @@ viewNode model id =
                         , Events.onInput UserEditedNode
 
                         -- , Events.onBlur UserFinishedEditingNode
-                        , Events.custom "keydown" (nodeHotkeysDecoder id node)
+                        , nodeInputKeydownHotkeys id node
+                        , nodeInputKeyupHotkeys
+                        , nodeInputSelectionChange
                         ]
                         [ Html.text (Node.content node) ]
 
@@ -353,8 +395,8 @@ viewNode model id =
                 ]
 
 
-nodeHotkeysDecoder : Database.ID -> Node -> Decoder { message : Msg, stopPropagation : Bool, preventDefault : Bool }
-nodeHotkeysDecoder id node =
+nodeInputKeydownHotkeys : Database.ID -> Node -> Attribute Msg
+nodeInputKeydownHotkeys id node =
     Decode.map3
         (\key shift alt ->
             { key = key
@@ -430,6 +472,44 @@ nodeHotkeysDecoder id node =
                     _ ->
                         Decode.fail "unhandled key"
             )
+        |> Events.custom "keydown"
+
+
+nodeInputKeyupHotkeys : Attribute Msg
+nodeInputKeyupHotkeys =
+    Decode.map2 Tuple.pair
+        (Decode.field "key" Decode.string)
+        (Decode.field "shiftKey" Decode.bool)
+        |> Decode.andThen
+            (\keys ->
+                case keys of
+                    ( "ArrowUp", False ) ->
+                        Decode.succeed UserWantsToNavigateUp
+
+                    ( "ArrowDown", False ) ->
+                        Decode.succeed UserWantsToNavigateDown
+
+                    _ ->
+                        Decode.fail "unhandled key"
+            )
+        |> Events.on "keyup"
+
+
+nodeInputSelectionChange : Attribute Msg
+nodeInputSelectionChange =
+    Decode.map3 (\start end length -> ( start, end, length ))
+        (Decode.at [ "detail", "selectionStart" ] Decode.int)
+        (Decode.at [ "detail", "selectionEnd" ] Decode.int)
+        (Decode.at [ "detail", "length" ] Decode.int)
+        |> Decode.andThen
+            (\values ->
+                let
+                    _ =
+                        Debug.log "selection" values
+                in
+                Decode.fail "no"
+            )
+        |> Events.custom "note-input-selectionchange"
 
 
 main : Program () (Model Navigation.Key) Msg
