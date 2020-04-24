@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "elm-format": "^0.8.3",
     "elm-hot": "^1.1.4",
     "node-elm-compiler": "^5.0.4",
     "parcel-bundler": "^1.12.4",
