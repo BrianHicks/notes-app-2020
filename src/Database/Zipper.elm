@@ -1,12 +1,14 @@
 module Database.Zipper exposing
-    ( Zipper, startAt
+    ( Zipper, startAt, Problem(..)
     , id, node
+    , update
     )
 
 {-|
 
-@docs Zipper, startAt
+@docs Zipper, startAt, Problem
 @docs id, node
+@docs update
 
 -}
 
@@ -23,9 +25,15 @@ type Zipper
         }
 
 
-startAt : Database.ID -> Database -> Maybe Zipper
+startAt : Database.ID -> Database -> Result Problem Zipper
 startAt id_ database =
-    Maybe.map Zipper (Database.get id_ database)
+    Database.get id_ database
+        |> Result.fromMaybe (NotFound id_)
+        |> Result.map Zipper
+
+
+type Problem
+    = NotFound Database.ID
 
 
 
@@ -40,3 +48,21 @@ id (Zipper guts) =
 node : Zipper -> Node
 node (Zipper guts) =
     guts.node
+
+
+
+-- MAKING MODIFICATIONS
+
+
+update : (Node -> Node) -> Database -> Zipper -> Result Problem ( Zipper, Database )
+update updater database zipper =
+    let
+        updated =
+            Database.update (id zipper) updater database
+    in
+    case Database.get (id zipper) updated of
+        Just guts ->
+            Ok ( Zipper guts, updated )
+
+        Nothing ->
+            Err (NotFound (id zipper))
