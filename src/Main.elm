@@ -383,8 +383,7 @@ viewNode model id =
                         , Attrs.id "content"
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
-                        , nodeInputKeydownHotkeys id node
-                        , nodeInputKeyupHotkeys model.selection
+                        , nodeInputKeydownHotkeys model.selection id node
                         , nodeInputSelectionChange
                         ]
                         [ Html.text (Node.content node) ]
@@ -408,8 +407,8 @@ viewNode model id =
                 ]
 
 
-nodeInputKeydownHotkeys : Database.ID -> Node -> Attribute Msg
-nodeInputKeydownHotkeys id node =
+nodeInputKeydownHotkeys : Maybe Selection -> Database.ID -> Node -> Attribute Msg
+nodeInputKeydownHotkeys selection id node =
     Decode.map3
         (\key shift alt ->
             { key = key
@@ -460,7 +459,7 @@ nodeInputKeydownHotkeys id node =
                         else
                             Decode.fail "ignoring backspace on non-empty node"
 
-                    "Up" ->
+                    "ArrowUp" ->
                         if alt then
                             Decode.succeed
                                 { message = UserWantsToMoveNodeUp id
@@ -468,51 +467,38 @@ nodeInputKeydownHotkeys id node =
                                 , preventDefault = True
                                 }
 
-                        else
-                            Decode.fail "ignoring up without alt key"
+                        else if not shift && Maybe.map Selection.atStart selection == Just True then
+                            Decode.succeed
+                                { message = UserWantsToNavigateUp
+                                , stopPropagation = False
+                                , preventDefault = False
+                                }
 
-                    "Down" ->
+                        else
+                            Decode.fail "ignoring up(arrow)"
+
+                    "ArrowDown" ->
                         if alt then
                             Decode.succeed
                                 { message = UserWantsToMoveNodeDown id
                                 , stopPropagation = True
                                 , preventDefault = True
                                 }
+                                
+                        else if not shift && Maybe.map Selection.atEnd selection == Just True then
+                            Decode.succeed
+                                { message = UserWantsToNavigateDown
+                                , stopPropagation = False
+                                , preventDefault = False
+                                }
 
                         else
-                            Decode.fail "ignoring down without alt key"
+                            Decode.fail "ignoring down(arrow)"
 
                     _ ->
                         Decode.fail "unhandled key"
             )
         |> Events.custom "keydown"
-
-
-nodeInputKeyupHotkeys : Maybe Selection -> Attribute Msg
-nodeInputKeyupHotkeys maybeSelection =
-    Events.on "keyup" <|
-        case maybeSelection of
-            Nothing ->
-                Decode.fail "no selection"
-
-            Just selection ->
-                Decode.map2 Tuple.pair
-                    (Decode.field "key" Decode.string)
-                    (Decode.field "shiftKey" Decode.bool)
-                    |> Decode.andThen
-                        (\( key, shiftKey ) ->
-                            if shiftKey then
-                                Decode.fail "don't mess with while selecting"
-
-                            else if key == "ArrowUp" && Selection.atStart selection then
-                                Decode.succeed UserWantsToNavigateUp
-
-                            else if key == "ArrowDown" && Selection.atEnd selection then
-                                Decode.succeed UserWantsToNavigateDown
-
-                            else
-                                Decode.fail "nothing to do"
-                        )
 
 
 nodeInputSelectionChange : Attribute Msg
