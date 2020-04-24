@@ -165,7 +165,7 @@ programTest =
                 start
                     |> addNoteAndChildren "Note" [ "First", "Second" ]
                     |> clickButton "Second"
-                    |> hitShortcutKey [ Alt ] Up
+                    |> hitShortcutKey [ Alt ] ArrowUp
                     |> hitShortcutKey [] Escape
                     |> expectSiblingsIn
                         (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
@@ -177,7 +177,7 @@ programTest =
                 start
                     |> addNoteAndChildren "Note" [ "First", "Second" ]
                     |> clickButton "First"
-                    |> hitShortcutKey [ Alt ] Down
+                    |> hitShortcutKey [ Alt ] ArrowDown
                     |> hitShortcutKey [] Escape
                     |> expectSiblingsIn
                         (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
@@ -190,7 +190,7 @@ programTest =
                     |> addNoteAndChildren "Note" [ "Parent", "Child" ]
                     |> clickButton "Child"
                     |> hitShortcutKey [] Tab
-                    |> hitShortcutKey [ Alt ] Up
+                    |> hitShortcutKey [ Alt ] ArrowUp
                     |> hitShortcutKey [] Escape
                     |> expectSiblingsIn
                         (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
@@ -203,7 +203,7 @@ programTest =
                     |> addNoteAndChildren "Note" [ "Parent", "Child", "Aunt" ]
                     |> clickButton "Child"
                     |> hitShortcutKey [] Tab
-                    |> hitShortcutKey [ Alt ] Down
+                    |> hitShortcutKey [ Alt ] ArrowDown
                     |> hitShortcutKey [] Escape
                     |> expectSiblingsIn
                         (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
@@ -262,8 +262,8 @@ type Key
     | Escape
     | Tab
     | Backspace
-    | Up
-    | Down
+    | ArrowUp
+    | ArrowDown
 
 
 type Modifier
