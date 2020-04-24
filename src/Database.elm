@@ -1,13 +1,12 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling
+    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling
     , moveInto, moveBefore, moveAfter
     , ID, idFromInt, idToString
-    , nextSibling
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling
+@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling
 
 @docs moveInto, moveBefore, moveAfter
 
