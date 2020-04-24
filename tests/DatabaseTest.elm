@@ -229,7 +229,7 @@ databaseTest =
                         |> moveInto parent second
                         |> moveInto parent first
                         -----
-                        |> nextNodeBelow first
+                        |> nextNode first
                         |> Expect.equal (Just second)
             , test "finds a parent's sibling if there are siblings" <|
                 \_ ->
@@ -245,7 +245,7 @@ databaseTest =
                         |> moveInto parent first
                         |> moveInto first child
                         -----
-                        |> nextNodeBelow child
+                        |> nextNode child
                         |> Expect.equal (Just second)
             , test "doesn't find anything if it's the only node" <|
                 \_ ->
@@ -254,7 +254,7 @@ databaseTest =
                             insert (Node.note "parent") empty
                     in
                     database
-                        |> nextNodeBelow parent
+                        |> nextNode parent
                         |> Expect.equal Nothing
             , test "doesn't find anything if it's the last node" <|
                 \_ ->
@@ -268,7 +268,7 @@ databaseTest =
                         |> moveInto parent second
                         |> moveInto parent first
                         -----
-                        |> nextNodeBelow second
+                        |> nextNode second
                         |> Expect.equal Nothing
             ]
         , describe "updating nodes"

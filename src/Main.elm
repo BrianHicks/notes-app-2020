@@ -248,7 +248,7 @@ update msg model =
                     )
 
         UserWantsToMoveNodeDown id ->
-            case Database.nextNodeBelow id model.database of
+            case Database.nextNode id model.database of
                 Just target ->
                     ( { model | database = Database.moveAfter target id model.database }
                     , FocusOnContent
