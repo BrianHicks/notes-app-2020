@@ -248,15 +248,7 @@ update msg model =
                     )
 
         UserWantsToMoveNodeDown id ->
-            case
-                Maybe.Extra.orListLazy
-                    [ \_ -> Database.nextSibling id model.database
-                    , \_ ->
-                        Database.get id model.database
-                            |> Maybe.andThen .parent
-                            |> Maybe.andThen (\parentId -> Database.nextSibling parentId model.database)
-                    ]
-            of
+            case Database.nextNodeBelow id model.database of
                 Just target ->
                     ( { model | database = Database.moveAfter target id model.database }
                     , FocusOnContent
