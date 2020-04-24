@@ -1,12 +1,12 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling
+    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNodeBelow
     , moveInto, moveBefore, moveAfter
     , ID, idFromInt, idToString
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling
+@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNodeBelow
 
 @docs moveInto, moveBefore, moveAfter
 
@@ -184,6 +184,18 @@ nextSibling id database =
                 in
                 helper Nothing children
             )
+
+
+nextNodeBelow : ID -> Database -> Maybe ID
+nextNodeBelow id database =
+    case nextSibling id database of
+        Just sibling ->
+            Just sibling
+
+        Nothing ->
+            get id database
+                |> Maybe.andThen .parent
+                |> Maybe.andThen (\parentId -> nextNodeBelow parentId database)
 
 
 detachChild : ID -> Database -> Database

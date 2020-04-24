@@ -216,6 +216,61 @@ databaseTest =
                         |> previousSibling second
                         |> Expect.equal (Just first)
             ]
+        , describe "finding a node below"
+            [ test "finds the next sibling, if one is present" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, database ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                    in
+                    database
+                        |> moveInto parent second
+                        |> moveInto parent first
+                        -----
+                        |> nextNodeBelow first
+                        |> Expect.equal (Just second)
+            , test "finds a parent's sibling if there are siblings" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, ( child, database ) ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "child"))))
+                    in
+                    database
+                        |> moveInto parent second
+                        |> moveInto parent first
+                        |> moveInto first child
+                        -----
+                        |> nextNodeBelow child
+                        |> Expect.equal (Just second)
+            , test "doesn't find anything if it's the only node" <|
+                \_ ->
+                    let
+                        ( parent, database ) =
+                            insert (Node.note "parent") empty
+                    in
+                    database
+                        |> nextNodeBelow parent
+                        |> Expect.equal Nothing
+            , test "doesn't find anything if it's the last node" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, database ) ) ) =
+                            insert (Node.note "parent") empty
+                                |> Tuple.mapSecond (insert (Node.note "first"))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note "second")))
+                    in
+                    database
+                        |> moveInto parent second
+                        |> moveInto parent first
+                        -----
+                        |> nextNodeBelow second
+                        |> Expect.equal Nothing
+            ]
         , describe "updating nodes"
             [ test "I can update a node's content" <|
                 \_ ->
