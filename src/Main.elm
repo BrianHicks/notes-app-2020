@@ -484,7 +484,7 @@ nodeInputKeydownHotkeys selection id node =
                                 , stopPropagation = True
                                 , preventDefault = True
                                 }
-                                
+
                         else if not shift && Maybe.map Selection.atEnd selection == Just True then
                             Decode.succeed
                                 { message = UserWantsToNavigateDown
