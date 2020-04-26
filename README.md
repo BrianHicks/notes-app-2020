@@ -85,6 +85,11 @@ Someday/maybe
 - [ ] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
 - [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
 
+### Notes to Self
+
+elm-rte-toolkit looks cool, and it may make sense to add it later, but don't go for the complexity now!
+Keep things simple as long as possible!
+
 ## Layout
 
 
