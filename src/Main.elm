@@ -377,7 +377,7 @@ viewNode model id =
 
                         -- , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
-                        , Attrs.value (Debug.log "what" <| Node.content node)
+                        , Attrs.value (Node.content node)
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys model.selection id node
