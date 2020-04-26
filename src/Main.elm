@@ -8,6 +8,7 @@ import Database exposing (Database)
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
+import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode exposing (Decoder)
 import Maybe.Extra
 import Node exposing (Node)
@@ -362,40 +363,51 @@ viewNode model id =
             let
                 tag =
                     if Node.isNote node then
-                        Html.section
+                        "section"
 
                     else
-                        Html.li
+                        "li"
             in
-            tag []
+            Keyed.node tag
+                []
                 [ if model.editing == Just id then
-                    Html.textarea
+                    ( "editing-" ++ Database.idToString id
+                    , Html.textarea
                         [ Attrs.attribute "aria-label" "Content"
-                        , Attrs.attribute "is" "note-input"
+
+                        -- , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
+                        , Attrs.value (Debug.log "what" <| Node.content node)
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys model.selection id node
                         , nodeInputSelectionChange
                         ]
-                        [ Html.text (Node.content node) ]
+                        []
+                    )
 
                   else if Node.isNote node then
-                    Html.button
+                    ( "note-" ++ Database.idToString id
+                    , Html.button
                         [ Events.onClick (UserWantsToEditNode id) ]
                         [ Html.h1 [] [ Html.text (Node.content node) ] ]
+                    )
 
                   else
-                    Html.button
+                    ( "node-" ++ Database.idToString id
+                    , Html.button
                         [ Events.onClick (UserWantsToEditNode id) ]
                         [ Html.text (Node.content node) ]
-                , if List.isEmpty children then
-                    Html.text ""
+                    )
+                , ( Database.idToString id ++ "-children"
+                  , if List.isEmpty children then
+                        Html.text ""
 
-                  else
-                    children
-                        |> List.map (viewNode model)
-                        |> Html.ul []
+                    else
+                        children
+                            |> List.map (viewNode model)
+                            |> Html.ul []
+                  )
                 ]
 
 
@@ -429,8 +441,8 @@ nodeInputKeydownHotkeys selection id node =
                     "Enter" ->
                         Decode.succeed
                             { message = UserHitEnterOnNode id
-                            , stopPropagation = False
-                            , preventDefault = False
+                            , stopPropagation = True
+                            , preventDefault = True
                             }
 
                     "Escape" ->
