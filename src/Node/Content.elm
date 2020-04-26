@@ -18,12 +18,27 @@ type Content
 
 fromString : String -> Result () Content
 fromString string =
-    Ok (Content [ Text string ])
+    if string == "" then
+        Ok (Content [])
+
+    else
+        Ok (Content [ Text string ])
 
 
 fromList : List Node -> Content
-fromList =
-    Content
+fromList nodes =
+    nodes
+        |> List.foldl
+            (\next prev ->
+                case ( next, prev ) of
+                    ( Text nextText, (Text prevText) :: rest ) ->
+                        Text (prevText ++ nextText) :: rest
+
+                    _ ->
+                        next :: prev
+            )
+            []
+        |> Content
 
 
 toString : Content -> String
