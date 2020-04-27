@@ -1,28 +1,26 @@
 module Node.Content exposing
     ( Content, fromList, fromString, toList, toString
-    , Node, text
+    , Node, text, noteLink
     )
 
 {-|
 
 @docs Content, fromList, fromString, toList, toString
 
-@docs Node, text
+@docs Node, text, noteLink
 
 -}
+
+import Parser exposing ((|.), (|=), Parser)
 
 
 type Content
     = Content (List Node)
 
 
-fromString : String -> Result () Content
-fromString string =
-    if string == "" then
-        Ok (Content [])
-
-    else
-        Ok (Content [ Text string ])
+fromString : String -> Result (List Parser.DeadEnd) Content
+fromString =
+    Parser.run (Parser.map Content parser)
 
 
 fromList : List Node -> Content
@@ -59,6 +57,7 @@ toList (Content guts) =
 
 type Node
     = Text String
+    | NoteLink String
 
 
 text : String -> Node
@@ -66,8 +65,73 @@ text =
     Text
 
 
+noteLink : String -> Node
+noteLink =
+    NoteLink
+
+
 nodeToString : Node -> String
 nodeToString node =
     case node of
         Text text_ ->
             text_
+
+        NoteLink name ->
+            "[[" ++ name ++ "]]"
+
+
+parser : Parser (List Node)
+parser =
+    Parser.loop [] nodesParser
+
+
+nodesParser : List Node -> Parser (Parser.Step (List Node) (List Node))
+nodesParser soFar =
+    Parser.oneOf
+        [ Parser.succeed (\_ -> Parser.Done (List.reverse soFar))
+            |= Parser.end
+        , Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
+        , Parser.succeed (\text_ -> Parser.Loop (Text text_ :: soFar))
+            |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '['))
+        ]
+
+
+noteLinkParser : Parser Node
+noteLinkParser =
+    Parser.andThen
+        (\parsed ->
+            case parsed of
+                Ok contents ->
+                    Parser.succeed (NoteLink contents)
+
+                Err err ->
+                    Parser.problem err
+        )
+        noteLinkContentsParser
+
+
+noteLinkContentsParser : Parser (Result String String)
+noteLinkContentsParser =
+    Parser.succeed identity
+        |. Parser.symbol "[["
+        |= Parser.loop []
+            (\soFar ->
+                Parser.oneOf
+                    [ Parser.succeed
+                        (\sub ->
+                            case sub of
+                                Ok subContents ->
+                                    Parser.Loop (("[[" ++ subContents ++ "]]") :: soFar)
+
+                                Err err ->
+                                    Parser.Done sub
+                        )
+                        |= Parser.lazy (\_ -> noteLinkContentsParser)
+                    , Parser.succeed (\_ -> Parser.Done (Ok (String.concat (List.reverse soFar))))
+                        |= Parser.symbol "]]"
+                    , Parser.succeed (\_ -> Parser.Done (Err "newlines are not allowed in note links"))
+                        |= Parser.token "\n"
+                    , Parser.succeed (\text_ -> Parser.Loop (text_ :: soFar))
+                        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '[' && c /= ']' && c /= '\n'))
+                    ]
+            )

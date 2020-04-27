@@ -28,6 +28,27 @@ contentTest =
                         |> toString
                         |> Expect.equal "Hey there!"
             ]
+        , describe "note links"
+            [ test "look like [[bracketed text]]" <|
+                \_ ->
+                    fromList [ noteLink "Note Title" ]
+                        |> toString
+                        |> Expect.equal "[[Note Title]]"
+            , test "is retrievable from a string" <|
+                \_ ->
+                    fromString "[[Note Title]]"
+                        |> Result.map toList
+                        |> Expect.equal (Ok [ noteLink "Note Title" ])
+            , test "can be nested" <|
+                \_ ->
+                    fromString "[[before [[nesting]] after]]"
+                        |> Result.map toList
+                        |> Expect.equal (Ok [ noteLink "before [[nesting]] after" ])
+            , test "cannot contain newlines" <|
+                \_ ->
+                    fromString "[[\n]]"
+                        |> Expect.err
+            ]
         , fuzz contentFuzzer "toString and fromString roundtrip successfully" <|
             \content -> content |> toString |> fromString |> Expect.equal (Ok content)
         ]
@@ -40,7 +61,9 @@ contentTest =
 contentFuzzer : Fuzzer Content
 contentFuzzer =
     Fuzz.oneOf
-        [ Fuzz.map text simpleStringFuzzer ]
+        [ Fuzz.map text simpleStringFuzzer
+        , Fuzz.constant (noteLink "Note")
+        ]
         |> nonEmptyShortList
         |> Fuzz.map fromList
 
