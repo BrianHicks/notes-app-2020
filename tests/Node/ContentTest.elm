@@ -49,6 +49,13 @@ contentTest =
                     fromString "[[\n]]"
                         |> Expect.err
             ]
+        , describe "external links"
+            [ test "look like [markdown links](https://www.google.com)" <|
+                \_ ->
+                    fromString "[markdown links](https://www.google.com)"
+                        |> Result.map toList
+                        |> Expect.equal (Ok [ link { text = "markdown links", href = "https://www.google.com" } ])
+            ]
         , fuzz contentFuzzer "toString and fromString roundtrip successfully" <|
             \content -> content |> toString |> fromString |> Expect.equal (Ok content)
         ]
@@ -62,7 +69,8 @@ contentFuzzer : Fuzzer Content
 contentFuzzer =
     Fuzz.oneOf
         [ Fuzz.map text simpleStringFuzzer
-        , Fuzz.constant (noteLink "Note")
+        , Fuzz.map noteLink simpleStringFuzzer
+        , Fuzz.map2 (\text_ href -> link { text = text_, href = href }) simpleStringFuzzer simpleStringFuzzer
         ]
         |> nonEmptyShortList
         |> Fuzz.map fromList
@@ -72,8 +80,8 @@ simpleStringFuzzer : Fuzzer String
 simpleStringFuzzer =
     Fuzz.oneOf
         [ Fuzz.constant "a"
+        , Fuzz.constant "b"
         , Fuzz.constant " "
-        , Fuzz.constant "\n"
         ]
         |> nonEmptyShortList
         |> Fuzz.map String.concat

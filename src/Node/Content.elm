@@ -1,6 +1,7 @@
 module Node.Content exposing
     ( Content, fromList, fromString, toList, toString
     , Node, text, noteLink
+    , link
     )
 
 {-|
@@ -58,6 +59,7 @@ toList (Content guts) =
 type Node
     = Text String
     | NoteLink String
+    | Link { text : String, href : String }
 
 
 text : String -> Node
@@ -70,6 +72,11 @@ noteLink =
     NoteLink
 
 
+link : { text : String, href : String } -> Node
+link =
+    Link
+
+
 nodeToString : Node -> String
 nodeToString node =
     case node of
@@ -78,6 +85,9 @@ nodeToString node =
 
         NoteLink name ->
             "[[" ++ name ++ "]]"
+
+        Link guts ->
+            "[" ++ guts.text ++ "](" ++ guts.href ++ ")"
 
 
 parser : Parser (List Node)
@@ -91,6 +101,7 @@ nodesParser soFar =
         [ Parser.succeed (\_ -> Parser.Done (List.reverse soFar))
             |= Parser.end
         , Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
+        , Parser.map (\node -> Parser.Loop (node :: soFar)) linkParser
         , Parser.succeed (\text_ -> Parser.Loop (Text text_ :: soFar))
             |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '['))
         ]
@@ -135,3 +146,13 @@ noteLinkContentsParser =
                         |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '[' && c /= ']' && c /= '\n'))
                     ]
             )
+
+
+linkParser : Parser Node
+linkParser =
+    Parser.succeed (\text_ href -> Link { text = text_, href = href })
+        |. Parser.symbol "["
+        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= ']'))
+        |. Parser.symbol "]("
+        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= ')'))
+        |. Parser.symbol ")"
