@@ -1,11 +1,11 @@
 module Node.Content exposing
-    ( Content, fromList, fromString, toList, toString
+    ( Content, fromList, fromString, toList, toString, isEmpty
     , Node, text, noteLink, link
     )
 
 {-|
 
-@docs Content, fromList, fromString, toList, toString
+@docs Content, fromList, fromString, toList, toString, isEmpty
 
 @docs Node, text, noteLink, link
 
@@ -49,6 +49,11 @@ toString (Content nodes) =
 toList : Content -> List Node
 toList (Content guts) =
     guts
+
+
+isEmpty : Content -> Bool
+isEmpty (Content guts) =
+    List.isEmpty guts
 
 
 
