@@ -292,7 +292,7 @@ deadEndToString { row, col, problem, contextStack } =
                     "text"
 
                 ParsingNoteLink ->
-                    "a note link"
+                    "a [[note link]]"
 
                 ParsingLink ->
                     "a link"

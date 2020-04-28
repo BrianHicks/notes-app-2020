@@ -60,7 +60,7 @@ contentTest =
                 [ test "cannot contain newlines" <|
                     \_ ->
                         fromString "[[\n]]"
-                            |> Expect.equal (Err [ "While parsing a note link, I was expecting no new line" ])
+                            |> Expect.equal (Err [ "While parsing a [[note link]], I was expecting no new line" ])
                 ]
             ]
         , describe "external links"
