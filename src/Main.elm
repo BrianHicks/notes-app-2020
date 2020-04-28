@@ -388,8 +388,7 @@ viewNode model id =
                     ( "editing-" ++ Database.idToString id
                     , Html.textarea
                         [ Attrs.attribute "aria-label" "Content"
-
-                        -- , Attrs.attribute "is" "note-input"
+                        , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
                         , Node.content node |> Content.toString |> Attrs.value
                         , Events.onInput UserEditedNode
