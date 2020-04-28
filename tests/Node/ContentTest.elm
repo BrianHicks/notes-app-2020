@@ -12,7 +12,7 @@ contentTest =
         [ describe "isEmpty"
             [ test "is true for an empty content" <|
                 \_ ->
-                    fromList []
+                    empty
                         |> isEmpty
                         |> Expect.equal True
             , test "is not true for a non-empty content" <|

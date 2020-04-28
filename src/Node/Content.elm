@@ -1,11 +1,11 @@
 module Node.Content exposing
-    ( Content, fromList, fromString, toList, toString, isEmpty
+    ( Content, empty, fromList, fromString, toList, toString, isEmpty
     , Node, text, noteLink, link
     )
 
 {-|
 
-@docs Content, fromList, fromString, toList, toString, isEmpty
+@docs Content, empty, fromList, fromString, toList, toString, isEmpty
 
 @docs Node, text, noteLink, link
 
@@ -21,6 +21,11 @@ type Content
 fromString : String -> Result (List Parser.DeadEnd) Content
 fromString =
     Parser.run (Parser.map Content parser)
+
+
+empty : Content
+empty =
+    Content []
 
 
 fromList : List Node -> Content
