@@ -13,7 +13,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Maybe.Extra
 import Node exposing (Node)
 import Node.Content as Content
-import Parser
 import Route exposing (Route)
 import Selection exposing (Selection)
 import Sort
@@ -31,7 +30,7 @@ type alias Model key =
 
     -- view state
     , editing : Maybe Database.ID
-    , temporarilyInvalidNodeInput : Maybe ( String, List Parser.DeadEnd )
+    , temporarilyInvalidNodeInput : Maybe ( String, List String )
     , selection : Maybe Selection
     }
 
@@ -390,7 +389,12 @@ viewNode model id =
                         [ Attrs.attribute "aria-label" "Content"
                         , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
-                        , Node.content node |> Content.toString |> Attrs.value
+                        , case model.temporarilyInvalidNodeInput of
+                            Just ( invalidInput, _ ) ->
+                                Attrs.value invalidInput
+
+                            Nothing ->
+                                Node.content node |> Content.toString |> Attrs.value
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys model.selection id node
@@ -412,6 +416,14 @@ viewNode model id =
                         [ Events.onClick (UserWantsToEditNode id) ]
                         [ Content.toHtml (Node.content node) ]
                     )
+                , ( Database.idToString id ++ "-error"
+                  , case model.temporarilyInvalidNodeInput of
+                        Just ( _, error ) ->
+                            Html.ul [] (List.map (\err -> Html.li [] [ Html.text err ]) error)
+
+                        Nothing ->
+                            Html.text ""
+                  )
                 , ( Database.idToString id ++ "-children"
                   , if List.isEmpty children then
                         Html.text ""

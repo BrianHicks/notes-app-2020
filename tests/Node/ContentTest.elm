@@ -56,10 +56,12 @@ contentTest =
                     fromString "[[before [[nesting]] after]]"
                         |> Result.map toList
                         |> Expect.equal (Ok [ noteLink "before [[nesting]] after" ])
-            , test "cannot contain newlines" <|
-                \_ ->
-                    fromString "[[\n]]"
-                        |> Expect.err
+            , describe "have reasonable error messages"
+                [ test "cannot contain newlines" <|
+                    \_ ->
+                        fromString "[[\n]]"
+                            |> Expect.equal (Err [ "While parsing a note link, I was expecting no new line" ])
+                ]
             ]
         , describe "external links"
             [ test "look like [markdown links](https://www.google.com)" <|

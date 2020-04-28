@@ -13,16 +13,17 @@ module Node.Content exposing
 
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs
-import Parser exposing ((|.), (|=), Parser)
+import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
 
 
 type Content
     = Content (List Node)
 
 
-fromString : String -> Result (List Parser.DeadEnd) Content
+fromString : String -> Result (List String) Content
 fromString =
     Parser.run (Parser.map Content parser)
+        >> Result.mapError (List.map deadEndToString)
 
 
 empty : Content
@@ -74,8 +75,11 @@ isEmpty (Content guts) =
 
 type Node
     = Text String
-    | NoteLink String
-    | Link { text : String, href : String }
+    | NoteLink String -- TODO: List Node
+    | Link
+        { text : String -- TODO: List Node
+        , href : String
+        }
 
 
 text : String -> Node
@@ -119,6 +123,39 @@ nodeToHtml node =
             Html.a [ Attrs.href guts.href ] [ Html.text guts.text ]
 
 
+
+-- PARSER
+
+
+type alias Parser a =
+    Parser.Parser Context Problem a
+
+
+type Context
+    = ParsingText
+    | ParsingNoteLink
+    | ParsingLink
+
+
+type Problem
+    = ExpectingEndOfContent
+    | ExpectingNewline
+    | ExpectingNoNewline
+    | -- text
+      ExpectingText
+      -- note link
+    | ExpectingStartOfNoteLink
+    | ExpectingNoteLinkText
+    | ExpectingEndOfNoteLink
+      -- link
+    | ExpectingStartOfLink
+    | ExpectingLinkText
+    | ExpectingEndOfLinkText
+    | ExpectingStartOfLinkHref
+    | ExpectingLinkHref
+    | ExpectingEndOfLinkHref
+
+
 parser : Parser (List Node)
 parser =
     Parser.loop [] nodesParser
@@ -128,32 +165,57 @@ nodesParser : List Node -> Parser (Parser.Step (List Node) (List Node))
 nodesParser soFar =
     Parser.oneOf
         [ Parser.succeed (\_ -> Parser.Done (List.reverse soFar))
-            |= Parser.end
+            |= Parser.end ExpectingEndOfContent
         , Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
         , Parser.map (\node -> Parser.Loop (node :: soFar)) linkParser
-        , Parser.succeed (\text_ -> Parser.Loop (Text text_ :: soFar))
-            |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '['))
+        , Parser.map (\node -> Parser.Loop (node :: soFar)) textParser
         ]
+
+
+
+-- text
+
+
+textParser : Parser Node
+textParser =
+    Parser.succeed Text
+        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[') ExpectingText)
+        |> Parser.inContext ParsingText
+
+
+
+-- note links
+
+
+noteLinkStart : Token Problem
+noteLinkStart =
+    Token "[[" ExpectingStartOfNoteLink
+
+
+noteLinkEnd : Token Problem
+noteLinkEnd =
+    Token "]]" ExpectingEndOfNoteLink
 
 
 noteLinkParser : Parser Node
 noteLinkParser =
-    Parser.andThen
-        (\parsed ->
-            case parsed of
-                Ok contents ->
-                    Parser.succeed (NoteLink contents)
+    noteLinkContentsParser
+        |> Parser.andThen
+            (\parsed ->
+                case parsed of
+                    Ok contents ->
+                        Parser.succeed (NoteLink contents)
 
-                Err err ->
-                    Parser.problem err
-        )
-        noteLinkContentsParser
+                    Err err ->
+                        Parser.problem err
+            )
+        |> Parser.inContext ParsingNoteLink
 
 
-noteLinkContentsParser : Parser (Result String String)
+noteLinkContentsParser : Parser (Result Problem String)
 noteLinkContentsParser =
     Parser.succeed identity
-        |. Parser.symbol "[["
+        |. Parser.symbol noteLinkStart
         |= Parser.loop []
             (\soFar ->
                 Parser.oneOf
@@ -168,20 +230,137 @@ noteLinkContentsParser =
                         )
                         |= Parser.lazy (\_ -> noteLinkContentsParser)
                     , Parser.succeed (\_ -> Parser.Done (Ok (String.concat (List.reverse soFar))))
-                        |= Parser.symbol "]]"
-                    , Parser.succeed (\_ -> Parser.Done (Err "newlines are not allowed in note links"))
-                        |= Parser.token "\n"
+                        |= Parser.symbol noteLinkEnd
+                    , Parser.succeed (\_ -> Parser.Done (Err ExpectingNoNewline))
+                        |= Parser.symbol newline
                     , Parser.succeed (\text_ -> Parser.Loop (text_ :: soFar))
-                        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= '[' && c /= ']' && c /= '\n'))
+                        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[' && c /= ']' && c /= '\n') ExpectingNoteLinkText)
                     ]
             )
+
+
+
+-- links
+
+
+linkStart : Token Problem
+linkStart =
+    Token "[" ExpectingStartOfLink
+
+
+linkTextClose : Token Problem
+linkTextClose =
+    Token "]" ExpectingEndOfLinkText
+
+
+linkHrefOpen : Token Problem
+linkHrefOpen =
+    Token "(" ExpectingStartOfLinkHref
+
+
+linkHrefClose : Token Problem
+linkHrefClose =
+    Token ")" ExpectingEndOfLinkHref
 
 
 linkParser : Parser Node
 linkParser =
     Parser.succeed (\text_ href -> Link { text = text_, href = href })
-        |. Parser.symbol "["
-        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= ']'))
-        |. Parser.symbol "]("
-        |= Parser.getChompedString (Parser.chompWhile (\c -> c /= ')'))
-        |. Parser.symbol ")"
+        |. Parser.symbol linkStart
+        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= ']') ExpectingLinkText)
+        |. Parser.symbol linkTextClose
+        |. Parser.symbol linkHrefOpen
+        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= ')') ExpectingLinkHref)
+        |. Parser.symbol linkHrefClose
+        |> Parser.inContext ParsingLink
+
+
+
+-- dead ends
+
+
+type alias DeadEnd =
+    Parser.DeadEnd Context Problem
+
+
+deadEndToString : DeadEnd -> String
+deadEndToString { row, col, problem, contextStack } =
+    let
+        contextToString context_ =
+            case context_ of
+                ParsingText ->
+                    "text"
+
+                ParsingNoteLink ->
+                    "a note link"
+
+                ParsingLink ->
+                    "a link"
+
+        context =
+            case List.map (.context >> contextToString) contextStack of
+                [] ->
+                    ""
+
+                contextItems ->
+                    "While parsing " ++ String.join " in a " contextItems ++ ", "
+
+        expecting =
+            case problem of
+                ExpectingEndOfContent ->
+                    "the end of the content string"
+
+                ExpectingNewline ->
+                    "a new line"
+
+                ExpectingNoNewline ->
+                    "no new line"
+
+                -- text
+                ExpectingText ->
+                    "some text"
+
+                -- note link
+                ExpectingStartOfNoteLink ->
+                    "the opening brackets of a [[note link]]"
+
+                ExpectingNoteLinkText ->
+                    "the text inside a [[note link]]"
+
+                ExpectingEndOfNoteLink ->
+                    "the closing brackets of a [[note link]]"
+
+                -- link
+                ExpectingStartOfLink ->
+                    "the opening '[' of a [link](url)"
+
+                ExpectingLinkText ->
+                    "the 'link' part of a [link](url)"
+
+                ExpectingEndOfLinkText ->
+                    "the closing ']' of a [link](url)"
+
+                ExpectingStartOfLinkHref ->
+                    "the opening '(' of a [link](url)"
+
+                ExpectingLinkHref ->
+                    "the 'href' part of a [link](url)"
+
+                ExpectingEndOfLinkHref ->
+                    "the closing ')' of a [link](url)"
+    in
+    context ++ "I was expecting " ++ expecting
+
+
+
+-- parser utilities
+
+
+newline : Token Problem
+newline =
+    Token "\n" ExpectingNewline
+
+
+chompAtLeastOne : (Char -> Bool) -> Problem -> Parser ()
+chompAtLeastOne cond problem =
+    Parser.chompIf cond problem |. Parser.chompWhile cond
