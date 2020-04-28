@@ -1,14 +1,13 @@
 module Node.Content exposing
     ( Content, fromList, fromString, toList, toString
-    , Node, text, noteLink
-    , link
+    , Node, text, noteLink, link
     )
 
 {-|
 
 @docs Content, fromList, fromString, toList, toString
 
-@docs Node, text, noteLink
+@docs Node, text, noteLink, link
 
 -}
 
