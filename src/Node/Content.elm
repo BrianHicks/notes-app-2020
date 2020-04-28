@@ -1,16 +1,18 @@
 module Node.Content exposing
-    ( Content, empty, fromList, fromString, toList, toString, isEmpty
+    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty
     , Node, text, noteLink, link
     )
 
 {-|
 
-@docs Content, empty, fromList, fromString, toList, toString, isEmpty
+@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty
 
 @docs Node, text, noteLink, link
 
 -}
 
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes as Attrs
 import Parser exposing ((|.), (|=), Parser)
 
 
@@ -56,6 +58,11 @@ toList (Content guts) =
     guts
 
 
+toHtml : Content -> Html msg
+toHtml (Content guts) =
+    Html.div [] (List.map nodeToHtml guts)
+
+
 isEmpty : Content -> Bool
 isEmpty (Content guts) =
     List.isEmpty guts
@@ -97,6 +104,19 @@ nodeToString node =
 
         Link guts ->
             "[" ++ guts.text ++ "](" ++ guts.href ++ ")"
+
+
+nodeToHtml : Node -> Html msg
+nodeToHtml node =
+    case node of
+        Text text_ ->
+            Html.text text_
+
+        NoteLink name ->
+            Html.a [] [ Html.text name ]
+
+        Link guts ->
+            Html.a [ Attrs.href guts.href ] [ Html.text guts.text ]
 
 
 parser : Parser (List Node)
