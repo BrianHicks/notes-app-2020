@@ -120,7 +120,11 @@ nodeToHtml node =
             Html.a [] [ Html.text name ]
 
         Link guts ->
-            Html.a [ Attrs.href guts.href ] [ Html.text guts.text ]
+            Html.a [ Attrs.href guts.href ]
+                [ Html.span [] [ Html.text "[[" ]
+                , Html.text guts.text
+                , Html.span [] [ Html.text "]]" ]
+                ]
 
 
 
