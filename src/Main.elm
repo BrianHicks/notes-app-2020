@@ -12,6 +12,8 @@ import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode exposing (Decoder)
 import Maybe.Extra
 import Node exposing (Node)
+import Node.Content as Content
+import Parser
 import Route exposing (Route)
 import Selection exposing (Selection)
 import Sort
@@ -29,6 +31,7 @@ type alias Model key =
 
     -- view state
     , editing : Maybe Database.ID
+    , temporarilyInvalidNodeInput : Maybe ( String, List Parser.DeadEnd )
     , selection : Maybe Selection
     }
 
@@ -70,6 +73,7 @@ init flags url key =
 
       -- view state
       , editing = Nothing
+      , temporarilyInvalidNodeInput = Nothing
       , selection = Nothing
       }
     , NoEffect
@@ -93,7 +97,7 @@ update msg model =
         ClickedNewNote ->
             let
                 ( id, database ) =
-                    Database.insert (Node.note "") model.database
+                    Database.insert (Node.note Content.empty) model.database
             in
             ( { model
                 | database = database
@@ -116,9 +120,19 @@ update msg model =
         UserEditedNode content ->
             case model.editing of
                 Just id ->
-                    ( { model | database = Database.update id (Node.setContent content) model.database }
-                    , NoEffect
-                    )
+                    case Content.fromString content of
+                        Ok good ->
+                            ( { model
+                                | database = Database.update id (Node.setContent good) model.database
+                                , temporarilyInvalidNodeInput = Nothing
+                              }
+                            , NoEffect
+                            )
+
+                        Err problems ->
+                            ( { model | temporarilyInvalidNodeInput = Just ( content, problems ) }
+                            , NoEffect
+                            )
 
                 Nothing ->
                     ( model, NoEffect )
@@ -148,7 +162,7 @@ update msg model =
         UserHitEnterOnNode id ->
             let
                 ( newId, database ) =
-                    Database.insert (Node.node "") model.database
+                    Database.insert (Node.node Content.empty) model.database
             in
             case Database.get id model.database |> Maybe.map (Node.isNote << .node) of
                 Just True ->
@@ -332,7 +346,7 @@ viewApplication model =
                         -- TODO: trigger on space and enter
                         -- TODO: put this in the tabbing order
                         ]
-                        [ Html.text (Node.content node) ]
+                        [ Content.toHtml (Node.content node) ]
                 )
             |> Html.ul []
             |> List.singleton
@@ -377,7 +391,7 @@ viewNode model id =
 
                         -- , Attrs.attribute "is" "note-input"
                         , Attrs.id "content"
-                        , Attrs.value (Node.content node)
+                        , Node.content node |> Content.toString |> Attrs.value
                         , Events.onInput UserEditedNode
                         , Events.onBlur UserFinishedEditingNode
                         , nodeInputKeydownHotkeys model.selection id node
@@ -390,14 +404,14 @@ viewNode model id =
                     ( "note-" ++ Database.idToString id
                     , Html.button
                         [ Events.onClick (UserWantsToEditNode id) ]
-                        [ Html.h1 [] [ Html.text (Node.content node) ] ]
+                        [ Html.h1 [] [ Content.toHtml (Node.content node) ] ]
                     )
 
                   else
                     ( "node-" ++ Database.idToString id
                     , Html.button
                         [ Events.onClick (UserWantsToEditNode id) ]
-                        [ Html.text (Node.content node) ]
+                        [ Content.toHtml (Node.content node) ]
                     )
                 , ( Database.idToString id ++ "-children"
                   , if List.isEmpty children then

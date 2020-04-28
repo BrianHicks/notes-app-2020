@@ -14,15 +14,17 @@ module Node exposing
 
 -}
 
+import Node.Content as Content exposing (Content)
+
 
 type Node
     = Node
         { metadata : Maybe Metadata
-        , content : String
+        , content : Content
         }
 
 
-note : String -> Node
+note : Content -> Node
 note content_ =
     Node
         { metadata = Just Note
@@ -30,7 +32,7 @@ note content_ =
         }
 
 
-node : String -> Node
+node : Content -> Node
 node content_ =
     Node
         { metadata = Nothing
@@ -38,17 +40,17 @@ node content_ =
         }
 
 
-content : Node -> String
+content : Node -> Content
 content (Node guts) =
     guts.content
 
 
 isEmpty : Node -> Bool
 isEmpty (Node guts) =
-    String.isEmpty guts.content
+    Content.isEmpty guts.content
 
 
-setContent : String -> Node -> Node
+setContent : Content -> Node -> Node
 setContent content_ (Node guts) =
     Node { guts | content = content_ }
 
