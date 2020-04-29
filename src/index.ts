@@ -17,6 +17,10 @@ class NoteInput extends HTMLTextAreaElement {
 
 customElements.define('note-input', NoteInput, { extends: 'textarea' });
 
+// storage
+import PouchDB from 'pouchdb';
+var db = new PouchDB('http://localhost:5984/notes');
+
 // go!
 import { Elm } from './Main.elm'
 Elm.Main.init()
