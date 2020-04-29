@@ -85,6 +85,16 @@ Someday/maybe
 - [ ] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
 - [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
 
+### The Plan for Storage
+
+I want stored notes to eventually sync like a CRDT so I can learn how to do that.
+That means, probably:
+
+- a hybrid logical clock for timestamps
+- a LWW-map for modifying attributes
+
+For now I'm *not* going to implement P2P stuff like a Merkle DAG or whatever; I'll probably just sync with something off the shelf like pouchdb/couchdb.
+
 ### Notes to Self
 
 elm-rte-toolkit looks cool, and it may make sense to add it later, but don't go for the complexity now!
