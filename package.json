@@ -17,6 +17,7 @@
     "elm-hot": "^1.1.4",
     "node-elm-compiler": "^5.0.4",
     "parcel-bundler": "^1.12.4",
+    "pouchdb-server": "^4.2.0",
     "typescript": "^3.8.3"
   },
   "dependencies": {

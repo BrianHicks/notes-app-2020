@@ -1,4 +1,8 @@
 /.cache
+/_replicator
+/_users
 /dist
 /elm-stuff
+/log.txt
 /node_modules
+/pouch__all_dbs__
