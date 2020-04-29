@@ -87,13 +87,14 @@ Someday/maybe
 
 ### The Plan for Storage
 
-I want stored notes to eventually sync like a CRDT so I can learn how to do that.
+I want stored notes to eventually sync like a CRDT so I can learn how to do that, and so as to avoid conflicts.
 That means, probably:
 
 - a hybrid logical clock for timestamps
 - a LWW-map for modifying attributes
 
 For now I'm *not* going to implement P2P stuff like a Merkle DAG or whatever; I'll probably just sync with something off the shelf like pouchdb/couchdb.
+Maybe sometime in the future I could move to a P2P backend, but let's start a little simpler.
 
 ### Notes to Self
 
