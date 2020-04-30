@@ -1,10 +1,6 @@
 module Database.Timestamp exposing
-    ( Generator, init, Problem(..), problemToString
-    , sendAt, receiveAt
-    , Timestamp, compare
-    , toString
-    , fromString, fromComponents, ParsingProblem(..), parsingProblemToString
-    , encode, decoder
+    ( Generator, generator, Problem(..), problemToString, sendAt, receiveAt
+    , Timestamp, init, compare, toString, fromString, ParsingProblem(..), parsingProblemToString, encode, decoder
     )
 
 {-| An implementation of [Hybrid Logical Clocks][hlc]
@@ -14,23 +10,12 @@ module Database.Timestamp exposing
 
 # Generator
 
-@docs Generator, init, Problem, problemToString
-
-@docs sendAt, receiveAt
+@docs Generator, generator, Problem, problemToString, sendAt, receiveAt
 
 
 ## Timestamp
 
-@docs Timestamp, compare
-
-
-### Interop
-
-@docs toString
-
-@docs fromString, fromComponents, ParsingProblem, parsingProblemToString
-
-@docs encode, decoder
+@docs Timestamp, init, compare, toString, fromString, ParsingProblem, parsingProblemToString, encode, decoder
 
 -}
 
@@ -39,6 +24,10 @@ import Iso8601
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
 import Time exposing (Posix)
+
+
+
+-- GENERATOR
 
 
 type alias Options =
@@ -59,20 +48,12 @@ type Generator
         }
 
 
-type Timestamp
-    = Timestamp
-        { millis : Int
-        , counter : Int
-        , node : Int
-        }
-
-
 {-| Create a timestamp generator given a number to use for this device's
 ID. This number should be under 16^16, but practically it doesn't matter
 since the biggest `Number` value JS can deal with is 2^53-1.
 -}
-init : Int -> Generator
-init rawNode =
+generator : Int -> Generator
+generator rawNode =
     let
         node =
             abs rawNode
@@ -83,21 +64,6 @@ init rawNode =
         , counter = 0
         , node = node
         }
-
-
-compare : Timestamp -> Timestamp -> Basics.Order
-compare (Timestamp left) (Timestamp right) =
-    case Basics.compare left.millis right.millis of
-        EQ ->
-            case Basics.compare left.counter right.counter of
-                EQ ->
-                    Basics.compare left.node right.node
-
-                otherwise ->
-                    otherwise
-
-        otherwise ->
-            otherwise
 
 
 type Problem
@@ -131,10 +97,6 @@ problemToString problem =
 
         DuplicateNode got ->
             "I got a duplicate node ID: " ++ String.fromInt got
-
-
-
--- OPERATIONS
 
 
 sendAt : Posix -> Generator -> Result Problem ( Generator, Timestamp )
@@ -246,26 +208,19 @@ receiveAt phys (Generator local) (Timestamp remote) =
 
 
 
--- STRING FORM
+-- TIMESTAMP
 
 
-toString : Timestamp -> String
-toString (Timestamp timestamp) =
-    String.join "-"
-        [ timestamp.millis
-            |> Time.millisToPosix
-            |> Iso8601.fromTime
-        , Hex.toString timestamp.counter
-            |> String.padLeft maxCounterHexes '0'
-            |> String.right maxCounterHexes
-        , Hex.toString timestamp.node
-            |> String.padLeft maxNodeHexes '0'
-            |> String.right maxNodeHexes
-        ]
+type Timestamp
+    = Timestamp
+        { millis : Int
+        , counter : Int
+        , node : Int
+        }
 
 
-fromComponents : { millis : Int, counter : Int, node : Int } -> Result Problem Timestamp
-fromComponents { millis, counter, node } =
+init : { millis : Int, counter : Int, node : Int } -> Result Problem Timestamp
+init { millis, counter, node } =
     if counter > maxCounterSize then
         Err
             (CounterTooHigh
@@ -288,6 +243,28 @@ fromComponents { millis, counter, node } =
             , counter = counter
             , node = node
             }
+
+
+compare : Timestamp -> Timestamp -> Basics.Order
+compare (Timestamp left) (Timestamp right) =
+    Basics.compare
+        ( left.millis, left.counter, left.node )
+        ( right.millis, right.counter, right.node )
+
+
+toString : Timestamp -> String
+toString (Timestamp timestamp) =
+    String.join "-"
+        [ timestamp.millis
+            |> Time.millisToPosix
+            |> Iso8601.fromTime
+        , Hex.toString timestamp.counter
+            |> String.padLeft maxCounterHexes '0'
+            |> String.right maxCounterHexes
+        , Hex.toString timestamp.node
+            |> String.padLeft maxNodeHexes '0'
+            |> String.right maxNodeHexes
+        ]
 
 
 {-| TODO: this would be better as a real parser!
@@ -319,7 +296,7 @@ fromString string =
                     , counter = counter
                     , node = node
                     }
-                        |> fromComponents
+                        |> init
                         |> Result.mapError SemanticProblem
 
                 ( Err err, _, _ ) ->
