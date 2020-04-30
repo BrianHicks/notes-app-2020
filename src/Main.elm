@@ -13,6 +13,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Maybe.Extra
 import Node exposing (Node)
 import Node.Content as Content
+import Random
 import Route exposing (Route)
 import Selection exposing (Selection)
 import Sort
@@ -65,7 +66,7 @@ type Effect
 
 init : () -> Url -> key -> ( Model key, Effect )
 init flags url key =
-    ( { database = Database.empty
+    ( { database = Database.empty (Random.initialSeed 0) -- TODO: current time or something
       , url = url
       , key = key
       , route = Route.parse url

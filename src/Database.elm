@@ -1,7 +1,7 @@
 module Database exposing
     ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
-    , ID, idFromInt, idToString
+    , ID, idFromInt, idFromString, idToString
     )
 
 {-|
@@ -10,13 +10,14 @@ module Database exposing
 
 @docs moveInto, moveBefore, moveAfter
 
-@docs ID, idFromInt, idToString
+@docs ID, idFromInt, idFromString, idToString
 
 -}
 
-import Array exposing (Array)
-import Array.Extra
+import Dict exposing (Dict)
 import Node exposing (Node)
+import Random
+import UUID exposing (UUID)
 
 
 
@@ -26,46 +27,46 @@ import Node exposing (Node)
 type Database
     = Database
         { nodes :
-            Array
-                (Maybe
-                    { id : ID
-                    , node : Node
-                    , parent : Maybe ID
-                    , children : List ID
-                    }
-                )
-        , nextID : ID
+            Dict String
+                { id : ID
+                , node : Node
+                , parent : Maybe ID
+                , children : List ID
+                }
+        , seed : Random.Seed
         }
 
 
-empty : Database
-empty =
+empty : Random.Seed -> Database
+empty seed =
     Database
-        { nodes = Array.empty
-        , nextID = ID 0
+        { nodes = Dict.empty
+        , seed = seed
         }
 
 
 isEmpty : Database -> Bool
 isEmpty (Database database) =
-    Array.isEmpty database.nodes
+    Dict.isEmpty database.nodes
 
 
 insert : Node -> Database -> ( ID, Database )
 insert node (Database database) =
-    ( database.nextID
+    let
+        ( id, seed ) =
+            Random.step (Random.map ID UUID.generator) database.seed
+    in
+    ( id
     , Database
         { nodes =
-            Array.push
-                (Just
-                    { id = database.nextID
-                    , node = node
-                    , parent = Nothing
-                    , children = []
-                    }
-                )
+            Dict.insert (idToString id)
+                { id = id
+                , node = node
+                , parent = Nothing
+                , children = []
+                }
                 database.nodes
-        , nextID = nextID database.nextID
+        , seed = seed
         }
     )
 
@@ -78,8 +79,8 @@ delete ((ID id) as toDelete) ((Database database) as db) =
                 withParentHandled =
                     case node.parent of
                         Just (ID parentID) ->
-                            Array.Extra.update
-                                parentID
+                            Dict.update
+                                (UUID.toString parentID)
                                 (Maybe.map (\parent -> { parent | children = List.filter ((/=) toDelete) parent.children }))
                                 database.nodes
 
@@ -87,7 +88,7 @@ delete ((ID id) as toDelete) ((Database database) as db) =
                             database.nodes
             in
             Database
-                { database | nodes = Array.set id Nothing withParentHandled }
+                { database | nodes = Dict.remove (UUID.toString id) withParentHandled }
 
         Nothing ->
             db
@@ -204,12 +205,11 @@ detachChild ((ID childID) as child) (Database database) =
         { database
             | nodes =
                 database.nodes
-                    |> Array.get childID
-                    |> Maybe.andThen identity
+                    |> Dict.get (UUID.toString childID)
                     |> Maybe.andThen .parent
                     |> Maybe.map
                         (\(ID oldParentID) ->
-                            Array.Extra.update oldParentID
+                            Dict.update (UUID.toString oldParentID)
                                 (Maybe.map
                                     (\node ->
                                         { node | children = List.filter ((/=) child) node.children }
@@ -218,7 +218,7 @@ detachChild ((ID childID) as child) (Database database) =
                                 database.nodes
                         )
                     |> Maybe.withDefault database.nodes
-                    |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Nothing }))
+                    |> Dict.update (UUID.toString childID) (Maybe.map (\node -> { node | parent = Nothing }))
         }
 
 
@@ -228,8 +228,8 @@ prependChild ((ID parentID) as parent) ((ID childID) as child) (Database databas
         { database
             | nodes =
                 database.nodes
-                    |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = child :: node.children }))
-                    |> Array.Extra.update childID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                    |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = child :: node.children }))
+                    |> Dict.update (UUID.toString childID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
         }
 
 
@@ -244,8 +244,8 @@ appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
                 { db
                     | nodes =
                         db.nodes
-                            |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
-                            |> Array.Extra.update targetID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                            |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
+                            |> Dict.update (UUID.toString targetID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
                 }
 
 
@@ -260,37 +260,33 @@ prependSibling sibling ((ID targetID) as target) ((Database db) as database) =
                 { db
                     | nodes =
                         db.nodes
-                            |> Array.Extra.update parentID (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
-                            |> Array.Extra.update targetID (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                            |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
+                            |> Dict.update (UUID.toString targetID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
                 }
 
 
 get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
-get (ID id) (Database database) =
-    database.nodes
-        |> Array.get id
-        |> Maybe.andThen identity
+get id (Database database) =
+    Dict.get (idToString id) database.nodes
 
 
 update : ID -> (Node -> Node) -> Database -> Database
 update (ID id) updater (Database database) =
-    Database { database | nodes = Array.Extra.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
+    Database { database | nodes = Dict.update (UUID.toString id) (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
 
 
 filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
 filter shouldInclude (Database database) =
-    database.nodes
-        |> Array.Extra.filterMap
-            (Maybe.andThen
-                (\node ->
-                    if shouldInclude node.node then
-                        Just node
+    Dict.foldr
+        (\_ current previous ->
+            if shouldInclude current.node then
+                current :: previous
 
-                    else
-                        Nothing
-                )
-            )
-        |> Array.toList
+            else
+                previous
+        )
+        []
+        database.nodes
 
 
 
@@ -298,22 +294,24 @@ filter shouldInclude (Database database) =
 
 
 type ID
-    = ID Int
-
-
-nextID : ID -> ID
-nextID (ID id) =
-    ID (id + 1)
+    = ID UUID
 
 
 idFromInt : Int -> ID
-idFromInt =
-    ID
+idFromInt seed =
+    Random.initialSeed seed
+        |> Random.step (Random.map ID UUID.generator)
+        |> Tuple.first
+
+
+idFromString : String -> Result UUID.Error ID
+idFromString string =
+    Result.map ID (UUID.fromString string)
 
 
 idToString : ID -> String
 idToString (ID id) =
-    String.fromInt id
+    UUID.toString id
 
 
 

@@ -56,18 +56,18 @@ programTest =
         [ test "it should be possible to add a note and see it in the sidebar after adding" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> addNote "What's up?"
                     |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
         , test "after editing, blurring finalizes the note" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> addNote "What's up?"
                     |> blur
                     |> expectViewDoesntHaveInput
         , test "after editing, hitting escape finalizes the note" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "What's up?"
+                    |> addNote "What's up?"
                     |> hitShortcutKey [] Escape
                     |> expectViewDoesntHaveInput
         , test "if I make a syntax error, I should see it" <|
@@ -84,8 +84,8 @@ programTest =
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "What's up?"
-                    |> addNote (Database.idFromInt 1) "Not much."
+                    |> addNote "What's up?"
+                    |> addNote "Not much."
                     |> clickButton "What's up?"
                     |> expectSidebar (Query.has [ Selector.text "What's up?" ])
         , test "after a note has been edited, clicking it repoens it for editing" <|
@@ -155,7 +155,7 @@ programTest =
         , test "hitting backspace in an empty node removes it from the note" <|
             \_ ->
                 start
-                    |> addNote (Database.idFromInt 0) "Note"
+                    |> addNote "Note"
                     |> hitShortcutKey [] Enter
                     |> hitShortcutKey [] Backspace
                     |> expectNote
@@ -220,11 +220,9 @@ programTest =
         ]
 
 
-addNote : Database.ID -> String -> NotesTest -> NotesTest
-addNote id text =
-    clickButton "New Note"
-        >> ensureBrowserUrl (Expect.equal ("https://localhost/node/" ++ Database.idToString id))
-        >> fillIn "content" "Content" text
+addNote : String -> NotesTest -> NotesTest
+addNote text =
+    clickButton "New Note" >> fillIn "content" "Content" text
 
 
 addNoteAndChildren : String -> List String -> NotesTest -> NotesTest
@@ -232,7 +230,7 @@ addNoteAndChildren note siblings test =
     let
         withNote =
             test
-                |> addNote (Database.idFromInt 0) note
+                |> addNote note
                 |> hitShortcutKey [] Enter
 
         addSiblings =
