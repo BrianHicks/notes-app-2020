@@ -14,11 +14,13 @@ module Database exposing
 
 -}
 
-import Database.Timestamp as Timestamp
+import Database.LWW as LWW exposing (LWW)
+import Database.Timestamp as Timestamp exposing (Timestamp)
 import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)
 import Sort.Dict as Dict exposing (Dict)
+import Time
 import UUID exposing (UUID)
 
 
@@ -27,7 +29,7 @@ type Database
         { nodes :
             Dict ID
                 { id : ID
-                , node : Node
+                , node : LWW (Maybe Node)
                 , parent : Maybe ID
                 , children : List ID
                 }
@@ -61,7 +63,7 @@ insert node (Database database) =
         { nodes =
             Dict.insert id
                 { id = id
-                , node = node
+                , node = LWW.init (Just node) -- TODO: get a timestamp first!
                 , parent = Nothing
                 , children = []
                 }
@@ -268,23 +270,46 @@ prependSibling sibling target ((Database db) as database) =
 
 get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
 get id (Database database) =
-    Dict.get id database.nodes
+    database.nodes
+        |> Dict.get id
+        |> Maybe.andThen
+            (\guts ->
+                Maybe.map
+                    (\node ->
+                        { id = guts.id
+                        , node = node
+                        , parent = guts.parent
+                        , children = guts.children
+                        }
+                    )
+                    (LWW.value guts.node)
+            )
 
 
 update : ID -> (Node -> Node) -> Database -> Database
 update id updater (Database database) =
-    Database { database | nodes = Dict.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
+    Database { database | nodes = Dict.update id (Maybe.map (\node -> { node | node = LWW.map (Maybe.map updater) node.node })) database.nodes }
 
 
 filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
 filter shouldInclude (Database database) =
     Dict.foldr
         (\_ current previous ->
-            if shouldInclude current.node then
-                current :: previous
+            case LWW.value current.node of
+                Just node ->
+                    if shouldInclude node then
+                        { id = current.id
+                        , node = node
+                        , parent = current.parent
+                        , children = current.children
+                        }
+                            :: previous
 
-            else
-                previous
+                    else
+                        previous
+
+                Nothing ->
+                    previous
         )
         []
         database.nodes
