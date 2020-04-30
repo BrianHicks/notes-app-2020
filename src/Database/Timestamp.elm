@@ -1,8 +1,8 @@
 module Database.Timestamp exposing
-    ( Generator, init, Options, defaultOptions, Problem(..), problemToString
+    ( Generator, init, Problem(..), problemToString
     , sendAt, receiveAt
     , Timestamp, compare
-    , toString, hash
+    , toString
     , fromString, fromComponents, ParsingProblem(..), parsingProblemToString
     , encode, decoder
     )
@@ -14,7 +14,7 @@ module Database.Timestamp exposing
 
 # Generator
 
-@docs Generator, init, Options, defaultOptions, Problem, problemToString
+@docs Generator, init, Problem, problemToString
 
 @docs sendAt, receiveAt
 
@@ -26,7 +26,7 @@ module Database.Timestamp exposing
 
 ### Interop
 
-@docs toString, hash
+@docs toString
 
 @docs fromString, fromComponents, ParsingProblem, parsingProblemToString
 
@@ -68,27 +68,22 @@ type Timestamp
         }
 
 
-init : Options -> Int -> Result Problem Generator
-init options rawNode =
+{-| Create a timestamp generator given a number to use for this device's
+ID. This number should be under 16^16, but practically it doesn't matter
+since the biggest `Number` value JS can deal with is 2^53-1.
+-}
+init : Int -> Generator
+init rawNode =
     let
         node =
             abs rawNode
     in
-    if node > maxNodeSize then
-        Err
-            (NodeIdTooHigh
-                { got = node
-                , limit = maxNodeSize
-                }
-            )
-
-    else
-        (Ok << Generator)
-            { options = options
-            , millis = 0
-            , counter = 0
-            , node = node
-            }
+    Generator
+        { options = defaultOptions
+        , millis = 0
+        , counter = 0
+        , node = node
+        }
 
 
 compare : Timestamp -> Timestamp -> Basics.Order
