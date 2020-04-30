@@ -96,6 +96,10 @@ That means, probably:
 For now I'm *not* going to implement P2P stuff like a Merkle DAG or whatever; I'll probably just sync with something off the shelf like pouchdb/couchdb.
 Maybe sometime in the future I could move to a P2P backend, but let's start a little simpler.
 
+#### Left to do on That
+
+- [ ] make insert require a time or return an effect somehow
+
 ### Notes to Self
 
 elm-rte-toolkit looks cool, and it may make sense to add it later, but don't go for the complexity now!
