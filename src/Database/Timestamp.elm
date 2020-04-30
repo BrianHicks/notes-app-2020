@@ -67,8 +67,7 @@ generator rawNode =
 
 
 type Problem
-    = NodeIdTooHigh { got : Int, limit : Int }
-    | TooMuchClockDrift { got : Int, limit : Int }
+    = TooMuchClockDrift { got : Int, limit : Int }
     | CounterTooHigh { got : Int, limit : Int }
     | DuplicateNode Int
 
@@ -76,12 +75,6 @@ type Problem
 problemToString : Problem -> String
 problemToString problem =
     case problem of
-        NodeIdTooHigh { got, limit } ->
-            "Node ID over limit. I got "
-                ++ String.fromInt got
-                ++ " but the maximum size is "
-                ++ String.fromInt limit
-
         TooMuchClockDrift { got, limit } ->
             "Too much clock drift. I saw a drift of "
                 ++ String.fromInt got
