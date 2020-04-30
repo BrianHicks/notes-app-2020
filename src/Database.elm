@@ -22,10 +22,6 @@ import Sort.Dict as Dict exposing (Dict)
 import UUID exposing (UUID)
 
 
-
--- performance note: push/get to arrays is faster than dicts. https://ellie-app.com/8xpcZ9KbFRWa1
-
-
 type Database
     = Database
         { nodes :
