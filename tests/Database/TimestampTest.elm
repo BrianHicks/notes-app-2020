@@ -23,4 +23,31 @@ timestampTest =
                                 )
                             )
             ]
+        , let
+            low =
+                0
+
+            high =
+                1
+          in
+          describe "compare"
+            [ test "compares first by lowest millis" <|
+                \_ ->
+                    Result.map2 Database.Timestamp.compare
+                        (init { millis = low, counter = high, node = high })
+                        (init { millis = high, counter = low, node = low })
+                        |> Expect.equal (Ok LT)
+            , test "compares second by lowest counter" <|
+                \_ ->
+                    Result.map2 Database.Timestamp.compare
+                        (init { millis = high, counter = low, node = high })
+                        (init { millis = high, counter = high, node = low })
+                        |> Expect.equal (Ok LT)
+            , test "compares third by lowest node ID" <|
+                \_ ->
+                    Result.map2 Database.Timestamp.compare
+                        (init { millis = high, counter = high, node = low })
+                        (init { millis = high, counter = high, node = high })
+                        |> Expect.equal (Ok LT)
+            ]
         ]
