@@ -17,6 +17,7 @@ module Database exposing
 import Dict exposing (Dict)
 import Node exposing (Node)
 import Random
+import Sort exposing (Sorter)
 import UUID exposing (UUID)
 
 
@@ -312,6 +313,11 @@ idFromString string =
 idToString : ID -> String
 idToString (ID id) =
     UUID.toString id
+
+
+idSorter : Sorter ID
+idSorter =
+    Sort.by (\(ID id) -> UUID.toString id) Sort.alphabetical
 
 
 
