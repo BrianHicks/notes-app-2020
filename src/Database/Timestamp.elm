@@ -1,5 +1,6 @@
 module Database.Timestamp exposing
     ( Generator, generator, Problem(..), problemToString, sendAt, receiveAt
+    , NodeID, nodeIdFromInt
     , Timestamp, init, compare, toString, fromString, ParsingProblem(..), parsingProblemToString, encode, decoder
     )
 
@@ -11,6 +12,11 @@ module Database.Timestamp exposing
 # Generator
 
 @docs Generator, generator, Problem, problemToString, sendAt, receiveAt
+
+
+## Node ID
+
+@docs NodeID, nodeIdFromInt
 
 
 ## Timestamp
@@ -44,7 +50,7 @@ type Generator
         { options : Options
         , millis : Int
         , counter : Int
-        , node : Int
+        , node : NodeID
         }
 
 
@@ -52,12 +58,8 @@ type Generator
 ID. This number should be under 16^16, but practically it doesn't matter
 since the biggest `Number` value JS can deal with is 2^53-1.
 -}
-generator : Int -> Generator
-generator rawNode =
-    let
-        node =
-            abs rawNode
-    in
+generator : NodeID -> Generator
+generator node =
     Generator
         { options = defaultOptions
         , millis = 0
@@ -69,7 +71,7 @@ generator rawNode =
 type Problem
     = TooMuchClockDrift { got : Int, limit : Int }
     | CounterTooHigh { got : Int, limit : Int }
-    | DuplicateNode Int
+    | DuplicateNode NodeID
 
 
 problemToString : Problem -> String
@@ -88,7 +90,7 @@ problemToString problem =
                 ++ " but the maximum size is "
                 ++ String.fromInt limit
 
-        DuplicateNode got ->
+        DuplicateNode (NodeID got) ->
             "I got a duplicate node ID: " ++ String.fromInt got
 
 
@@ -201,6 +203,24 @@ receiveAt phys (Generator local) (Timestamp remote) =
 
 
 
+-- NODE ID
+
+
+type NodeID
+    = NodeID Int
+
+
+nodeIdFromInt : Int -> NodeID
+nodeIdFromInt =
+    NodeID << abs
+
+
+nodeIdToInt : NodeID -> Int
+nodeIdToInt (NodeID id) =
+    id
+
+
+
 -- TIMESTAMP
 
 
@@ -208,11 +228,11 @@ type Timestamp
     = Timestamp
         { millis : Int
         , counter : Int
-        , node : Int
+        , node : NodeID
         }
 
 
-init : { millis : Int, counter : Int, node : Int } -> Result Problem Timestamp
+init : { millis : Int, counter : Int, node : NodeID } -> Result Problem Timestamp
 init { millis, counter, node } =
     if counter > maxCounterSize then
         Err
@@ -233,8 +253,8 @@ init { millis, counter, node } =
 compare : Timestamp -> Timestamp -> Basics.Order
 compare (Timestamp left) (Timestamp right) =
     Basics.compare
-        ( left.millis, left.counter, left.node )
-        ( right.millis, right.counter, right.node )
+        ( left.millis, left.counter, nodeIdToInt left.node )
+        ( right.millis, right.counter, nodeIdToInt right.node )
 
 
 toString : Timestamp -> String
@@ -246,7 +266,8 @@ toString (Timestamp timestamp) =
         , Hex.toString timestamp.counter
             |> String.padLeft maxCounterHexes '0'
             |> String.right maxCounterHexes
-        , Hex.toString timestamp.node
+        , nodeIdToInt timestamp.node
+            |> Hex.toString
             |> String.padLeft maxNodeHexes '0'
             |> String.right maxNodeHexes
         ]
@@ -274,6 +295,7 @@ fromString string =
                     nodePart
                         |> Hex.fromString
                         |> Result.mapError (BadHex "node")
+                        |> Result.map nodeIdFromInt
             in
             case ( millisResult, counterResult, nodeResult ) of
                 ( Ok millis, Ok counter, Ok node ) ->
