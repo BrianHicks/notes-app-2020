@@ -14,10 +14,10 @@ module Database exposing
 
 -}
 
-import Dict exposing (Dict)
 import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)
+import Sort.Dict as Dict exposing (Dict)
 import UUID exposing (UUID)
 
 
@@ -28,7 +28,7 @@ import UUID exposing (UUID)
 type Database
     = Database
         { nodes :
-            Dict String
+            Dict ID
                 { id : ID
                 , node : Node
                 , parent : Maybe ID
@@ -41,7 +41,7 @@ type Database
 empty : Random.Seed -> Database
 empty seed =
     Database
-        { nodes = Dict.empty
+        { nodes = Dict.empty idSorter
         , seed = seed
         }
 
@@ -60,7 +60,7 @@ insert node (Database database) =
     ( id
     , Database
         { nodes =
-            Dict.insert (idToString id)
+            Dict.insert id
                 { id = id
                 , node = node
                 , parent = Nothing
@@ -73,15 +73,15 @@ insert node (Database database) =
 
 
 delete : ID -> Database -> Database
-delete ((ID id) as toDelete) ((Database database) as db) =
+delete toDelete ((Database database) as db) =
     case get toDelete db of
         Just node ->
             let
                 withParentHandled =
                     case node.parent of
-                        Just (ID parentID) ->
+                        Just parentID ->
                             Dict.update
-                                (UUID.toString parentID)
+                                parentID
                                 (Maybe.map (\parent -> { parent | children = List.filter ((/=) toDelete) parent.children }))
                                 database.nodes
 
@@ -89,7 +89,7 @@ delete ((ID id) as toDelete) ((Database database) as db) =
                             database.nodes
             in
             Database
-                { database | nodes = Dict.remove (UUID.toString id) withParentHandled }
+                { database | nodes = Dict.remove toDelete withParentHandled }
 
         Nothing ->
             db
@@ -201,16 +201,16 @@ nextNode id database =
 
 
 detachChild : ID -> Database -> Database
-detachChild ((ID childID) as child) (Database database) =
+detachChild child (Database database) =
     Database
         { database
             | nodes =
                 database.nodes
-                    |> Dict.get (UUID.toString childID)
+                    |> Dict.get child
                     |> Maybe.andThen .parent
                     |> Maybe.map
-                        (\(ID oldParentID) ->
-                            Dict.update (UUID.toString oldParentID)
+                        (\oldParent ->
+                            Dict.update oldParent
                                 (Maybe.map
                                     (\node ->
                                         { node | children = List.filter ((/=) child) node.children }
@@ -219,61 +219,61 @@ detachChild ((ID childID) as child) (Database database) =
                                 database.nodes
                         )
                     |> Maybe.withDefault database.nodes
-                    |> Dict.update (UUID.toString childID) (Maybe.map (\node -> { node | parent = Nothing }))
+                    |> Dict.update child (Maybe.map (\node -> { node | parent = Nothing }))
         }
 
 
 prependChild : ID -> ID -> Database -> Database
-prependChild ((ID parentID) as parent) ((ID childID) as child) (Database database) =
+prependChild parent child (Database database) =
     Database
         { database
             | nodes =
                 database.nodes
-                    |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = child :: node.children }))
-                    |> Dict.update (UUID.toString childID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                    |> Dict.update parent (Maybe.map (\node -> { node | children = child :: node.children }))
+                    |> Dict.update child (Maybe.map (\node -> { node | parent = Just parent }))
         }
 
 
 appendSibling : ID -> ID -> Database -> Database
-appendSibling sibling ((ID targetID) as target) ((Database db) as database) =
+appendSibling sibling target ((Database db) as database) =
     case get sibling database |> Maybe.andThen .parent of
         Nothing ->
             database
 
-        Just (ID parentID) ->
+        Just parent ->
             Database
                 { db
                     | nodes =
                         db.nodes
-                            |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
-                            |> Dict.update (UUID.toString targetID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                            |> Dict.update parent (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
+                            |> Dict.update target (Maybe.map (\node -> { node | parent = Just parent }))
                 }
 
 
 prependSibling : ID -> ID -> Database -> Database
-prependSibling sibling ((ID targetID) as target) ((Database db) as database) =
+prependSibling sibling target ((Database db) as database) =
     case get sibling database |> Maybe.andThen .parent of
         Nothing ->
             database
 
-        Just (ID parentID) ->
+        Just parent ->
             Database
                 { db
                     | nodes =
                         db.nodes
-                            |> Dict.update (UUID.toString parentID) (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
-                            |> Dict.update (UUID.toString targetID) (Maybe.map (\node -> { node | parent = Just (ID parentID) }))
+                            |> Dict.update parent (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
+                            |> Dict.update target (Maybe.map (\node -> { node | parent = Just parent }))
                 }
 
 
 get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
 get id (Database database) =
-    Dict.get (idToString id) database.nodes
+    Dict.get id database.nodes
 
 
 update : ID -> (Node -> Node) -> Database -> Database
-update (ID id) updater (Database database) =
-    Database { database | nodes = Dict.update (UUID.toString id) (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
+update id updater (Database database) =
+    Database { database | nodes = Dict.update id (Maybe.map (\node -> { node | node = updater node.node })) database.nodes }
 
 
 filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
