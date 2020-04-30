@@ -38,7 +38,6 @@ import Hex
 import Iso8601
 import Json.Decode as Decode exposing (Decoder, Value)
 import Json.Encode as Encode
-import SHA256
 import Time exposing (Posix)
 
 
@@ -263,11 +262,6 @@ toString (Timestamp timestamp) =
             |> String.padLeft maxNodeHexes '0'
             |> String.right maxNodeHexes
         ]
-
-
-hash : Timestamp -> SHA256.Digest
-hash =
-    SHA256.fromString << toString
 
 
 fromComponents : { millis : Int, counter : Int, node : Int } -> Result Problem Timestamp
