@@ -229,14 +229,6 @@ init { millis, counter, node } =
                 }
             )
 
-    else if node > maxNodeSize then
-        Err
-            (NodeIdTooHigh
-                { got = node
-                , limit = maxNodeSize
-                }
-            )
-
     else
         (Ok << Timestamp)
             { millis = millis
