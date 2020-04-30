@@ -2,6 +2,7 @@ module Database.TimestampTest exposing (..)
 
 import Database.Timestamp exposing (..)
 import Expect
+import Fuzz
 import Test exposing (..)
 
 
@@ -66,5 +67,22 @@ timestampTest =
                     init { millis = 0, counter = 0, node = 0xD00DF00D }
                         |> Result.map toString
                         |> Expect.equal (Ok "1970-01-01T00:00:00.000Z-0000-00000000d00df00d")
+            ]
+        , describe "fromString"
+            [ fuzz3 Fuzz.int (Fuzz.intRange 0 (2 ^ 16 - 1)) Fuzz.int "can always parse the output of toString" <|
+                \millisOffset counter node ->
+                    let
+                        baseDate =
+                            1588276543000
+                    in
+                    case init { millis = baseDate + millisOffset, counter = abs counter, node = abs node } of
+                        Err err ->
+                            Expect.fail (problemToString err)
+
+                        Ok timestamp ->
+                            timestamp
+                                |> toString
+                                |> fromString
+                                |> Expect.equal (Ok timestamp)
             ]
         ]
