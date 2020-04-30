@@ -50,4 +50,21 @@ timestampTest =
                         (init { millis = high, counter = high, node = high })
                         |> Expect.equal (Ok LT)
             ]
+        , describe "toString"
+            [ test "starts with the ISO8601 time" <|
+                \_ ->
+                    init { millis = 1483205400000, counter = 0, node = 0 }
+                        |> Result.map toString
+                        |> Expect.equal (Ok "2016-12-31T17:30:00.000Z-0000-0000000000000000")
+            , test "has the counter in the second position" <|
+                \_ ->
+                    init { millis = 0, counter = 0xABCD, node = 0 }
+                        |> Result.map toString
+                        |> Expect.equal (Ok "1970-01-01T00:00:00.000Z-abcd-0000000000000000")
+            , test "has the node ID in the third position" <|
+                \_ ->
+                    init { millis = 0, counter = 0, node = 0xD00DF00D }
+                        |> Result.map toString
+                        |> Expect.equal (Ok "1970-01-01T00:00:00.000Z-0000-00000000d00df00d")
+            ]
         ]
