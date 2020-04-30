@@ -14,6 +14,7 @@ module Database exposing
 
 -}
 
+import Database.Timestamp as Timestamp
 import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)
@@ -35,14 +36,16 @@ type Database
                 , children : List ID
                 }
         , seed : Random.Seed
+        , generator : Timestamp.Generator
         }
 
 
-empty : Random.Seed -> Database
-empty seed =
+empty : Random.Seed -> Timestamp.NodeID -> Database
+empty seed nodeID =
     Database
         { nodes = Dict.empty idSorter
         , seed = seed
+        , generator = Timestamp.generator nodeID
         }
 
 
@@ -68,6 +71,7 @@ insert node (Database database) =
                 }
                 database.nodes
         , seed = seed
+        , generator = database.generator
         }
     )
 

@@ -5,6 +5,7 @@ import Browser.Dom as Dom
 import Browser.Navigation as Navigation
 import Css
 import Database exposing (Database)
+import Database.Timestamp as Timestamp
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
@@ -66,7 +67,12 @@ type Effect
 
 init : () -> Url -> key -> ( Model key, Effect )
 init flags url key =
-    ( { database = Database.empty (Random.initialSeed 0) -- TODO: current time or something
+    ( { database =
+            Database.empty
+                -- TODO: current time or something
+                (Random.initialSeed 0)
+                -- TODO: random and then in on flags
+                (Timestamp.nodeIdFromInt 0)
       , url = url
       , key = key
       , route = Route.parse url
