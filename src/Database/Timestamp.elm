@@ -94,7 +94,7 @@ problemToString problem =
             "I got a duplicate node ID: " ++ String.fromInt got
 
 
-sendAt : Posix -> Generator -> Result Problem ( Generator, Timestamp )
+sendAt : Posix -> Generator -> Result Problem ( Timestamp, Generator )
 sendAt phys (Generator local) =
     let
         physMillis =
@@ -128,16 +128,16 @@ sendAt phys (Generator local) =
 
     else
         Ok
-            ( Generator
+            ( Timestamp
+                { millis = millisNew
+                , counter = counterNew
+                , node = local.node
+                }
+            , Generator
                 { local
                     | millis = millisNew
                     , counter = counterNew
                     , node = local.node
-                }
-            , Timestamp
-                { millis = millisNew
-                , counter = counterNew
-                , node = local.node
                 }
             )
 
