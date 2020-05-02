@@ -17,31 +17,28 @@ logTest =
                 init (Timestamp.nodeIdFromInt 0)
                     |> insert
                         { now = Time.millisToPosix 0
-                        , key = "row"
-                        , column = "column"
-                        , operation = Set (Encode.string "value")
+                        , row = "row"
+                        , operation = SetContent "value"
                         }
                     |> Result.map .state
-                    |> Expect.equal (Ok Dict.empty)
+                    |> Expect.equal (Ok (Dict.singleton "row" { content = Just "value" }))
         , test "can overwrite a column in a row from a newer log message" <|
             \_ ->
                 init (Timestamp.nodeIdFromInt 0)
                     |> insert
                         { now = Time.millisToPosix 0
-                        , key = "row"
-                        , column = "column"
-                        , operation = Set (Encode.string "a")
+                        , row = "row"
+                        , operation = SetContent "a"
                         }
                     |> Result.andThen
                         (insert
                             { now = Time.millisToPosix 1
-                            , key = "row"
-                            , column = "column"
-                            , operation = Set (Encode.string "b")
+                            , row = "row"
+                            , operation = SetContent "b"
                             }
                         )
                     |> Result.map .state
-                    |> Expect.equal (Ok Dict.empty)
+                    |> Expect.equal (Ok (Dict.singleton "row" { content = Just "b" }))
         ]
 
 
