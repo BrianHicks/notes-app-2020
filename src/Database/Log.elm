@@ -64,6 +64,18 @@ insert now row operation log =
         (Timestamp.sendAt now log.generator)
 
 
+receive : Posix -> Entry -> Log -> Result Timestamp.Problem Log
+receive now entry log =
+    Result.map
+        (\generator ->
+            { log = entry :: log.log -- TODO: insert at the right spot or sort
+            , state = updateRow entry.timestamp entry.row entry.operation log.state
+            , generator = generator
+            }
+        )
+        (Timestamp.receiveAt now log.generator entry.timestamp)
+
+
 updateRow : Timestamp -> String -> Operation -> State -> State
 updateRow timestamp rowID operation state =
     Dict.update rowID
@@ -83,10 +95,6 @@ updateRow timestamp rowID operation state =
                             | content =
                                 case row.content of
                                     Just existing ->
-                                        let
-                                            _ =
-                                                Debug.log "n,e" ( new, existing )
-                                        in
                                         Just (LWW.max new existing)
 
                                     Nothing ->
