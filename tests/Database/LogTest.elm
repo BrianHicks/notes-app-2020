@@ -1,5 +1,6 @@
 module Database.LogTest exposing (..)
 
+import Database.LWW as LWW
 import Database.Log exposing (..)
 import Database.Timestamp as Timestamp
 import Dict
@@ -15,30 +16,25 @@ logTest =
         [ test "can set a column in a row from log messages" <|
             \_ ->
                 init (Timestamp.nodeIdFromInt 0)
-                    |> insert
-                        { now = Time.millisToPosix 0
-                        , row = "row"
-                        , operation = SetContent "value"
-                        }
-                    |> Result.map .state
-                    |> Expect.equal (Ok (Dict.singleton "row" { content = Just "value" }))
+                    |> insert (Time.millisToPosix 0) "row" (SetContent "value")
+                    |> Result.map (.state >> Dict.get "row" >> Maybe.andThen .content >> Maybe.map LWW.value)
+                    |> Expect.equal (Ok (Just "value"))
         , test "can overwrite a column in a row from a newer log message" <|
             \_ ->
                 init (Timestamp.nodeIdFromInt 0)
-                    |> insert
-                        { now = Time.millisToPosix 0
-                        , row = "row"
-                        , operation = SetContent "a"
-                        }
-                    |> Result.andThen
-                        (insert
-                            { now = Time.millisToPosix 1
-                            , row = "row"
-                            , operation = SetContent "b"
-                            }
-                        )
-                    |> Result.map .state
-                    |> Expect.equal (Ok (Dict.singleton "row" { content = Just "b" }))
+                    |> insert (Time.millisToPosix 0) "row" (SetContent "a")
+                    |> Result.andThen (insert (Time.millisToPosix 1) "row" (SetContent "b"))
+                    |> Result.map (.state >> Dict.get "row" >> Maybe.andThen .content >> Maybe.map LWW.value)
+                    |> Expect.equal (Ok (Just "b"))
+
+        -- , only <|
+        --     test "receiving an older log message does not overwrite a column" <|
+        --         \_ ->
+        --             init (Timestamp.nodeIdFromInt 0)
+        --                 |> insert (Time.millisToPosix 1) "row" (SetContent "a")
+        --                 |> Result.andThen (insert (Time.millisToPosix 0) "row" (SetContent "b"))
+        --                 |> Result.map (.state >> Dict.get "row" >> Maybe.andThen .content >> Maybe.map LWW.value)
+        --                 |> Expect.equal (Ok (Just "a"))
         ]
 
 

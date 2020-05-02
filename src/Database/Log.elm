@@ -1,5 +1,6 @@
 module Database.Log exposing (..)
 
+import Database.LWW as LWW exposing (LWW)
 import Database.Timestamp as Timestamp exposing (Timestamp)
 import Dict exposing (Dict)
 import Time exposing (Posix)
@@ -17,7 +18,7 @@ type alias State =
 
 
 type alias Row =
-    { content : Maybe String }
+    { content : Maybe (LWW String) }
 
 
 emptyRow : Row
@@ -44,8 +45,8 @@ init nodeID =
     }
 
 
-insert : { now : Posix, row : String, operation : Operation } -> Log -> Result Timestamp.Problem Log
-insert { now, row, operation } log =
+insert : Posix -> String -> Operation -> Log -> Result Timestamp.Problem Log
+insert now row operation log =
     Result.map
         (\( timestamp, generator ) ->
             let
@@ -56,15 +57,15 @@ insert { now, row, operation } log =
                     }
             in
             { log = entry :: log.log
-            , state = updateRow row operation log.state
+            , state = updateRow timestamp row operation log.state
             , generator = generator
             }
         )
         (Timestamp.sendAt now log.generator)
 
 
-updateRow : String -> Operation -> State -> State
-updateRow rowID operation state =
+updateRow : Timestamp -> String -> Operation -> State -> State
+updateRow timestamp rowID operation state =
     Dict.update rowID
         (\maybeRow ->
             let
@@ -74,6 +75,22 @@ updateRow rowID operation state =
             Just <|
                 case operation of
                     SetContent content ->
-                        { row | content = Just content }
+                        let
+                            new =
+                                LWW.init timestamp content
+                        in
+                        { row
+                            | content =
+                                case row.content of
+                                    Just existing ->
+                                        let
+                                            _ =
+                                                Debug.log "n,e" ( new, existing )
+                                        in
+                                        Just (LWW.max new existing)
+
+                                    Nothing ->
+                                        Just new
+                        }
         )
         state
