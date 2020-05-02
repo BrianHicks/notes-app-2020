@@ -1,6 +1,6 @@
 module Database.Log exposing (..)
 
-import Database.Timestamp as Timestamp
+import Database.Timestamp as Timestamp exposing (Timestamp)
 import Dict exposing (Dict)
 import Json.Decode exposing (Value)
 import Time exposing (Posix)
@@ -37,57 +37,57 @@ init nodeID =
     }
 
 
-insert : { now : Posix, key : String, column : String, operation : Operation } -> Log -> Log
+insert : { now : Posix, key : String, column : String, operation : Operation } -> Log -> Result Timestamp.Problem Log
 insert { now, key, column, operation } log =
-    let
-        ( timestamp, generator ) =
-            Timestamp.sendAt now log.generator
-
-        entry =
-            { timestamp = timestamp
-            , key = key
-            , column = column
-            , operation = operation
+    Result.map
+        (\( timestamp, generator ) ->
+            let
+                entry =
+                    { timestamp = timestamp
+                    , key = key
+                    , column = column
+                    , operation = operation
+                    }
+            in
+            { log = entry :: log.log
+            , state = updateState entry log.state
+            , generator = generator
             }
-    in
-    { log = entry :: log.log
-    , state = updateState entry log.state
-    , generator = generator
-    }
+        )
+        (Timestamp.sendAt now log.generator)
 
 
 {-| AAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
 -}
 updateState : Entry -> State -> State
 updateState { timestamp, key, column, operation } state =
-    Dict.update
+    Dict.update key
         (\maybeRow ->
             case maybeRow of
                 Just row ->
-                    Dict.update
-                        (\maybeCell ->
-                            case maybeCell of
-                                Just ( existingTimestamp, existingValue ) ->
-                                    case operation of
-                                        Set value ->
-                                            if compare existingTimestamp timestamp == LT then
+                    row
+                        |> Dict.update column
+                            (\maybeCell ->
+                                case maybeCell of
+                                    Just ( existingTimestamp, existingValue ) ->
+                                        case operation of
+                                            Set value ->
+                                                if Timestamp.compare existingTimestamp timestamp == LT then
+                                                    Just ( timestamp, value )
+
+                                                else
+                                                    Just ( existingTimestamp, existingValue )
+
+                                    Nothing ->
+                                        case operation of
+                                            Set value ->
                                                 Just ( timestamp, value )
-
-                                            else
-                                                Just ( existingTimestamp, existingValue )
-
-                                Nothing ->
-                                    case operation of
-                                        Set value ->
-                                            Just ( timestamp, value )
-                        )
-                        column
-                        row
+                            )
+                        |> Just
 
                 Nothing ->
                     case operation of
                         Set value ->
                             Just (Dict.singleton column ( timestamp, value ))
         )
-        key
         state
