@@ -56,7 +56,7 @@ insert now row operation log =
                     , operation = operation
                     }
             in
-            { log = entry :: log.log
+            { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
             , state = updateRow timestamp row operation log.state
             , generator = generator
             }
@@ -68,7 +68,7 @@ receive : Posix -> Entry -> Log -> Result Timestamp.Problem Log
 receive now entry log =
     Result.map
         (\generator ->
-            { log = entry :: log.log -- TODO: insert at the right spot or sort
+            { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
             , state = updateRow entry.timestamp entry.row entry.operation log.state
             , generator = generator
             }
@@ -102,3 +102,23 @@ updateRow timestamp rowID operation state =
                         }
         )
         state
+
+
+insertDescending : (a -> a -> Order) -> a -> List a -> List a
+insertDescending cmp item items =
+    insertDescendingHelp cmp item items []
+
+
+insertDescendingHelp : (a -> a -> Order) -> a -> List a -> List a -> List a
+insertDescendingHelp cmp item items itemsRev =
+    case items of
+        [] ->
+            List.reverse (item :: itemsRev)
+
+        head :: tail ->
+            case cmp item head of
+                GT ->
+                    List.reverse itemsRev ++ (item :: head :: tail)
+
+                _ ->
+                    insertDescendingHelp cmp item tail (head :: itemsRev)
