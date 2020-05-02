@@ -278,19 +278,19 @@ databaseTest =
                         |> Expect.equal Nothing
             ]
         , describe "updating nodes"
-            [ test "I can update a node's content" <|
-                \_ ->
-                    let
-                        ( id, database ) =
-                            insert (Node.note Content.empty) emptyFixture
-                    in
-                    database
-                        |> update id (Node.setContent (plainContent "Hey!"))
-                        |> get id
-                        |> Maybe.map .node
-                        |> Maybe.map Node.content
-                        |> Expect.equal (Just (plainContent "Hey!"))
-            , test "trying to update a non-existent node doesn't change anything" <|
+            [ -- test "I can update a node's content" <|
+              --   \_ ->
+              --       let
+              --           ( id, database ) =
+              --               insert (Node.note Content.empty) emptyFixture
+              --       in
+              --       database
+              --           |> update id (Node.setContent (plainContent "Hey!"))
+              --           |> get id
+              --           |> Maybe.map .node
+              --           |> Maybe.map Node.content
+              --           |> Expect.equal (Just (plainContent "Hey!"))
+              test "trying to update a non-existent node doesn't change anything" <|
                 \_ ->
                     emptyFixture
                         |> update (idFromInt 1000) (Node.setContent (plainContent "Hey!"))
