@@ -59,7 +59,7 @@ insert now row operation log =
                     }
             in
             { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-            , state = updateRow timestamp row operation log.state
+            , state = updateRow entry log.state
             , generator = generator
             }
         )
@@ -71,7 +71,7 @@ receive now entry log =
     Result.map
         (\generator ->
             { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-            , state = updateRow entry.timestamp entry.row entry.operation log.state
+            , state = updateRow entry log.state
             , generator = generator
             }
         )
@@ -85,7 +85,7 @@ load entry log =
             insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
     in
     { log = newLog
-    , state = updateRow entry.timestamp entry.row entry.operation log.state
+    , state = updateRow entry log.state
     , generator =
         case newLog of
             newest :: _ ->
@@ -96,20 +96,20 @@ load entry log =
     }
 
 
-updateRow : Timestamp -> String -> Operation -> State -> State
-updateRow timestamp rowID operation state =
-    Dict.update rowID
+updateRow : Entry -> State -> State
+updateRow entry state =
+    Dict.update entry.row
         (\maybeRow ->
             let
                 row =
                     Maybe.withDefault emptyRow maybeRow
             in
             Just <|
-                case operation of
+                case entry.operation of
                     SetContent content ->
                         let
                             new =
-                                LWW.init timestamp content
+                                LWW.init entry.timestamp content
                         in
                         { row
                             | content =
