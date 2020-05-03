@@ -162,8 +162,10 @@ insertDescendingHelp cmp item items itemsRev =
 encode : Entry -> Value
 encode entry =
     Encode.object
-        [ ( "dataset", Encode.string "nodes" )
-        , ( "timestamp", Timestamp.encode entry.timestamp )
+        [ -- couchdb/pouchdb need an ID for sorting. This is the right one to
+          -- do it with!
+          ( "_id", Timestamp.encode entry.timestamp )
+        , ( "dataset", Encode.string "nodes" )
         , ( "row", Encode.string entry.row )
         , ( "operation"
           , case entry.operation of
@@ -183,7 +185,7 @@ decoder =
             case dataset of
                 "nodes" ->
                     Decode.map3 Entry
-                        (Decode.field "timestamp" Timestamp.decoder)
+                        (Decode.field "_id" Timestamp.decoder)
                         (Decode.field "row" Decode.string)
                         (Decode.field "operation" operationDecoder)
 
