@@ -1,11 +1,11 @@
 module Database.Log exposing
-    ( Log, Row, State, init, get, filter, insert, receive, load
+    ( Log, Row, State, init, get, filter, insert, edit, receive, load
     , Entry, Operation(..), decoder, encode
     )
 
 {-|
 
-@docs Log, Row, State, init, get, filter, insert, receive, load
+@docs Log, Row, State, init, get, filter, insert, edit, receive, load
 
 @docs Entry, Operation, decoder, encode
 
@@ -72,8 +72,8 @@ filter pred log =
     Dict.filter pred log.state
 
 
-insert : Posix -> Operation -> Log -> Result Timestamp.Problem ( String, Log, Entry )
-insert now operation log =
+insert : Posix -> String -> Log -> Result Timestamp.Problem ( String, Log, Entry )
+insert now content log =
     Result.map
         (\( timestamp, generator ) ->
             let
@@ -83,7 +83,7 @@ insert now operation log =
                 entry =
                     { timestamp = timestamp
                     , row = id
-                    , operation = operation
+                    , operation = SetContent content
                     }
             in
             ( id
@@ -91,6 +91,28 @@ insert now operation log =
               , state = updateRow entry log.state
               , generator = generator
               , seed = nextSeed
+              }
+            , entry
+            )
+        )
+        (Timestamp.sendAt now log.generator)
+
+
+edit : Posix -> String -> String -> Log -> Result Timestamp.Problem ( Log, Entry )
+edit now id content log =
+    Result.map
+        (\( timestamp, generator ) ->
+            let
+                entry =
+                    { timestamp = timestamp
+                    , row = id
+                    , operation = SetContent content
+                    }
+            in
+            ( { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
+              , state = updateRow entry log.state
+              , generator = generator
+              , seed = log.seed
               }
             , entry
             )

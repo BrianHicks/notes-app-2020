@@ -19,7 +19,7 @@ logTest =
         [ describe "setting content"
             [ test "can set content from log messages" <|
                 \_ ->
-                    case insert (Time.millisToPosix 0) (SetContent "value") empty of
+                    case insert (Time.millisToPosix 0) "value" empty of
                         Ok ( id, log, _ ) ->
                             get id log
                                 |> Maybe.andThen .content

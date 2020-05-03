@@ -47,10 +47,11 @@ type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
     | ClickedNewNote
-    | GotTimeForNewNote Posix
+    | ClickedNewNoteAt Posix
     | UserWantsToEditNode String
     | UserEditedNode String
     | UserFinishedEditingNode
+    | UserFinishedEditingNodeAt String String Posix
     | Focused (Result Dom.Error ())
 
 
@@ -112,11 +113,11 @@ update msg model =
 
         ClickedNewNote ->
             ( model
-            , GetTimeAnd GotTimeForNewNote
+            , GetTimeAnd ClickedNewNoteAt
             )
 
-        GotTimeForNewNote currentTime ->
-            case Log.insert currentTime (Log.SetContent "") model.database of
+        ClickedNewNoteAt currentTime ->
+            case Log.insert currentTime "" model.database of
                 Ok ( id, database, entryToSave ) ->
                     ( { model
                         | database = database
@@ -179,12 +180,31 @@ update msg model =
                     ( model, NoEffect )
 
         UserFinishedEditingNode ->
-            ( { model
-                | editing = Nothing
-                , selection = Nothing
-              }
-            , NoEffect
-            )
+            case model.editing of
+                Just { id, input, errors } ->
+                    if not (List.isEmpty errors) then
+                        Debug.todo "nonempty errors! Revert? Discard?"
+
+                    else
+                        ( { model | editing = Nothing, selection = Nothing }
+                        , GetTimeAnd (UserFinishedEditingNodeAt id input)
+                        )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
+        UserFinishedEditingNodeAt id input time ->
+            case Log.edit time id input model.database of
+                Ok ( database, toInsert ) ->
+                    ( { model | database = database }
+                    , -- TODO: persist entryToSave
+                      NoEffect
+                    )
+
+                Err err ->
+                    Debug.todo (Debug.toString err)
 
         Focused _ ->
             -- TODO: report errors that happen?
