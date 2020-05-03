@@ -1,11 +1,11 @@
 module Database.Log exposing
-    ( Log, Row, State, init, insert, receive, load
+    ( Log, Row, State, init, get, filter, insert, receive, load
     , Entry, Operation(..), decoder, encode
     )
 
 {-|
 
-@docs Log, Row, State, init, insert, receive, load
+@docs Log, Row, State, init, get, filter, insert, receive, load
 
 @docs Entry, Operation, decoder, encode
 
@@ -58,7 +58,17 @@ init nodeID =
     }
 
 
-insert : Posix -> String -> Operation -> Log -> Result Timestamp.Problem Log
+get : String -> Log -> Maybe Row
+get id log =
+    Dict.get id log.state
+
+
+filter : (String -> Row -> Bool) -> Log -> Dict String Row
+filter pred log =
+    Dict.filter pred log.state
+
+
+insert : Posix -> String -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
 insert now row operation log =
     Result.map
         (\( timestamp, generator ) ->
@@ -69,10 +79,12 @@ insert now row operation log =
                     , operation = operation
                     }
             in
-            { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-            , state = updateRow entry log.state
-            , generator = generator
-            }
+            ( { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
+              , state = updateRow entry log.state
+              , generator = generator
+              }
+            , entry
+            )
         )
         (Timestamp.sendAt now log.generator)
 
