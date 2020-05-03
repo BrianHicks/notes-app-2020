@@ -1,4 +1,15 @@
-module Database.Log exposing (..)
+module Database.Log exposing
+    ( Log, Row, State, init, insert, receive, load
+    , Entry, Operation(..), decoder, encode
+    )
+
+{-|
+
+@docs Log, Row, State, init, insert, receive, load
+
+@docs Entry, Operation, decoder, encode
+
+-}
 
 import Database.LWW as LWW exposing (LWW)
 import Database.Timestamp as Timestamp exposing (Timestamp)
