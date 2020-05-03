@@ -3,6 +3,8 @@ module Database.Log exposing (..)
 import Database.LWW as LWW exposing (LWW)
 import Database.Timestamp as Timestamp exposing (Timestamp)
 import Dict exposing (Dict)
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode exposing (Value)
 import Time exposing (Posix)
 
 
@@ -140,3 +142,55 @@ insertDescendingHelp cmp item items itemsRev =
 
                 _ ->
                     insertDescendingHelp cmp item tail (head :: itemsRev)
+
+
+
+-- JSON
+
+
+encode : Entry -> Value
+encode entry =
+    Encode.object
+        [ ( "dataset", Encode.string "nodes" )
+        , ( "timestamp", Timestamp.encode entry.timestamp )
+        , ( "row", Encode.string entry.row )
+        , ( "operation"
+          , case entry.operation of
+                SetContent content ->
+                    Encode.object
+                        [ ( "operation", Encode.string "setContent" )
+                        , ( "content", Encode.string content )
+                        ]
+          )
+        ]
+
+
+decoder : Decoder Entry
+decoder =
+    Decode.andThen
+        (\dataset ->
+            case dataset of
+                "nodes" ->
+                    Decode.map3 Entry
+                        (Decode.field "timestamp" Timestamp.decoder)
+                        (Decode.field "row" Decode.string)
+                        (Decode.field "operation" operationDecoder)
+
+                _ ->
+                    Decode.fail ("I don't know how to decode entries in the " ++ dataset ++ " dataset.")
+        )
+        (Decode.field "dataset" Decode.string)
+
+
+operationDecoder : Decoder Operation
+operationDecoder =
+    Decode.andThen
+        (\name ->
+            case name of
+                "setContent" ->
+                    Decode.map SetContent (Decode.field "content" Decode.string)
+
+                _ ->
+                    Decode.fail ("I don't know how to handle a " ++ name ++ " operation.")
+        )
+        (Decode.field "operation" Decode.string)

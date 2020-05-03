@@ -5,6 +5,8 @@ import Database.Log exposing (..)
 import Database.Timestamp as Timestamp
 import Dict
 import Expect
+import Fuzz exposing (Fuzzer)
+import Json.Decode
 import Json.Encode as Encode
 import Test exposing (..)
 import Time exposing (Posix)
@@ -41,6 +43,13 @@ logTest =
                         |> Result.map (.state >> Dict.get "row" >> Maybe.andThen .content >> Maybe.map LWW.value)
                         |> Expect.equal (Ok (Just "a"))
             ]
+        , describe "serialization"
+            [ fuzz entryFuzzer "encode -> decode is symmetrical" <|
+                \entry ->
+                    encode entry
+                        |> Json.Decode.decodeValue decoder
+                        |> Expect.equal (Ok entry)
+            ]
         ]
 
 
@@ -56,3 +65,35 @@ unwrap result =
 
         Err err ->
             Debug.todo (Debug.toString err)
+
+
+entryFuzzer : Fuzzer Entry
+entryFuzzer =
+    Fuzz.map3
+        (\timestamp row operation ->
+            { timestamp = timestamp
+            , row = row
+            , operation = operation
+            }
+        )
+        (Fuzz.map3
+            (\millis counter node ->
+                unwrap
+                    (Timestamp.init
+                        { millis = 1588276543000 + millis
+                        , counter = counter
+                        , node = Timestamp.nodeIdFromInt node
+                        }
+                    )
+            )
+            Fuzz.int
+            (Fuzz.intRange 0 (2 ^ 16 - 1))
+            Fuzz.int
+        )
+        Fuzz.string
+        operationFuzzer
+
+
+operationFuzzer : Fuzzer Operation
+operationFuzzer =
+    Fuzz.map SetContent Fuzz.string
