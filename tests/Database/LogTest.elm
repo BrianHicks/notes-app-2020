@@ -19,7 +19,7 @@ logTest =
         [ describe "setting content"
             [ test "can set content from log messages" <|
                 \_ ->
-                    case insert (Time.millisToPosix 0) "value" empty of
+                    case newNode (Time.millisToPosix 0) "value" empty of
                         Ok ( id, log, _ ) ->
                             get id log
                                 |> Maybe.andThen .content
@@ -32,15 +32,15 @@ logTest =
             -- , test "can overwrite content from a newer log message" <|
             --     \_ ->
             --         empty
-            --             |> insert (Time.millisToPosix 0) "row" (SetContent "a")
+            --             |> newNode (Time.millisToPosix 0) "row" (SetContent "a")
             --             |> Result.map Tuple.first
-            --             |> Result.andThen (insert (Time.millisToPosix 1) "row" (SetContent "b"))
+            --             |> Result.andThen (newNode (Time.millisToPosix 1) "row" (SetContent "b"))
             --             |> Result.map (Tuple.first >> .state >> Dict.get "row" >> Maybe.andThen .content >> Maybe.map LWW.value)
             --             |> Expect.equal (Ok (Just "b"))
             -- , test "receiving an older log message does not overwrite content" <|
             --     \_ ->
             --         empty
-            --             |> insert (Time.millisToPosix 1) "row" (SetContent "a")
+            --             |> newNode (Time.millisToPosix 1) "row" (SetContent "a")
             --             |> Result.map Tuple.first
             --             |> Result.andThen
             --                 (receive (Time.millisToPosix 1)

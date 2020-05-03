@@ -1,11 +1,11 @@
 module Database.Log exposing
-    ( Log, Row, State, init, get, filter, insert, edit, receive, load
+    ( Log, Row, State, init, get, filter, newNode, edit, receive, load
     , Entry, Operation(..), decoder, encode
     )
 
 {-|
 
-@docs Log, Row, State, init, get, filter, insert, edit, receive, load
+@docs Log, Row, State, init, get, filter, newNode, edit, receive, load
 
 @docs Entry, Operation, decoder, encode
 
@@ -72,8 +72,8 @@ filter pred log =
     Dict.filter pred log.state
 
 
-insert : Posix -> String -> Log -> Result Timestamp.Problem ( String, Log, Entry )
-insert now content log =
+newNode : Posix -> String -> Log -> Result Timestamp.Problem ( String, Log, Entry )
+newNode now content log =
     Result.map
         (\( timestamp, generator ) ->
             let

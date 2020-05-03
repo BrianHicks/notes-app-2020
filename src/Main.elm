@@ -117,7 +117,7 @@ update msg model =
             )
 
         ClickedNewNoteAt currentTime ->
-            case Log.insert currentTime "" model.database of
+            case Log.newNode currentTime "" model.database of
                 Ok ( id, database, entryToSave ) ->
                     ( { model
                         | database = database
