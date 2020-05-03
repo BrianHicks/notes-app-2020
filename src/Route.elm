@@ -3,13 +3,13 @@ module Route exposing (..)
 import Database
 import Url exposing (Url)
 import Url.Builder as Builder
-import Url.Parser as Parser exposing ((</>), custom, map, oneOf, s, top)
+import Url.Parser as Parser exposing (..)
 
 
 type Route
     = NotFound
     | Root
-    | Node Database.ID
+    | Node String
 
 
 toString : Route -> String
@@ -22,7 +22,7 @@ toString route =
             Builder.absolute [ "404" ] []
 
         Node id_ ->
-            Builder.absolute [ "node", Database.idToString id_ ] []
+            Builder.absolute [ "node", id_ ] []
 
 
 parse : Url -> Route
@@ -33,7 +33,7 @@ parse url =
 parser =
     oneOf
         [ map Root top
-        , map Node (s "node" </> id)
+        , map Node (s "node" </> string)
         ]
 
 

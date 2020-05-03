@@ -16,13 +16,16 @@ import Database.Timestamp as Timestamp exposing (Timestamp)
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Random
 import Time exposing (Posix)
+import UUID
 
 
 type alias Log =
     { log : List Entry
     , generator : Timestamp.Generator
     , state : State
+    , seed : Random.Seed
     }
 
 
@@ -50,11 +53,12 @@ type Operation
     = SetContent String
 
 
-init : Timestamp.NodeID -> Log
-init nodeID =
+init : Random.Seed -> Timestamp.NodeID -> Log
+init seed nodeID =
     { log = []
     , state = Dict.empty
     , generator = Timestamp.generator nodeID
+    , seed = seed
     }
 
 
@@ -68,20 +72,25 @@ filter pred log =
     Dict.filter pred log.state
 
 
-insert : Posix -> String -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
-insert now row operation log =
+insert : Posix -> Operation -> Log -> Result Timestamp.Problem ( String, Log, Entry )
+insert now operation log =
     Result.map
         (\( timestamp, generator ) ->
             let
+                ( id, nextSeed ) =
+                    Random.step (Random.map UUID.toString UUID.generator) log.seed
+
                 entry =
                     { timestamp = timestamp
-                    , row = row
+                    , row = id
                     , operation = operation
                     }
             in
-            ( { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
+            ( id
+            , { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
               , state = updateRow entry log.state
               , generator = generator
+              , seed = nextSeed
               }
             , entry
             )
@@ -96,6 +105,7 @@ receive now entry log =
             { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
             , state = updateRow entry log.state
             , generator = generator
+            , seed = log.seed
             }
         )
         (Timestamp.receiveAt now log.generator entry.timestamp)
@@ -116,6 +126,7 @@ load entry log =
 
             [] ->
                 Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
+    , seed = log.seed
     }
 
 

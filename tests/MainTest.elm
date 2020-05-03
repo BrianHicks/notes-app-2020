@@ -49,6 +49,10 @@ testPerform effect =
         FocusOnContent ->
             SCmd.none
 
+        GetTimeAnd next ->
+            -- TODO: time simulation
+            SCmd.none
+
 
 programTest : Test
 programTest =
