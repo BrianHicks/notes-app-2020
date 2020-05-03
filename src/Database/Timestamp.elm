@@ -1,5 +1,5 @@
 module Database.Timestamp exposing
-    ( Generator, generator, generatorAt, Problem(..), problemToString, sendAt, receiveAt
+    ( Generator, generator, generatorAt, Problem(..), problemToString, sendAt, receiveAt, nodeID
     , NodeID, nodeIdFromInt
     , Timestamp, init, compare, toString, fromString, ParsingProblem(..), parsingProblemToString, encode, decoder
     )
@@ -11,7 +11,7 @@ module Database.Timestamp exposing
 
 # Generator
 
-@docs Generator, generator, generatorAt, Problem, problemToString, sendAt, receiveAt
+@docs Generator, generator, generatorAt, Problem, problemToString, sendAt, receiveAt, nodeID
 
 
 ## Node ID
@@ -76,6 +76,11 @@ generatorAt (Timestamp { millis, counter }) node =
         , counter = counter
         , node = node
         }
+
+
+nodeID : Generator -> NodeID
+nodeID (Generator guts) =
+    guts.node
 
 
 type Problem

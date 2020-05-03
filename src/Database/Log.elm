@@ -76,6 +76,24 @@ receive now entry log =
         (Timestamp.receiveAt now log.generator entry.timestamp)
 
 
+load : Entry -> Log -> Log
+load entry log =
+    let
+        newLog =
+            insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
+    in
+    { log = newLog
+    , state = updateRow entry.timestamp entry.row entry.operation log.state
+    , generator =
+        case newLog of
+            newest :: _ ->
+                Timestamp.generatorAt newest.timestamp (Timestamp.nodeID log.generator)
+
+            [] ->
+                Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
+    }
+
+
 updateRow : Timestamp -> String -> Operation -> State -> State
 updateRow timestamp rowID operation state =
     Dict.update rowID
