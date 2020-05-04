@@ -2,6 +2,7 @@ module DatabaseTest exposing (..)
 
 import Array
 import Database exposing (..)
+import Database.ID as ID
 import Database.Timestamp as Timestamp
 import Expect
 import Node
@@ -30,7 +31,7 @@ databaseTest =
                     emptyFixture
                         |> insert (Node.note Content.empty)
                         |> Tuple.first
-                        |> Expect.equal (idFromInt 0)
+                        |> Expect.equal (ID.fromInt 0)
             , test "starts without children" <|
                 \_ ->
                     emptyFixture
@@ -61,7 +62,7 @@ databaseTest =
                         |> Maybe.map (.node >> Node.content)
                         |> Expect.equal (Just content)
             , test "getting a node that doesn't exist returns Nothing" <|
-                \_ -> Expect.equal Nothing (get (idFromInt 0) emptyFixture)
+                \_ -> Expect.equal Nothing (get (ID.fromInt 0) emptyFixture)
             ]
         , describe "moving into a parent"
             [ test "shows the relationship in .children" <|
@@ -125,7 +126,7 @@ databaseTest =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
-                        |> moveInto id (idFromInt 0x1BAD1DEA)
+                        |> moveInto id (ID.fromInt 0x1BAD1DEA)
                         |> Expect.equal database
             , test "will not insert a bad parent ID" <|
                 \_ ->
@@ -134,7 +135,7 @@ databaseTest =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
-                        |> moveInto (idFromInt 0x1BAD1DEA) id
+                        |> moveInto (ID.fromInt 0x1BAD1DEA) id
                         |> Expect.equal database
             ]
         , describe "moving after a sibling"
@@ -154,7 +155,7 @@ databaseTest =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
-                        |> moveAfter (idFromInt 1000) id
+                        |> moveAfter (ID.fromInt 1000) id
                         |> Expect.equal database
             , test "will not move a missing node" <|
                 \_ ->
@@ -163,7 +164,7 @@ databaseTest =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
-                        |> moveAfter id (idFromInt 1000)
+                        |> moveAfter id (ID.fromInt 1000)
                         |> Expect.equal database
             , test "will move directly after the sibling" <|
                 \_ ->
@@ -293,7 +294,7 @@ databaseTest =
               test "trying to update a non-existent node doesn't change anything" <|
                 \_ ->
                     emptyFixture
-                        |> update (idFromInt 1000) (Node.setContent (plainContent "Hey!"))
+                        |> update (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
                         |> Expect.equal emptyFixture
             ]
         , describe "filter nodes"
@@ -350,7 +351,7 @@ databaseTest =
                             insert (Node.note (plainContent "hey")) emptyFixture
                     in
                     database
-                        |> delete (idFromInt 1000)
+                        |> delete (ID.fromInt 1000)
                         |> Expect.equal database
             ]
         ]

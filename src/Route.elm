@@ -1,6 +1,7 @@
 module Route exposing (..)
 
 import Database
+import Database.ID as ID
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser as Parser exposing (..)
@@ -38,4 +39,4 @@ parser =
 
 
 id =
-    custom "ID" (Result.toMaybe << Database.idFromString)
+    custom "ID" (Result.toMaybe << ID.fromString)

@@ -1,7 +1,6 @@
 module Database exposing
     ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
-    , ID, idFromInt, idFromString, idToString
     )
 
 {-|
@@ -10,10 +9,9 @@ module Database exposing
 
 @docs moveInto, moveBefore, moveAfter
 
-@docs ID, idFromInt, idFromString, idToString
-
 -}
 
+import Database.ID as ID exposing (ID)
 import Database.Timestamp as Timestamp exposing (Timestamp)
 import Node exposing (Node)
 import Random
@@ -40,7 +38,7 @@ type Database
 empty : Random.Seed -> Timestamp.NodeID -> Database
 empty seed nodeID =
     Database
-        { nodes = Dict.empty idSorter
+        { nodes = Dict.empty ID.sorter
         , seed = seed
         , generator = Timestamp.generator nodeID
         }
@@ -55,7 +53,7 @@ insert : Node -> Database -> ( ID, Database )
 insert node (Database database) =
     let
         ( id, seed ) =
-            Random.step (Random.map ID UUID.generator) database.seed
+            Random.step ID.generator database.seed
     in
     ( id
     , Database
@@ -290,36 +288,6 @@ filter shouldInclude (Database database) =
         )
         []
         database.nodes
-
-
-
--- ID
-
-
-type ID
-    = ID UUID
-
-
-idFromInt : Int -> ID
-idFromInt seed =
-    Random.initialSeed seed
-        |> Random.step (Random.map ID UUID.generator)
-        |> Tuple.first
-
-
-idFromString : String -> Result UUID.Error ID
-idFromString string =
-    Result.map ID (UUID.fromString string)
-
-
-idToString : ID -> String
-idToString (ID id) =
-    UUID.toString id
-
-
-idSorter : Sorter ID
-idSorter =
-    Sort.by (\(ID id) -> UUID.toString id) Sort.alphabetical
 
 
 
