@@ -23,8 +23,7 @@ import UUID
 
 
 type alias Log =
-    { log : List Entry
-    , generator : Timestamp.Generator
+    { generator : Timestamp.Generator
     , state : State
     , seed : Random.Seed
     }
@@ -56,8 +55,7 @@ type Operation
 
 init : Random.Seed -> Timestamp.NodeID -> Log
 init seed nodeID =
-    { log = []
-    , state = Dict.empty ID.sorter
+    { state = Dict.empty ID.sorter
     , generator = Timestamp.generator nodeID
     , seed = seed
     }
@@ -95,8 +93,7 @@ send now id operation log =
                     }
             in
             ( { log
-                | log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-                , state = updateRow entry log.state
+                | state = updateRow entry log.state
                 , generator = generator
               }
             , entry
@@ -109,8 +106,7 @@ receive : Posix -> Entry -> Log -> Result Timestamp.Problem Log
 receive now entry log =
     Result.map
         (\generator ->
-            { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-            , state = updateRow entry log.state
+            { state = updateRow entry log.state
             , generator = generator
             , seed = log.seed
             }
@@ -120,19 +116,10 @@ receive now entry log =
 
 load : Entry -> Log -> Log
 load entry log =
-    let
-        newLog =
-            insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-    in
-    { log = newLog
-    , state = updateRow entry log.state
+    { state = updateRow entry log.state
     , generator =
-        case newLog of
-            newest :: _ ->
-                Timestamp.generatorAt newest.timestamp (Timestamp.nodeID log.generator)
-
-            [] ->
-                Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
+        -- TODO: compare if it's newer or older here
+        Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
     , seed = log.seed
     }
 
@@ -163,26 +150,6 @@ updateRow entry state =
                         }
         )
         state
-
-
-insertDescending : (a -> a -> Order) -> a -> List a -> List a
-insertDescending cmp item items =
-    insertDescendingHelp cmp item items []
-
-
-insertDescendingHelp : (a -> a -> Order) -> a -> List a -> List a -> List a
-insertDescendingHelp cmp item items itemsRev =
-    case items of
-        [] ->
-            List.reverse (item :: itemsRev)
-
-        head :: tail ->
-            case cmp item head of
-                GT ->
-                    List.reverse itemsRev ++ (item :: head :: tail)
-
-                _ ->
-                    insertDescendingHelp cmp item tail (head :: itemsRev)
 
 
 
