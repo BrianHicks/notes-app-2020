@@ -46,26 +46,6 @@ type alias Model key =
 type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
-    | ClickedNewNote
-    | ClickedNewNoteAt Posix
-    | UserWantsToEditNode String
-    | UserEditedNode String
-    | UserFinishedEditingNode
-    | UserFinishedEditingNodeAt String String Posix
-    | Focused (Result Dom.Error ())
-
-
-
--- | UserSelectedNode Database.ID
--- | UserChangedSelection Selection
--- | UserHitEnterOnNode Database.ID
--- | UserHitTabToIndent Database.ID
--- | UserHitShiftTabToDedent Database.ID
--- | UserWantsToDeleteNode Database.ID
--- | UserWantsToMoveNodeUp Database.ID
--- | UserWantsToMoveNodeDown Database.ID
--- | UserWantsToNavigateUp
--- | UserWantsToNavigateDown
 
 
 type Effect
@@ -73,7 +53,6 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
-    | FocusOnContent
     | GetTimeAnd (Posix -> Msg)
 
 
@@ -111,235 +90,6 @@ update msg model =
             , NoEffect
             )
 
-        ClickedNewNote ->
-            ( model
-            , GetTimeAnd ClickedNewNoteAt
-            )
-
-        ClickedNewNoteAt currentTime ->
-            case Log.newNode currentTime "" model.database of
-                Ok ( id, database, entryToSave ) ->
-                    ( { model
-                        | database = database
-                        , editing =
-                            Just
-                                { id = id
-                                , input = ""
-                                , errors = []
-                                }
-                      }
-                    , Batch
-                        [ PushUrl (Route.Node id)
-                        , FocusOnContent
-
-                        -- TODO: send entryToSave out the saving port
-                        ]
-                    )
-
-                Err err ->
-                    Debug.todo (Debug.toString err)
-
-        UserWantsToEditNode id ->
-            case Log.get id model.database of
-                Just { content } ->
-                    ( { model
-                        | editing =
-                            Just
-                                { id = id
-                                , input = content |> Maybe.map LWW.value |> Maybe.withDefault ""
-                                , errors = []
-                                }
-                      }
-                    , FocusOnContent
-                    )
-
-                Nothing ->
-                    ( model, NoEffect )
-
-        UserEditedNode content ->
-            case model.editing of
-                Just editing ->
-                    ( { model
-                        | editing =
-                            Just
-                                { editing
-                                    | input = content
-                                    , errors =
-                                        case Content.fromString content of
-                                            Ok _ ->
-                                                []
-
-                                            Err problems ->
-                                                problems
-                                }
-                      }
-                    , NoEffect
-                    )
-
-                Nothing ->
-                    ( model, NoEffect )
-
-        UserFinishedEditingNode ->
-            case model.editing of
-                Just { id, input, errors } ->
-                    if not (List.isEmpty errors) then
-                        Debug.todo "nonempty errors! Revert? Discard?"
-
-                    else
-                        ( { model | editing = Nothing, selection = Nothing }
-                        , GetTimeAnd (UserFinishedEditingNodeAt id input)
-                        )
-
-                Nothing ->
-                    ( model
-                    , NoEffect
-                    )
-
-        UserFinishedEditingNodeAt id input time ->
-            case Log.edit time id input model.database of
-                Ok ( database, toInsert ) ->
-                    ( { model | database = database }
-                    , -- TODO: persist entryToSave
-                      NoEffect
-                    )
-
-                Err err ->
-                    Debug.todo (Debug.toString err)
-
-        Focused _ ->
-            -- TODO: report errors that happen?
-            ( model, NoEffect )
-
-
-
--- UserSelectedNode id ->
---     ( model
---     , PushUrl (Route.Node id)
---     )
--- UserChangedSelection selection ->
---     ( { model | selection = Just selection }
---     , NoEffect
---     )
--- UserHitEnterOnNode id ->
---     let
---         ( newId, database ) =
---             Database.insert (Node.node Content.empty) model.database
---     in
---     case Database.get id model.database |> Maybe.map (Node.isNote << .node) of
---         Just True ->
---             ( { model
---                 | database = Database.moveInto id newId database
---                 , editing = Just newId
---               }
---             , FocusOnContent
---             )
---         Just False ->
---             ( { model
---                 | database = Database.moveAfter id newId database
---                 , editing = Just newId
---               }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model, NoEffect )
--- UserHitTabToIndent id ->
---     case
---         model.database
---             |> Database.previousSibling id
---             |> Maybe.andThen (\siblingId -> Database.get siblingId model.database)
---     of
---         Just previousSibling ->
---             ( { model
---                 | database =
---                     -- TODO: this looks like some logic that
---                     -- should live inside Database.elm. It's making
---                     -- a decision where to move something based on
---                     -- the field values when the intent could be
---                     -- clearer as "moveToLastChild" or similar.
---                     case previousSibling.children |> List.reverse |> List.head of
---                         Nothing ->
---                             Database.moveInto previousSibling.id id model.database
---                         Just lastChild ->
---                             Database.moveAfter lastChild id model.database
---               }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model, NoEffect )
--- UserHitShiftTabToDedent id ->
---     case Database.get id model.database |> Maybe.andThen .parent of
---         Just parent ->
---             ( { model | database = Database.moveAfter parent id model.database }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model, NoEffect )
--- UserWantsToDeleteNode id ->
---     -- TODO: if we were focused on editing this comment, change focus
---     -- to the previous sibling.
---     ( { model | database = Database.delete id model.database }
---     , NoEffect
---     )
--- UserWantsToMoveNodeUp id ->
---     case
---         Maybe.Extra.orListLazy
---             [ \_ -> Database.previousSibling id model.database
---             , \_ -> Database.get id model.database |> Maybe.andThen .parent
---             ]
---     of
---         Just target ->
---             ( { model | database = Database.moveBefore target id model.database }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model
---             , NoEffect
---             )
--- UserWantsToNavigateUp ->
---     case
---         Maybe.Extra.orListLazy
---             [ \_ -> model.editing |> Maybe.andThen (\id -> Database.previousSibling id model.database)
---             , \_ -> model.editing |> Maybe.andThen (\id -> Database.get id model.database) |> Maybe.andThen .parent
---             ]
---     of
---         Just target ->
---             ( { model | editing = Just target }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model
---             , NoEffect
---             )
--- UserWantsToMoveNodeDown id ->
---     case Database.nextNode id model.database of
---         Just target ->
---             ( { model | database = Database.moveAfter target id model.database }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model
---             , NoEffect
---             )
--- UserWantsToNavigateDown ->
---     case
---         Maybe.Extra.orListLazy
---             [ \_ -> model.editing |> Maybe.andThen (\id -> Database.nextSibling id model.database)
---             , \_ ->
---                 model.editing
---                     |> Maybe.andThen (\id -> Database.get id model.database)
---                     |> Maybe.andThen .parent
---                     |> Maybe.andThen (\id -> Database.nextSibling id model.database)
---             ]
---     of
---         Just target ->
---             ( { model | editing = Just target }
---             , FocusOnContent
---             )
---         Nothing ->
---             ( model
---             , NoEffect
---             )
-
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -360,9 +110,6 @@ perform model effect =
             else
                 Navigation.pushUrl model.key (Route.toString route)
 
-        FocusOnContent ->
-            Task.attempt Focused (Dom.focus "content")
-
         GetTimeAnd next ->
             Task.perform next Time.now
 
@@ -382,8 +129,7 @@ view model =
 viewApplication : Model key -> Html Msg
 viewApplication model =
     Html.main_ []
-        [ Html.button [ Events.onClick ClickedNewNote ] [ Html.text "New Note" ]
-        , model.database.state
+        [ model.database.state
             |> Dict.foldr
                 (\id { content } acc ->
                     Html.li

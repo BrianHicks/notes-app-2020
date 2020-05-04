@@ -46,9 +46,6 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
-        FocusOnContent ->
-            SCmd.none
-
         GetTimeAnd next ->
             -- TODO: time simulation
             SCmd.none
