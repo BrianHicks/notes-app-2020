@@ -74,45 +74,34 @@ filter pred log =
 
 newNode : Posix -> String -> Log -> Result Timestamp.Problem ( String, Log, Entry )
 newNode now content log =
-    Result.map
-        (\( timestamp, generator ) ->
-            let
-                ( id, nextSeed ) =
-                    Random.step (Random.map UUID.toString UUID.generator) log.seed
-
-                entry =
-                    { timestamp = timestamp
-                    , row = id
-                    , operation = SetContent content
-                    }
-            in
-            ( id
-            , { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-              , state = updateRow entry log.state
-              , generator = generator
-              , seed = nextSeed
-              }
-            , entry
-            )
-        )
-        (Timestamp.sendAt now log.generator)
+    let
+        ( id, nextSeed ) =
+            Random.step (Random.map UUID.toString UUID.generator) log.seed
+    in
+    send now id (SetContent content) { log | seed = nextSeed }
+        |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
 edit : Posix -> String -> String -> Log -> Result Timestamp.Problem ( Log, Entry )
 edit now id content log =
+    send now id (SetContent content) log
+
+
+send : Posix -> String -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
+send now id operation log =
     Result.map
         (\( timestamp, generator ) ->
             let
                 entry =
                     { timestamp = timestamp
                     , row = id
-                    , operation = SetContent content
+                    , operation = operation
                     }
             in
-            ( { log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
-              , state = updateRow entry log.state
-              , generator = generator
-              , seed = log.seed
+            ( { log
+                | log = insertDescending (\a b -> Timestamp.compare a.timestamp b.timestamp) entry log.log
+                , state = updateRow entry log.state
+                , generator = generator
               }
             , entry
             )
