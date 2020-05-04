@@ -1,11 +1,11 @@
 module Database.Log exposing
-    ( Log, Row, State, init, get, newNode, edit, receive, load
+    ( Log, Row, init, get, toDict, newNode, edit, receive, load
     , Entry, Operation(..), decoder, encode
     )
 
 {-|
 
-@docs Log, Row, State, init, get, newNode, edit, receive, load
+@docs Log, Row, init, get, toDict, newNode, edit, receive, load
 
 @docs Entry, Operation, decoder, encode
 
@@ -22,15 +22,12 @@ import Time exposing (Posix)
 import UUID
 
 
-type alias Log =
-    { generator : Timestamp.Generator
-    , state : State
-    , seed : Random.Seed
-    }
-
-
-type alias State =
-    Dict ID Row
+type Log
+    = Log
+        { generator : Timestamp.Generator
+        , state : Dict ID Row
+        , seed : Random.Seed
+        }
 
 
 type alias Row =
@@ -55,24 +52,30 @@ type Operation
 
 init : Random.Seed -> Timestamp.NodeID -> Log
 init seed nodeID =
-    { state = Dict.empty ID.sorter
-    , generator = Timestamp.generator nodeID
-    , seed = seed
-    }
+    Log
+        { state = Dict.empty ID.sorter
+        , generator = Timestamp.generator nodeID
+        , seed = seed
+        }
 
 
 get : ID -> Log -> Maybe Row
-get id log =
+get id (Log log) =
     Dict.get id log.state
 
 
+toDict : Log -> Dict ID Row
+toDict (Log log) =
+    log.state
+
+
 newNode : Posix -> String -> Log -> Result Timestamp.Problem ( ID, Log, Entry )
-newNode now content log =
+newNode now content (Log log) =
     let
         ( id, nextSeed ) =
             Random.step ID.generator log.seed
     in
-    send now id (SetContent content) { log | seed = nextSeed }
+    send now id (SetContent content) (Log { log | seed = nextSeed })
         |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
@@ -82,7 +85,7 @@ edit now id content log =
 
 
 send : Posix -> ID -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
-send now id operation log =
+send now id operation (Log log) =
     Result.map
         (\( timestamp, generator ) ->
             let
@@ -92,10 +95,11 @@ send now id operation log =
                     , operation = operation
                     }
             in
-            ( { log
-                | state = updateRow entry log.state
-                , generator = generator
-              }
+            ( Log
+                { log
+                    | state = updateRow entry log.state
+                    , generator = generator
+                }
             , entry
             )
         )
@@ -103,28 +107,30 @@ send now id operation log =
 
 
 receive : Posix -> Entry -> Log -> Result Timestamp.Problem Log
-receive now entry log =
+receive now entry (Log log) =
     Result.map
         (\generator ->
-            { state = updateRow entry log.state
-            , generator = generator
-            , seed = log.seed
-            }
+            Log
+                { state = updateRow entry log.state
+                , generator = generator
+                , seed = log.seed
+                }
         )
         (Timestamp.receiveAt now log.generator entry.timestamp)
 
 
 load : Entry -> Log -> Log
-load entry log =
-    { state = updateRow entry log.state
-    , generator =
-        -- TODO: compare if it's newer or older here
-        Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
-    , seed = log.seed
-    }
+load entry (Log log) =
+    Log
+        { state = updateRow entry log.state
+        , generator =
+            -- TODO: compare if it's newer or older here
+            Timestamp.generatorAt entry.timestamp (Timestamp.nodeID log.generator)
+        , seed = log.seed
+        }
 
 
-updateRow : Entry -> State -> State
+updateRow : Entry -> Dict ID Row -> Dict ID Row
 updateRow entry state =
     Dict.update entry.id
         (\maybeRow ->

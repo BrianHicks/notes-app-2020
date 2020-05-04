@@ -129,7 +129,8 @@ view model =
 viewApplication : Model key -> Html Msg
 viewApplication model =
     Html.main_ []
-        [ model.database.state
+        [ model.database
+            |> Log.toDict
             |> Dict.foldr
                 (\id { content } acc ->
                     Html.li
