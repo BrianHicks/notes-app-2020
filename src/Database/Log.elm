@@ -1,22 +1,23 @@
 module Database.Log exposing
-    ( Log, Row, State, init, get, filter, newNode, edit, receive, load
+    ( Log, Row, State, init, get, newNode, edit, receive, load
     , Entry, Operation(..), decoder, encode
     )
 
 {-|
 
-@docs Log, Row, State, init, get, filter, newNode, edit, receive, load
+@docs Log, Row, State, init, get, newNode, edit, receive, load
 
 @docs Entry, Operation, decoder, encode
 
 -}
 
+import Database.ID as ID exposing (ID)
 import Database.LWW as LWW exposing (LWW)
 import Database.Timestamp as Timestamp exposing (Timestamp)
-import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Random
+import Sort.Dict as Dict exposing (Dict)
 import Time exposing (Posix)
 import UUID
 
@@ -30,7 +31,7 @@ type alias Log =
 
 
 type alias State =
-    Dict String Row
+    Dict ID Row
 
 
 type alias Row =
@@ -44,7 +45,7 @@ emptyRow =
 
 type alias Entry =
     { timestamp : Timestamp
-    , row : String
+    , id : ID
     , operation : Operation
     }
 
@@ -56,45 +57,40 @@ type Operation
 init : Random.Seed -> Timestamp.NodeID -> Log
 init seed nodeID =
     { log = []
-    , state = Dict.empty
+    , state = Dict.empty ID.sorter
     , generator = Timestamp.generator nodeID
     , seed = seed
     }
 
 
-get : String -> Log -> Maybe Row
+get : ID -> Log -> Maybe Row
 get id log =
     Dict.get id log.state
 
 
-filter : (String -> Row -> Bool) -> Log -> Dict String Row
-filter pred log =
-    Dict.filter pred log.state
-
-
-newNode : Posix -> String -> Log -> Result Timestamp.Problem ( String, Log, Entry )
+newNode : Posix -> String -> Log -> Result Timestamp.Problem ( ID, Log, Entry )
 newNode now content log =
     let
         ( id, nextSeed ) =
-            Random.step (Random.map UUID.toString UUID.generator) log.seed
+            Random.step ID.generator log.seed
     in
     send now id (SetContent content) { log | seed = nextSeed }
         |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
-edit : Posix -> String -> String -> Log -> Result Timestamp.Problem ( Log, Entry )
+edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Entry )
 edit now id content log =
     send now id (SetContent content) log
 
 
-send : Posix -> String -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
+send : Posix -> ID -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
 send now id operation log =
     Result.map
         (\( timestamp, generator ) ->
             let
                 entry =
                     { timestamp = timestamp
-                    , row = id
+                    , id = id
                     , operation = operation
                     }
             in
@@ -143,7 +139,7 @@ load entry log =
 
 updateRow : Entry -> State -> State
 updateRow entry state =
-    Dict.update entry.row
+    Dict.update entry.id
         (\maybeRow ->
             let
                 row =
@@ -200,7 +196,7 @@ encode entry =
           -- do it with!
           ( "_id", Timestamp.encode entry.timestamp )
         , ( "dataset", Encode.string "nodes" )
-        , ( "row", Encode.string entry.row )
+        , ( "id", ID.encode entry.id )
         , ( "operation"
           , case entry.operation of
                 SetContent content ->
@@ -220,7 +216,7 @@ decoder =
                 "nodes" ->
                     Decode.map3 Entry
                         (Decode.field "_id" Timestamp.decoder)
-                        (Decode.field "row" Decode.string)
+                        (Decode.field "id" ID.decoder)
                         (Decode.field "operation" operationDecoder)
 
                 _ ->

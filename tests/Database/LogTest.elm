@@ -1,5 +1,6 @@
 module Database.LogTest exposing (..)
 
+import Database.ID as ID
 import Database.LWW as LWW
 import Database.Log exposing (..)
 import Database.Timestamp as Timestamp
@@ -79,9 +80,9 @@ unwrap result =
 entryFuzzer : Fuzzer Entry
 entryFuzzer =
     Fuzz.map3
-        (\timestamp row operation ->
+        (\timestamp id operation ->
             { timestamp = timestamp
-            , row = row
+            , id = id
             , operation = operation
             }
         )
@@ -99,7 +100,7 @@ entryFuzzer =
             (Fuzz.intRange 0 (2 ^ 16 - 1))
             Fuzz.int
         )
-        Fuzz.string
+        (Fuzz.map ID.fromInt Fuzz.int)
         operationFuzzer
 
 

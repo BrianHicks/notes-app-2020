@@ -7,7 +7,6 @@ import Css
 import Database.LWW as LWW
 import Database.Log as Log exposing (Log)
 import Database.Timestamp as Timestamp
-import Dict
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
@@ -20,6 +19,7 @@ import Random
 import Route exposing (Route)
 import Selection exposing (Selection)
 import Sort
+import Sort.Dict as Dict
 import Task
 import Time exposing (Posix)
 import UUID exposing (UUID)
