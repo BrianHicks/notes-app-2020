@@ -1,4 +1,4 @@
-module Main exposing (..)
+port module Main exposing (..)
 
 import Browser
 import Browser.Dom as Dom
@@ -12,7 +12,7 @@ import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Html.Styled.Keyed as Keyed
-import Json.Decode as Decode exposing (Decoder)
+import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
 import Node.Content as Content
@@ -83,6 +83,7 @@ type Effect
     | PushUrl Route
     | GetTimeFor (Posix -> Msg)
     | SaveAfter Float
+    | PersistLogEntry Log.Entry
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -124,6 +125,7 @@ update msg model =
                     , Batch
                         [ PushUrl (Route.Node id)
                         , SaveAfter 1000
+                        , PersistLogEntry toPersist
                         ]
                     )
 
@@ -169,8 +171,7 @@ update msg model =
                                 | editing = Just { editing | saveAfter = Nothing }
                                 , database = database
                               }
-                            , -- TODO: save toPersist
-                              NoEffect
+                            , PersistLogEntry toPersist
                             )
 
                         Err err ->
@@ -208,6 +209,12 @@ perform model effect =
             Process.sleep millis
                 |> Task.andThen (\_ -> Time.now)
                 |> Task.perform DelayTriggeredSave
+
+        PersistLogEntry entry ->
+            persistLogEntry (Log.encode entry)
+
+
+port persistLogEntry : Value -> Cmd msg
 
 
 subscriptions : Model key -> Sub Msg

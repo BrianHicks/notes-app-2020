@@ -23,4 +23,8 @@ var db = new PouchDB('http://localhost:5984/notes');
 
 // go!
 import { Elm } from './Main.elm'
-Elm.Main.init()
+var app = Elm.Main.init()
+
+app.ports.persistLogEntry.subscribe((logItem) => {
+  console.log(logItem);
+})
