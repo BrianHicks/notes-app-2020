@@ -57,6 +57,9 @@ testPerform effect =
                 |> STask.andThen (\_ -> STask.succeed (Time.millisToPosix 100000))
                 |> STask.perform DelayTriggeredSave
 
+        PersistLogEntry _ ->
+            SCmd.none
+
 
 programTest : Test
 programTest =
