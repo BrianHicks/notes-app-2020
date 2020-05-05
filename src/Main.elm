@@ -15,7 +15,7 @@ import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
-import Node.Content as Content
+import Node.Content as Content exposing (Content)
 import Process
 import Random
 import Route exposing (Route)
@@ -38,8 +38,7 @@ type alias Model key =
     , editing :
         Maybe
             { id : ID
-            , input : String
-            , errors : List String
+            , input : Result ( String, List String ) Content
             , saveAfter : Maybe Posix
             }
     , selection : Maybe Selection
@@ -121,7 +120,8 @@ update msg model =
             )
 
         UserClickedNewNoteAt time ->
-            case Log.newNode time "" model.database of
+            -- TODO: the fromList call here does not reveal intention
+            case Log.newNode time (Content.fromList []) model.database of
                 Ok ( id, database, toPersist ) ->
                     let
                         saveAfter =
@@ -132,8 +132,7 @@ update msg model =
                         , editing =
                             Just
                                 { id = id
-                                , input = ""
-                                , errors = []
+                                , input = Content.fromString "" |> Result.mapError (Tuple.pair "")
                                 , saveAfter = Just saveAfter
                                 }
                       }
@@ -159,7 +158,14 @@ update msg model =
                         saveAfter =
                             Time.millisToPosix (Time.posixToMillis time + 1000)
                     in
-                    ( { model | editing = Just { editing | input = input, saveAfter = Just saveAfter } }
+                    ( { model
+                        | editing =
+                            Just
+                                { editing
+                                    | input = Result.mapError (Tuple.pair input) (Content.fromString input)
+                                    , saveAfter = Just saveAfter
+                                }
+                      }
                     , SaveAfter 1000
                     )
 
@@ -170,6 +176,14 @@ update msg model =
 
         DelayTriggeredSave now ->
             let
+                maybeContent =
+                    case Maybe.map .input model.editing of
+                        Just (Ok good) ->
+                            Just good
+
+                        _ ->
+                            Nothing
+
                 shouldSave =
                     -- if we're editing
                     model.editing
@@ -178,9 +192,9 @@ update msg model =
                         -- and it's in the past
                         |> Maybe.map (\saveAfter -> Time.posixToMillis saveAfter <= Time.posixToMillis now)
             in
-            case Maybe.map2 Tuple.pair model.editing shouldSave of
-                Just ( editing, True ) ->
-                    case Log.edit now editing.id editing.input model.database of
+            case Maybe.map3 (\a b c -> ( a, b, c )) model.editing maybeContent shouldSave of
+                Just ( editing, content, True ) ->
+                    case Log.edit now editing.id content model.database of
                         Ok ( database, toPersist ) ->
                             ( { model
                                 | editing = Just { editing | saveAfter = Nothing }
@@ -257,7 +271,7 @@ viewApplication model =
                     Html.li []
                         [ case content of
                             Just inner ->
-                                Html.text (LWW.value inner)
+                                Content.toHtml (LWW.value inner)
 
                             Nothing ->
                                 Html.text "no content! Fine but unusual. Maybe missing a log entry?"
@@ -289,7 +303,16 @@ viewNode id model =
         Just { content } ->
             if Maybe.map .id model.editing == Just id then
                 Html.textarea
-                    [ Attrs.value (model.editing |> Maybe.map .input |> Maybe.withDefault "")
+                    [ case Maybe.map .input model.editing of
+                        Just (Ok good) ->
+                            Attrs.value (Content.toString good)
+
+                        Just (Err ( bad, _ )) ->
+                            -- TODO: show errors
+                            Attrs.value bad
+
+                        Nothing ->
+                            Attrs.value ""
                     , Attrs.attribute "aria-label" "Content"
                     , Attrs.id "content"
                     , Events.onInput UserEditedNode
@@ -299,7 +322,7 @@ viewNode id model =
             else
                 case Maybe.map LWW.value content of
                     Just something ->
-                        Html.text something
+                        Content.toHtml something
 
                     Nothing ->
                         Html.text "Content is unset. This is legal but unusual. Missing a log entry, maybe?"

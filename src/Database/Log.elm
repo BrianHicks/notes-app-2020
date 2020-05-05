@@ -16,6 +16,7 @@ import Database.LWW as LWW exposing (LWW)
 import Database.Timestamp as Timestamp exposing (Timestamp)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Node.Content as Content exposing (Content)
 import Random
 import Sort.Dict as Dict exposing (Dict)
 import Time exposing (Posix)
@@ -31,7 +32,7 @@ type Log
 
 
 type alias Row =
-    { content : Maybe (LWW String) }
+    { content : Maybe (LWW Content) }
 
 
 emptyRow : Row
@@ -47,7 +48,7 @@ type alias Event =
 
 
 type Operation
-    = SetContent String
+    = SetContent Content
 
 
 init : Random.Seed -> Timestamp.NodeID -> Log
@@ -69,7 +70,7 @@ toDict (Log log) =
     log.state
 
 
-newNode : Posix -> String -> Log -> Result Timestamp.Problem ( ID, Log, Event )
+newNode : Posix -> Content -> Log -> Result Timestamp.Problem ( ID, Log, Event )
 newNode now content (Log log) =
     let
         ( id, nextSeed ) =
@@ -79,7 +80,7 @@ newNode now content (Log log) =
         |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
-edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Maybe Event )
+edit : Posix -> ID -> Content -> Log -> Result Timestamp.Problem ( Log, Maybe Event )
 edit now id content log =
     case log |> get id |> Maybe.andThen .content |> Maybe.map LWW.value |> Maybe.map ((==) content) of
         Just False ->
@@ -182,7 +183,7 @@ encode entry =
                 SetContent content ->
                     Encode.object
                         [ ( "operation", Encode.string "setContent" )
-                        , ( "content", Encode.string content )
+                        , ( "content", Content.encode content )
                         ]
           )
         ]
@@ -211,7 +212,7 @@ operationDecoder =
         (\name ->
             case name of
                 "setContent" ->
-                    Decode.map SetContent (Decode.field "content" Decode.string)
+                    Decode.map SetContent (Decode.field "content" Content.decoder)
 
                 _ ->
                     Decode.fail ("I don't know how to handle a " ++ name ++ " operation.")

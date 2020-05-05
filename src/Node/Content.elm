@@ -1,6 +1,7 @@
 module Node.Content exposing
     ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty
     , Node, text, noteLink, link
+    , encode, decoder
     )
 
 {-|
@@ -9,10 +10,14 @@ module Node.Content exposing
 
 @docs Node, text, noteLink, link
 
+@docs encode, decoder
+
 -}
 
 import Html.Styled as Html exposing (Html)
 import Html.Styled.Attributes as Attrs
+import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
 
 
@@ -368,3 +373,63 @@ newline =
 chompAtLeastOne : (Char -> Bool) -> Problem -> Parser ()
 chompAtLeastOne cond problem =
     Parser.chompIf cond problem |. Parser.chompWhile cond
+
+
+
+-- JSON
+
+
+encode : Content -> Encode.Value
+encode (Content nodes) =
+    Encode.list encodeNode nodes
+
+
+encodeNode : Node -> Encode.Value
+encodeNode node =
+    case node of
+        Text text_ ->
+            Encode.object
+                [ ( "kind", Encode.string "text" )
+                , ( "text", Encode.string text_ )
+                ]
+
+        NoteLink text_ ->
+            Encode.object
+                [ ( "kind", Encode.string "noteLink" )
+                , ( "text", Encode.string text_ )
+                ]
+
+        Link guts ->
+            Encode.object
+                [ ( "kind", Encode.string "link" )
+                , ( "text", Encode.string guts.text )
+                , ( "href", Encode.string guts.href )
+                ]
+
+
+decoder : Decoder Content
+decoder =
+    Decode.map Content (Decode.list decodeNode)
+
+
+decodeNode : Decoder Node
+decodeNode =
+    Decode.andThen
+        (\kind ->
+            case kind of
+                "text" ->
+                    Decode.map Text (Decode.field "text" Decode.string)
+
+                "noteLink" ->
+                    Decode.map NoteLink (Decode.field "text" Decode.string)
+
+                "link" ->
+                    Decode.map2 (\text_ href -> { text = text_, href = href })
+                        (Decode.field "text" Decode.string)
+                        (Decode.field "href" Decode.string)
+                        |> Decode.map Link
+
+                _ ->
+                    Decode.fail ("I don't know how to decode a \"" ++ kind ++ "\"inside a content.")
+        )
+        (Decode.field "kind" Decode.string)

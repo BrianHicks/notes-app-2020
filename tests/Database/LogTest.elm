@@ -9,6 +9,7 @@ import Expect
 import Fuzz exposing (Fuzzer)
 import Json.Decode
 import Json.Encode as Encode
+import Node.Content as Content exposing (Content)
 import Random
 import Test exposing (..)
 import Time exposing (Posix)
@@ -20,47 +21,47 @@ logTest =
         [ describe "setting content"
             [ test "can set content from log messages" <|
                 \_ ->
-                    case newNode (Time.millisToPosix 0) "value" empty of
+                    case newNode (Time.millisToPosix 0) (plain "value") empty of
                         Ok ( id, log, _ ) ->
                             get id log
                                 |> Maybe.andThen .content
                                 |> Maybe.map LWW.value
-                                |> Expect.equal (Just "value")
+                                |> Expect.equal (Just (plain "value"))
 
                         Err err ->
                             Expect.fail (Debug.toString err)
             , test "can overwrite content from a later log message" <|
                 \_ ->
-                    case newNode (Time.millisToPosix 0) "a" empty of
+                    case newNode (Time.millisToPosix 0) (plain "a") empty of
                         Ok ( id, log, _ ) ->
                             log
-                                |> edit (Time.millisToPosix 0) id "b"
+                                |> edit (Time.millisToPosix 0) id (plain "b")
                                 |> Result.map
                                     (Tuple.first
                                         >> get id
                                         >> Maybe.andThen .content
                                         >> Maybe.map LWW.value
                                     )
-                                |> Expect.equal (Ok (Just "b"))
+                                |> Expect.equal (Ok (Just (plain "b")))
 
                         Err err ->
                             Expect.fail (Debug.toString err)
             , test "receiving an older log message does not overwrite content" <|
                 \_ ->
-                    case newNode (Time.millisToPosix 1) "a" empty of
+                    case newNode (Time.millisToPosix 1) (plain "a") empty of
                         Ok ( id, log, _ ) ->
                             log
                                 |> receive (Time.millisToPosix 1)
                                     { timestamp = unwrap (Timestamp.init { millis = 0, counter = 0, node = Timestamp.nodeIdFromInt 1 })
                                     , id = ID.fromInt 1
-                                    , operation = SetContent "b"
+                                    , operation = SetContent (plain "b")
                                     }
                                 |> Result.map
                                     (get id
                                         >> Maybe.andThen .content
                                         >> Maybe.map LWW.value
                                     )
-                                |> Expect.equal (Ok (Just "a"))
+                                |> Expect.equal (Ok (Just (plain "a")))
 
                         Err err ->
                             Expect.fail (Debug.toString err)
@@ -123,4 +124,9 @@ empty =
 
 operationFuzzer : Fuzzer Operation
 operationFuzzer =
-    Fuzz.map SetContent Fuzz.string
+    Fuzz.map (plain >> SetContent) Fuzz.string
+
+
+plain : String -> Content
+plain =
+    Content.text >> List.singleton >> Content.fromList
