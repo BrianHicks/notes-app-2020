@@ -46,14 +46,22 @@ type alias Model key =
     }
 
 
-init : () -> Url -> key -> ( Model key, Effect )
+init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
-    ( { database =
-            Log.init
-                -- TODO: current time or something
-                (Random.initialSeed 0)
-                -- TODO: set persistently
-                (Timestamp.nodeIdFromInt 0)
+    let
+        { seed, events } =
+            case Decode.decodeValue flagsDecoder flags of
+                Ok stuff ->
+                    stuff
+
+                Err err ->
+                    Debug.todo (Debug.toString err)
+
+        database =
+            -- TODO: set ID persistently
+            Log.init seed (Timestamp.nodeIdFromInt 0)
+    in
+    ( { database = List.foldl Log.load database events
       , url = url
       , key = key
       , route = Route.parse url
@@ -64,6 +72,13 @@ init flags url key =
       }
     , NoEffect
     )
+
+
+flagsDecoder : Decoder { seed : Random.Seed, events : List Log.Entry }
+flagsDecoder =
+    Decode.map2 (\seed events -> { seed = seed, events = events })
+        (Decode.field "seed" (Decode.map Random.initialSeed Decode.int))
+        (Decode.field "events" (Decode.list (Decode.field "doc" Log.decoder)))
 
 
 type Msg
@@ -290,7 +305,7 @@ viewNode id model =
                         Html.text "Content is unset. This is legal but unusual. Missing a log entry, maybe?"
 
 
-main : Program () (Model Navigation.Key) Msg
+main : Program Value (Model Navigation.Key) Msg
 main =
     Browser.application
         { init =

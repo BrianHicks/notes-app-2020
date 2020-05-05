@@ -19,12 +19,21 @@ customElements.define('note-input', NoteInput, { extends: 'textarea' });
 
 // storage
 import PouchDB from 'pouchdb';
-var db = new PouchDB('http://localhost:5984/notes');
+import { Elm } from './Main.elm'
+
+var db = new PouchDB('notes');
+// TODO: set up syncing
+
+db.allDocs({ include_docs: true }).then(allDocs => {
+  var app = Elm.Main.init({
+    flags: {
+      seed: Date.now(),
+      events: allDocs.rows
+    }
+  })
+  
+  app.ports.persistLogEntry.subscribe((logItem) => { db.put(logItem); });
+})
 
 // go!
-import { Elm } from './Main.elm'
-var app = Elm.Main.init()
 
-app.ports.persistLogEntry.subscribe((logItem) => {
-  console.log(logItem);
-})
