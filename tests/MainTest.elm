@@ -4,13 +4,16 @@ import Database
 import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
+import SimulatedEffect.Process as SProcess
+import SimulatedEffect.Task as STask
 import Test exposing (..)
 import Test.Html.Query as Query
 import Test.Html.Selector as Selector exposing (Selector)
+import Time
 
 
 type alias NotesTest =
@@ -46,21 +49,27 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
-        GetTimeAnd next ->
-            -- TODO: time simulation
-            SCmd.none
+        GetTimeFor next ->
+            STask.perform next (STask.succeed (Time.millisToPosix 0))
+
+        SaveAfter amount ->
+            SProcess.sleep amount
+                |> STask.andThen (\_ -> STask.succeed (Time.millisToPosix 100000))
+                |> STask.perform DelayTriggeredSave
 
 
 programTest : Test
 programTest =
     describe "notes"
         [ test "pass" (\_ -> Expect.pass)
+        , test "it should be possible to add a note and see it in the sidebar after adding" <|
+            \_ ->
+                start
+                    |> clickButton "New Note"
+                    |> fillIn "content" "Content" "What's up?"
+                    |> advanceTime 1000
+                    |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
 
-        -- , test "it should be possible to add a note and see it in the sidebar after adding" <|
-        --     \_ ->
-        --         start
-        --             |> addNote "What's up?"
-        --             |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
         -- , test "after editing, blurring finalizes the note" <|
         --     \_ ->
         --         start

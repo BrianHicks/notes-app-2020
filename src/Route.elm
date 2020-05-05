@@ -1,7 +1,7 @@
 module Route exposing (..)
 
 import Database
-import Database.ID as ID
+import Database.ID as ID exposing (ID)
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser as Parser exposing (..)
@@ -10,7 +10,7 @@ import Url.Parser as Parser exposing (..)
 type Route
     = NotFound
     | Root
-    | Node String
+    | Node ID
 
 
 toString : Route -> String
@@ -23,7 +23,7 @@ toString route =
             Builder.absolute [ "404" ] []
 
         Node id_ ->
-            Builder.absolute [ "node", id_ ] []
+            Builder.absolute [ "node", ID.toString id_ ] []
 
 
 parse : Url -> Route
@@ -34,7 +34,7 @@ parse url =
 parser =
     oneOf
         [ map Root top
-        , map Node (s "node" </> string)
+        , map Node (s "node" </> id)
         ]
 
 
