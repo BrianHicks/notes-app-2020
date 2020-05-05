@@ -79,9 +79,16 @@ newNode now content (Log log) =
         |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
-edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Entry )
+edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Maybe Entry )
 edit now id content log =
-    send now id (SetContent content) log
+    case log |> get id |> Maybe.andThen .content |> Maybe.map LWW.value |> Maybe.map ((==) content) of
+        Just False ->
+            log
+                |> send now id (SetContent content)
+                |> Result.map (Tuple.mapSecond Just)
+
+        _ ->
+            Ok ( log, Nothing )
 
 
 send : Posix -> ID -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )

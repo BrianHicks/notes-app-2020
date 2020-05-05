@@ -171,7 +171,9 @@ update msg model =
                                 | editing = Just { editing | saveAfter = Nothing }
                                 , database = database
                               }
-                            , PersistLogEntry toPersist
+                            , toPersist
+                                |> Maybe.map PersistLogEntry
+                                |> Maybe.withDefault NoEffect
                             )
 
                         Err err ->
