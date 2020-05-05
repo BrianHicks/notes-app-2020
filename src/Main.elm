@@ -74,7 +74,7 @@ init flags url key =
     )
 
 
-flagsDecoder : Decoder { seed : Random.Seed, events : List Log.Entry }
+flagsDecoder : Decoder { seed : Random.Seed, events : List Log.Event }
 flagsDecoder =
     Decode.map2 (\seed events -> { seed = seed, events = events })
         (Decode.field "seed" (Decode.map Random.initialSeed Decode.int))
@@ -98,7 +98,7 @@ type Effect
     | PushUrl Route
     | GetTimeFor (Posix -> Msg)
     | SaveAfter Float
-    | PersistLogEntry Log.Entry
+    | PersistLogEvent Log.Event
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -140,7 +140,7 @@ update msg model =
                     , Batch
                         [ PushUrl (Route.Node id)
                         , SaveAfter 1000
-                        , PersistLogEntry toPersist
+                        , PersistLogEvent toPersist
                         ]
                     )
 
@@ -187,7 +187,7 @@ update msg model =
                                 , database = database
                               }
                             , toPersist
-                                |> Maybe.map PersistLogEntry
+                                |> Maybe.map PersistLogEvent
                                 |> Maybe.withDefault NoEffect
                             )
 
@@ -227,11 +227,11 @@ perform model effect =
                 |> Task.andThen (\_ -> Time.now)
                 |> Task.perform DelayTriggeredSave
 
-        PersistLogEntry entry ->
-            persistLogEntry (Log.encode entry)
+        PersistLogEvent entry ->
+            persistLogEvent (Log.encode entry)
 
 
-port persistLogEntry : Value -> Cmd msg
+port persistLogEvent : Value -> Cmd msg
 
 
 subscriptions : Model key -> Sub Msg

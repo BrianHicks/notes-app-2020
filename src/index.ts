@@ -32,7 +32,7 @@ db.allDocs({ include_docs: true }).then(allDocs => {
     }
   })
   
-  app.ports.persistLogEntry.subscribe((logItem) => { db.put(logItem); });
+  app.ports.persistLogEvent.subscribe((logItem) => { db.put(logItem); });
 })
 
 // go!

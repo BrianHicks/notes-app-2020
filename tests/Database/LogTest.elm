@@ -66,7 +66,7 @@ logTest =
                             Expect.fail (Debug.toString err)
             ]
         , describe "serialization"
-            [ fuzz entryFuzzer "encode -> decode is symmetrical" <|
+            [ fuzz eventFuzzer "encode -> decode is symmetrical" <|
                 \entry ->
                     encode entry
                         |> Json.Decode.decodeValue decoder
@@ -89,8 +89,8 @@ unwrap result =
             Debug.todo (Debug.toString err)
 
 
-entryFuzzer : Fuzzer Entry
-entryFuzzer =
+eventFuzzer : Fuzzer Event
+eventFuzzer =
     Fuzz.map3
         (\timestamp id operation ->
             { timestamp = timestamp

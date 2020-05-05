@@ -1,13 +1,13 @@
 module Database.Log exposing
     ( Log, Row, init, get, toDict, newNode, edit, receive, load
-    , Entry, Operation(..), decoder, encode
+    , Event, Operation(..), decoder, encode
     )
 
 {-|
 
 @docs Log, Row, init, get, toDict, newNode, edit, receive, load
 
-@docs Entry, Operation, decoder, encode
+@docs Event, Operation, decoder, encode
 
 -}
 
@@ -39,7 +39,7 @@ emptyRow =
     { content = Nothing }
 
 
-type alias Entry =
+type alias Event =
     { timestamp : Timestamp
     , id : ID
     , operation : Operation
@@ -69,7 +69,7 @@ toDict (Log log) =
     log.state
 
 
-newNode : Posix -> String -> Log -> Result Timestamp.Problem ( ID, Log, Entry )
+newNode : Posix -> String -> Log -> Result Timestamp.Problem ( ID, Log, Event )
 newNode now content (Log log) =
     let
         ( id, nextSeed ) =
@@ -79,7 +79,7 @@ newNode now content (Log log) =
         |> Result.map (\( newLog, entry ) -> ( id, newLog, entry ))
 
 
-edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Maybe Entry )
+edit : Posix -> ID -> String -> Log -> Result Timestamp.Problem ( Log, Maybe Event )
 edit now id content log =
     case log |> get id |> Maybe.andThen .content |> Maybe.map LWW.value |> Maybe.map ((==) content) of
         Just False ->
@@ -91,7 +91,7 @@ edit now id content log =
             Ok ( log, Nothing )
 
 
-send : Posix -> ID -> Operation -> Log -> Result Timestamp.Problem ( Log, Entry )
+send : Posix -> ID -> Operation -> Log -> Result Timestamp.Problem ( Log, Event )
 send now id operation (Log log) =
     Result.map
         (\( timestamp, generator ) ->
@@ -113,7 +113,7 @@ send now id operation (Log log) =
         (Timestamp.sendAt now log.generator)
 
 
-receive : Posix -> Entry -> Log -> Result Timestamp.Problem Log
+receive : Posix -> Event -> Log -> Result Timestamp.Problem Log
 receive now entry (Log log) =
     Result.map
         (\generator ->
@@ -126,7 +126,7 @@ receive now entry (Log log) =
         (Timestamp.receiveAt now log.generator entry.timestamp)
 
 
-load : Entry -> Log -> Log
+load : Event -> Log -> Log
 load entry (Log log) =
     Log
         { state = updateRow entry log.state
@@ -137,7 +137,7 @@ load entry (Log log) =
         }
 
 
-updateRow : Entry -> Dict ID Row -> Dict ID Row
+updateRow : Event -> Dict ID Row -> Dict ID Row
 updateRow entry state =
     Dict.update entry.id
         (\maybeRow ->
@@ -169,7 +169,7 @@ updateRow entry state =
 -- JSON
 
 
-encode : Entry -> Value
+encode : Event -> Value
 encode entry =
     Encode.object
         [ -- couchdb/pouchdb need an ID for sorting. This is the right one to
@@ -188,13 +188,13 @@ encode entry =
         ]
 
 
-decoder : Decoder Entry
+decoder : Decoder Event
 decoder =
     Decode.andThen
         (\dataset ->
             case dataset of
                 "nodes" ->
-                    Decode.map3 Entry
+                    Decode.map3 Event
                         (Decode.field "_id" Timestamp.decoder)
                         (Decode.field "id" ID.decoder)
                         (Decode.field "operation" operationDecoder)
