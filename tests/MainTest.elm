@@ -31,7 +31,12 @@ start =
         }
         |> ProgramTest.withBaseUrl "https://localhost/"
         |> ProgramTest.withSimulatedEffects testPerform
-        |> ProgramTest.start ()
+        |> ProgramTest.start
+            (Encode.object
+                [ ( "events", Encode.list identity [] )
+                , ( "seed", Encode.int 0 )
+                ]
+            )
 
 
 testPerform : Effect -> SimulatedEffect Msg
