@@ -12,7 +12,6 @@ module Database exposing
 -}
 
 import Database.ID as ID exposing (ID)
-import Database.Timestamp as Timestamp exposing (Timestamp)
 import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)

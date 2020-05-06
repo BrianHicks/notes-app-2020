@@ -6,8 +6,6 @@ import Browser.Navigation as Navigation
 import Css
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
-import Database.LWW as LWW
-import Database.Timestamp as Timestamp
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
