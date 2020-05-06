@@ -383,4 +383,14 @@ encode row =
                     ID.encode parent
           )
         , ( "children", Encode.list ID.encode row.children )
+
+        -- TODO: this is _rev specifically for the pouchdb storage. Is that OK?
+        , ( "_rev"
+          , case row.revision of
+                Just revision ->
+                    Encode.string revision
+
+                Nothing ->
+                    Encode.null
+          )
         ]
