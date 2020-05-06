@@ -1,12 +1,12 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, updateRevision, delete, get, filter, previousSibling, nextSibling, nextNode
+    ( Database, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
     , encode
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, updateRevision, delete, get, filter, previousSibling, nextSibling, nextNode
+@docs Database, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
 
 @docs moveInto, moveBefore, moveAfter
 
@@ -55,6 +55,11 @@ isEmpty (Database database) =
     Dict.isEmpty database.nodes
 
 
+get : ID -> Database -> Maybe Row
+get id (Database database) =
+    Dict.get id database.nodes
+
+
 insert : Node -> Database -> ( Row, Database )
 insert node (Database database) =
     let
@@ -75,6 +80,38 @@ insert node (Database database) =
         , seed = seed
         }
     )
+
+
+update : ID -> (Node -> Node) -> Database -> ( Maybe Row, Database )
+update id updater ((Database database) as db) =
+    case get id db of
+        Just row ->
+            let
+                updated =
+                    { row | node = updater row.node }
+            in
+            ( Just updated
+            , Database { database | nodes = Dict.insert id updated database.nodes }
+            )
+
+        Nothing ->
+            ( Nothing
+            , db
+            )
+
+
+{-| This shouldn't get re-persisted just because of a revision update,
+so we don't return the updated Row this time!
+-}
+updateRevision : ID -> String -> Database -> Database
+updateRevision id revision (Database database) =
+    Database
+        { database
+            | nodes =
+                Dict.update id
+                    (Maybe.map (\row -> { row | revision = Just revision }))
+                    database.nodes
+        }
 
 
 delete : ID -> Database -> Database
@@ -269,43 +306,6 @@ prependSibling sibling target ((Database db) as database) =
                             |> Dict.update parent (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
                             |> Dict.update target (Maybe.map (\node -> { node | parent = Just parent }))
                 }
-
-
-get : ID -> Database -> Maybe Row
-get id (Database database) =
-    Dict.get id database.nodes
-
-
-update : ID -> (Node -> Node) -> Database -> ( Maybe Row, Database )
-update id updater ((Database database) as db) =
-    case get id db of
-        Just row ->
-            let
-                updated =
-                    { row | node = updater row.node }
-            in
-            ( Just updated
-            , Database { database | nodes = Dict.insert id updated database.nodes }
-            )
-
-        Nothing ->
-            ( Nothing
-            , db
-            )
-
-
-{-| This shouldn't get re-persisted just because of a revision update,
-so we don't return the updated Row this time!
--}
-updateRevision : ID -> String -> Database -> Database
-updateRevision id revision (Database database) =
-    Database
-        { database
-            | nodes =
-                Dict.update id
-                    (Maybe.map (\row -> { row | revision = Just revision }))
-                    database.nodes
-        }
 
 
 filter : (Node -> Bool) -> Database -> List Row
