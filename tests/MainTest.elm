@@ -54,17 +54,6 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
-        GetTimeFor next ->
-            STask.perform next (STask.succeed (Time.millisToPosix 0))
-
-        SaveAfter amount ->
-            SProcess.sleep amount
-                |> STask.andThen (\_ -> STask.succeed (Time.millisToPosix 100000))
-                |> STask.perform DelayTriggeredSave
-
-        PersistLogEvent _ ->
-            SCmd.none
-
 
 programTest : Test
 programTest =
@@ -75,7 +64,6 @@ programTest =
                 start
                     |> clickButton "New Note"
                     |> fillIn "content" "Content" "What's up?"
-                    |> advanceTime 1000
                     |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
 
         -- , test "after editing, blurring finalizes the note" <|

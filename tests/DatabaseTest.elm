@@ -3,7 +3,6 @@ module DatabaseTest exposing (..)
 import Array
 import Database exposing (..)
 import Database.ID as ID
-import Database.Timestamp as Timestamp
 import Expect
 import Node
 import Node.Content as Content exposing (Content)
@@ -359,7 +358,7 @@ databaseTest =
 
 emptyFixture : Database
 emptyFixture =
-    empty (Random.initialSeed 0) (Timestamp.nodeIdFromInt 0)
+    empty (Random.initialSeed 0)
 
 
 untuple : (a -> b -> c) -> ( a, b ) -> c

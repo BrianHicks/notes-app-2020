@@ -4,9 +4,9 @@ import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Navigation
 import Css
+import Database exposing (Database)
 import Database.ID as ID exposing (ID)
 import Database.LWW as LWW
-import Database.Log as Log exposing (Log)
 import Database.Timestamp as Timestamp
 import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
@@ -29,7 +29,7 @@ import Url exposing (Url)
 
 
 type alias Model key =
-    { database : Log
+    { database : Database
     , url : Url
     , key : key
     , route : Route
@@ -39,7 +39,6 @@ type alias Model key =
         Maybe
             { id : ID
             , input : Result ( String, List String ) Content
-            , saveAfter : Maybe Posix
             }
     , selection : Maybe Selection
     }
@@ -48,19 +47,15 @@ type alias Model key =
 init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
     let
-        { seed, events } =
+        { seed } =
             case Decode.decodeValue flagsDecoder flags of
                 Ok stuff ->
                     stuff
 
                 Err err ->
                     Debug.todo (Debug.toString err)
-
-        database =
-            -- TODO: set ID persistently
-            Log.init seed (Timestamp.nodeIdFromInt 0)
     in
-    ( { database = List.foldl Log.load database events
+    ( { database = Database.empty seed -- TODO: load data
       , url = url
       , key = key
       , route = Route.parse url
@@ -73,21 +68,17 @@ init flags url key =
     )
 
 
-flagsDecoder : Decoder { seed : Random.Seed, events : List Log.Event }
+flagsDecoder : Decoder { seed : Random.Seed }
 flagsDecoder =
-    Decode.map2 (\seed events -> { seed = seed, events = events })
+    Decode.map (\seed -> { seed = seed })
         (Decode.field "seed" (Decode.map Random.initialSeed Decode.int))
-        (Decode.field "events" (Decode.list (Decode.field "doc" Log.decoder)))
 
 
 type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
     | UserClickedNewNote
-    | UserClickedNewNoteAt Posix
     | UserEditedNode String
-    | UserEditedNodeAt String Posix
-    | DelayTriggeredSave Posix
 
 
 type Effect
@@ -95,9 +86,6 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
-    | GetTimeFor (Posix -> Msg)
-    | SaveAfter Float
-    | PersistLogEvent Log.Event
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -115,103 +103,42 @@ update msg model =
             )
 
         UserClickedNewNote ->
-            ( model
-            , GetTimeFor UserClickedNewNoteAt
+            let
+                ( id, database ) =
+                    Database.insert (Node.note Content.empty) model.database
+            in
+            ( { model
+                | database = database
+                , editing =
+                    Just
+                        { id = id
+                        , input = Ok Content.empty
+                        }
+              }
+            , PushUrl (Route.Node id)
             )
-
-        UserClickedNewNoteAt time ->
-            -- TODO: the fromList call here does not reveal intention
-            case Log.newNode time (Content.fromList []) model.database of
-                Ok ( id, database, toPersist ) ->
-                    let
-                        saveAfter =
-                            Time.millisToPosix (Time.posixToMillis time + 1000)
-                    in
-                    ( { model
-                        | database = database
-                        , editing =
-                            Just
-                                { id = id
-                                , input = Content.fromString "" |> Result.mapError (Tuple.pair "")
-                                , saveAfter = Just saveAfter
-                                }
-                      }
-                    , Batch
-                        [ PushUrl (Route.Node id)
-                        , SaveAfter 1000
-                        , PersistLogEvent toPersist
-                        ]
-                    )
-
-                Err err ->
-                    Debug.todo (Debug.toString err)
 
         UserEditedNode input ->
-            ( model
-            , GetTimeFor (UserEditedNodeAt input)
-            )
-
-        UserEditedNodeAt input time ->
             case model.editing of
-                Just editing ->
-                    let
-                        saveAfter =
-                            Time.millisToPosix (Time.posixToMillis time + 1000)
-                    in
-                    ( { model
-                        | editing =
-                            Just
-                                { editing
-                                    | input = Result.mapError (Tuple.pair input) (Content.fromString input)
-                                    , saveAfter = Just saveAfter
-                                }
-                      }
-                    , SaveAfter 1000
-                    )
-
                 Nothing ->
                     ( model
                     , NoEffect
                     )
 
-        DelayTriggeredSave now ->
-            let
-                maybeContent =
-                    case Maybe.map .input model.editing of
-                        Just (Ok good) ->
-                            Just good
-
-                        _ ->
-                            Nothing
-
-                shouldSave =
-                    -- if we're editing
-                    model.editing
-                        -- and saveAfter is set
-                        |> Maybe.andThen .saveAfter
-                        -- and it's in the past
-                        |> Maybe.map (\saveAfter -> Time.posixToMillis saveAfter <= Time.posixToMillis now)
-            in
-            case Maybe.map3 (\a b c -> ( a, b, c )) model.editing maybeContent shouldSave of
-                Just ( editing, content, True ) ->
-                    case Log.edit now editing.id content model.database of
-                        Ok ( database, toPersist ) ->
+                Just editing ->
+                    case Content.fromString input of
+                        Ok content ->
                             ( { model
-                                | editing = Just { editing | saveAfter = Nothing }
-                                , database = database
+                                | editing = Just { editing | input = Ok content }
+                                , database = Database.update editing.id (Node.setContent content) model.database
                               }
-                            , toPersist
-                                |> Maybe.map PersistLogEvent
-                                |> Maybe.withDefault NoEffect
+                            , NoEffect
                             )
 
-                        Err err ->
-                            Debug.todo (Debug.toString err)
-
-                _ ->
-                    ( model
-                    , NoEffect
-                    )
+                        Err problems ->
+                            ( { model | editing = Just { editing | input = Err ( input, problems ) } }
+                            , NoEffect
+                            )
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
@@ -232,17 +159,6 @@ perform model effect =
 
             else
                 Navigation.pushUrl model.key (Route.toString route)
-
-        GetTimeFor next ->
-            Task.perform next Time.now
-
-        SaveAfter millis ->
-            Process.sleep millis
-                |> Task.andThen (\_ -> Time.now)
-                |> Task.perform DelayTriggeredSave
-
-        PersistLogEvent entry ->
-            persistLogEvent (Log.encode entry)
 
 
 port persistLogEvent : Value -> Cmd msg
@@ -265,20 +181,8 @@ viewApplication model =
     Html.main_ []
         [ Html.button [ Events.onClick UserClickedNewNote ] [ Html.text "New Note" ]
         , model.database
-            |> Log.toDict
-            |> Dict.foldr
-                (\id { content } acc ->
-                    Html.li []
-                        [ case content of
-                            Just inner ->
-                                Content.toHtml (LWW.value inner)
-
-                            Nothing ->
-                                Html.text "no content! Fine but unusual. Maybe missing a log entry?"
-                        ]
-                        :: acc
-                )
-                []
+            |> Database.filter Node.isNote
+            |> List.map (\{ node } -> Html.li [] [ Content.toHtml (Node.content node) ])
             |> Html.ul []
             |> List.singleton
             |> Html.nav []
@@ -296,23 +200,14 @@ viewApplication model =
 
 viewNode : ID -> Model key -> Html Msg
 viewNode id model =
-    case Log.get id model.database of
+    case Database.get id model.database of
         Nothing ->
-            Html.text "Node ID not found!"
+            Html.text "Node not found!"
 
-        Just { content } ->
+        Just { node } ->
             if Maybe.map .id model.editing == Just id then
                 Html.textarea
-                    [ case Maybe.map .input model.editing of
-                        Just (Ok good) ->
-                            Attrs.value (Content.toString good)
-
-                        Just (Err ( bad, _ )) ->
-                            -- TODO: show errors
-                            Attrs.value bad
-
-                        Nothing ->
-                            Attrs.value ""
+                    [ Attrs.value (Content.toString (Node.content node))
                     , Attrs.attribute "aria-label" "Content"
                     , Attrs.id "content"
                     , Events.onInput UserEditedNode
@@ -320,12 +215,7 @@ viewNode id model =
                     []
 
             else
-                case Maybe.map LWW.value content of
-                    Just something ->
-                        Content.toHtml something
-
-                    Nothing ->
-                        Html.text "Content is unset. This is legal but unusual. Missing a log entry, maybe?"
+                Content.toHtml (Node.content node)
 
 
 main : Program Value (Model Navigation.Key) Msg

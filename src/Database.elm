@@ -31,16 +31,14 @@ type Database
                 , children : List ID
                 }
         , seed : Random.Seed
-        , generator : Timestamp.Generator
         }
 
 
-empty : Random.Seed -> Timestamp.NodeID -> Database
-empty seed nodeID =
+empty : Random.Seed -> Database
+empty seed =
     Database
         { nodes = Dict.empty ID.sorter
         , seed = seed
-        , generator = Timestamp.generator nodeID
         }
 
 
@@ -66,7 +64,6 @@ insert node (Database database) =
                 }
                 database.nodes
         , seed = seed
-        , generator = database.generator
         }
     )
 
@@ -272,8 +269,13 @@ get id (Database database) =
 
 update : ID -> (Node -> Node) -> Database -> Database
 update id updater (Database database) =
-    -- Database { database | nodes = Dict.update id (Maybe.map (\node -> { node | node = LWW.map (Maybe.map updater) node.node  })) database.nodes }
-    Database database
+    Database
+        { database
+            | nodes =
+                Dict.update id
+                    (Maybe.map (\node -> { node | node = updater node.node }))
+                    database.nodes
+        }
 
 
 filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
