@@ -54,6 +54,10 @@ testPerform effect =
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
 
+        Put _ ->
+            -- port!
+            SCmd.none
+
 
 programTest : Test
 programTest =

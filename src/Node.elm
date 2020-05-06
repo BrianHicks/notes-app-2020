@@ -2,6 +2,7 @@ module Node exposing
     ( Node, content, setContent, isEmpty
     , note, isNote
     , node
+    , encode
     )
 
 {-|
@@ -12,8 +13,11 @@ module Node exposing
 
 @docs node
 
+@docs encode
+
 -}
 
+import Json.Encode as Encode
 import Node.Content as Content exposing (Content)
 
 
@@ -62,3 +66,25 @@ type Metadata
 isNote : Node -> Bool
 isNote (Node guts) =
     guts.metadata == Just Note
+
+
+encode : Node -> Encode.Value
+encode (Node guts) =
+    Encode.object
+        [ ( "metadata"
+          , case guts.metadata of
+                Just meta ->
+                    encodeMetadata meta
+
+                Nothing ->
+                    Encode.null
+          )
+        , ( "content", Content.encode guts.content )
+        ]
+
+
+encodeMetadata : Metadata -> Encode.Value
+encodeMetadata meta =
+    case meta of
+        Note ->
+            Encode.string "note"

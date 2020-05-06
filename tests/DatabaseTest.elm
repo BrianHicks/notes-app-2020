@@ -30,19 +30,20 @@ databaseTest =
                     emptyFixture
                         |> insert (Node.note Content.empty)
                         |> Tuple.first
+                        |> .id
                         |> Expect.equal (ID.fromInt 0)
             , test "starts without children" <|
                 \_ ->
                     emptyFixture
                         |> insert (Node.note Content.empty)
-                        |> untuple get
+                        |> (\( { id }, database ) -> get id database)
                         |> Maybe.map .children
                         |> Expect.equal (Just [])
             , test "starts without a parent" <|
                 \_ ->
                     emptyFixture
                         |> insert (Node.note Content.empty)
-                        |> untuple get
+                        |> (\( { id }, database ) -> get id database)
                         |> Maybe.map .parent
                         |> Expect.equal (Just Nothing)
             ]
@@ -53,7 +54,7 @@ databaseTest =
                         content =
                             Content.fromList [ Content.text "Hey" ]
 
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note content) emptyFixture
                     in
                     database
@@ -73,10 +74,10 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
                     in
                     database
-                        |> moveInto parent child
-                        |> get parent
+                        |> moveInto parent.id child.id
+                        |> get parent.id
                         |> Maybe.map .children
-                        |> Expect.equal (Just [ child ])
+                        |> Expect.equal (Just [ child.id ])
             , test "shows the relationship in .parent" <|
                 \_ ->
                     let
@@ -86,14 +87,14 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
                     in
                     database
-                        |> moveInto parent child
-                        |> get child
+                        |> moveInto parent.id child.id
+                        |> get child.id
                         |> Maybe.map .parent
-                        |> Expect.equal (Just (Just parent))
+                        |> Expect.equal (Just (Just parent.id))
             , test "will not append a node to itself" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -113,15 +114,15 @@ databaseTest =
                             insert (Node.node (plainContent "child")) dbTemp
                     in
                     database
-                        |> moveInto siblingA child
-                        |> moveInto siblingB child
-                        |> get siblingA
+                        |> moveInto siblingA.id child.id
+                        |> moveInto siblingB.id child.id
+                        |> get siblingA.id
                         |> Maybe.map .children
                         |> Expect.equal (Just [])
             , test "will not insert a bad child ID" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -130,7 +131,7 @@ databaseTest =
             , test "will not insert a bad parent ID" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -141,7 +142,7 @@ databaseTest =
             [ test "will not move a node after itself" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -150,7 +151,7 @@ databaseTest =
             , test "will not move after a missing node" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -159,7 +160,7 @@ databaseTest =
             , test "will not move a missing node" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -175,19 +176,19 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "third")))))
                     in
                     database
-                        |> moveInto parent third
-                        |> moveInto parent second
-                        |> moveInto parent first
-                        |> moveAfter second first
-                        |> get parent
+                        |> moveInto parent.id third.id
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
+                        |> moveAfter second.id first.id
+                        |> get parent.id
                         |> Maybe.map .children
-                        |> Expect.equal (Just [ second, first, third ])
+                        |> Expect.equal (Just [ second.id, first.id, third.id ])
             ]
         , describe "finding a sibling"
             [ test "won't work for the only note in the database" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "note")) emptyFixture
                     in
                     database
@@ -202,10 +203,10 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
                     in
                     database
-                        |> moveInto parent second
-                        |> moveInto parent first
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
                         -----
-                        |> previousSibling first
+                        |> previousSibling first.id
                         |> Expect.equal Nothing
             , test "will work for the second node in a sibling group" <|
                 \_ ->
@@ -216,11 +217,11 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
                     in
                     database
-                        |> moveInto parent second
-                        |> moveInto parent first
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
                         -----
-                        |> previousSibling second
-                        |> Expect.equal (Just first)
+                        |> previousSibling second.id
+                        |> Expect.equal (Just first.id)
             ]
         , describe "finding a node below"
             [ test "finds the next sibling, if one is present" <|
@@ -232,11 +233,11 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
                     in
                     database
-                        |> moveInto parent second
-                        |> moveInto parent first
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
                         -----
-                        |> nextNode first
-                        |> Expect.equal (Just second)
+                        |> nextNode first.id
+                        |> Expect.equal (Just second.id)
             , test "finds a parent's sibling if there are siblings" <|
                 \_ ->
                     let
@@ -247,20 +248,20 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "child")))))
                     in
                     database
-                        |> moveInto parent second
-                        |> moveInto parent first
-                        |> moveInto first child
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
+                        |> moveInto first.id child.id
                         -----
-                        |> nextNode child
-                        |> Expect.equal (Just second)
+                        |> nextNode child.id
+                        |> Expect.equal (Just second.id)
             , test "doesn't find anything if it's the only node" <|
                 \_ ->
                     let
-                        ( parent, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "parent")) emptyFixture
                     in
                     database
-                        |> nextNode parent
+                        |> nextNode id
                         |> Expect.equal Nothing
             , test "doesn't find anything if it's the last node" <|
                 \_ ->
@@ -271,30 +272,30 @@ databaseTest =
                                 |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
                     in
                     database
-                        |> moveInto parent second
-                        |> moveInto parent first
+                        |> moveInto parent.id second.id
+                        |> moveInto parent.id first.id
                         -----
-                        |> nextNode second
+                        |> nextNode second.id
                         |> Expect.equal Nothing
             ]
         , describe "updating nodes"
-            [ -- test "I can update a node's content" <|
-              --   \_ ->
-              --       let
-              --           ( id, database ) =
-              --               insert (Node.note Content.empty) emptyFixture
-              --       in
-              --       database
-              --           |> update id (Node.setContent (plainContent "Hey!"))
-              --           |> get id
-              --           |> Maybe.map .node
-              --           |> Maybe.map Node.content
-              --           |> Expect.equal (Just (plainContent "Hey!"))
-              test "trying to update a non-existent node doesn't change anything" <|
+            [ test "I can update a node's content" <|
+                \_ ->
+                    let
+                        ( { id }, database ) =
+                            insert (Node.note Content.empty) emptyFixture
+                    in
+                    database
+                        |> update id (Node.setContent (plainContent "Hey!"))
+                        |> Tuple.first
+                        |> Maybe.map .node
+                        |> Maybe.map Node.content
+                        |> Expect.equal (Just (plainContent "Hey!"))
+            , test "trying to update a non-existent node doesn't change anything" <|
                 \_ ->
                     emptyFixture
                         |> update (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
-                        |> Expect.equal emptyFixture
+                        |> Expect.equal ( Nothing, emptyFixture )
             ]
         , describe "filter nodes"
             [ test "if my filter never matches, the list will be empty" <|
@@ -323,7 +324,7 @@ databaseTest =
             [ test "should make them non-gettable" <|
                 \_ ->
                     let
-                        ( id, database ) =
+                        ( { id }, database ) =
                             insert (Node.note (plainContent "hey")) emptyFixture
                     in
                     database
@@ -338,9 +339,9 @@ databaseTest =
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "bye!")))
                     in
                     database
-                        |> moveInto parent child
-                        |> delete child
-                        |> get parent
+                        |> moveInto parent.id child.id
+                        |> delete child.id
+                        |> get parent.id
                         |> Maybe.map .children
                         |> Expect.equal (Just [])
             , test "when given an invalid ID, should do nothing" <|
@@ -359,11 +360,6 @@ databaseTest =
 emptyFixture : Database
 emptyFixture =
     empty (Random.initialSeed 0)
-
-
-untuple : (a -> b -> c) -> ( a, b ) -> c
-untuple fn ( a, b ) =
-    fn a b
 
 
 plainContent : String -> Content

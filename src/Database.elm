@@ -1,17 +1,21 @@
 module Database exposing
-    ( Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNode
+    ( Database, empty, isEmpty, insert, update, updateRevision, delete, get, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
+    , encode
     )
 
 {-|
 
-@docs Database, empty, isEmpty, insert, update, delete, get, filter, previousSibling, nextSibling, nextNode
+@docs Database, empty, isEmpty, insert, update, updateRevision, delete, get, filter, previousSibling, nextSibling, nextNode
 
 @docs moveInto, moveBefore, moveAfter
+
+@docs encode
 
 -}
 
 import Database.ID as ID exposing (ID)
+import Json.Encode as Encode
 import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)
@@ -22,15 +26,20 @@ import UUID exposing (UUID)
 
 type Database
     = Database
-        { nodes :
-            Dict ID
-                { id : ID
-                , node : Node
-                , parent : Maybe ID
-                , children : List ID
-                }
+        { nodes : Dict ID Row
         , seed : Random.Seed
         }
+
+
+type alias Row =
+    { id : ID
+    , node : Node
+    , parent : Maybe ID
+    , children : List ID
+
+    -- PouchDB state
+    , revision : Maybe String
+    }
 
 
 empty : Random.Seed -> Database
@@ -46,22 +55,23 @@ isEmpty (Database database) =
     Dict.isEmpty database.nodes
 
 
-insert : Node -> Database -> ( ID, Database )
+insert : Node -> Database -> ( Row, Database )
 insert node (Database database) =
     let
         ( id, seed ) =
             Random.step ID.generator database.seed
+
+        row =
+            { id = id
+            , node = node
+            , parent = Nothing
+            , children = []
+            , revision = Nothing
+            }
     in
-    ( id
+    ( row
     , Database
-        { nodes =
-            Dict.insert id
-                { id = id
-                , node = node
-                , parent = Nothing
-                , children = []
-                }
-                database.nodes
+        { nodes = Dict.insert id row database.nodes
         , seed = seed
         }
     )
@@ -261,23 +271,44 @@ prependSibling sibling target ((Database db) as database) =
                 }
 
 
-get : ID -> Database -> Maybe { id : ID, node : Node, parent : Maybe ID, children : List ID }
+get : ID -> Database -> Maybe Row
 get id (Database database) =
     Dict.get id database.nodes
 
 
-update : ID -> (Node -> Node) -> Database -> Database
-update id updater (Database database) =
+update : ID -> (Node -> Node) -> Database -> ( Maybe Row, Database )
+update id updater ((Database database) as db) =
+    case get id db of
+        Just row ->
+            let
+                updated =
+                    { row | node = updater row.node }
+            in
+            ( Just updated
+            , Database { database | nodes = Dict.insert id updated database.nodes }
+            )
+
+        Nothing ->
+            ( Nothing
+            , db
+            )
+
+
+{-| This shouldn't get re-persisted just because of a revision update,
+so we don't return the updated Row this time!
+-}
+updateRevision : ID -> String -> Database -> Database
+updateRevision id revision (Database database) =
     Database
         { database
             | nodes =
                 Dict.update id
-                    (Maybe.map (\node -> { node | node = updater node.node }))
+                    (Maybe.map (\row -> { row | revision = Just revision }))
                     database.nodes
         }
 
 
-filter : (Node -> Bool) -> Database -> List { id : ID, node : Node, parent : Maybe ID, children : List ID }
+filter : (Node -> Bool) -> Database -> List Row
 filter shouldInclude (Database database) =
     Dict.foldr
         (\_ current previous ->
@@ -331,3 +362,25 @@ insertBeforeHelp target toInsert items soFar =
 
             else
                 insertBeforeHelp target toInsert rest (candidate :: soFar)
+
+
+
+-- JSON
+
+
+encode : Row -> Encode.Value
+encode row =
+    Encode.object
+        [ -- TODO: this is _id specifically for the pouchdb storage. Is that OK?
+          ( "_id", ID.encode row.id )
+        , ( "node", Node.encode row.node )
+        , ( "parent"
+          , case row.parent of
+                Nothing ->
+                    Encode.null
+
+                Just parent ->
+                    ID.encode parent
+          )
+        , ( "children", Encode.list ID.encode row.children )
+        ]

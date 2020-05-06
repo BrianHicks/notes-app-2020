@@ -77,6 +77,7 @@ type Msg
     | UrlChanged Url
     | UserClickedNewNote
     | UserEditedNode String
+    | PouchDBPutSuccessfully Value
 
 
 type Effect
@@ -84,6 +85,7 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
+    | Put Value
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -102,19 +104,38 @@ update msg model =
 
         UserClickedNewNote ->
             let
-                ( id, database ) =
+                ( row, database ) =
                     Database.insert (Node.note Content.empty) model.database
             in
             ( { model
                 | database = database
                 , editing =
                     Just
-                        { id = id
+                        { id = row.id
                         , input = Ok Content.empty
                         }
               }
-            , PushUrl (Route.Node id)
+            , Batch
+                [ PushUrl (Route.Node row.id)
+                , Put (Database.encode row)
+                ]
             )
+
+        PouchDBPutSuccessfully value ->
+            let
+                decoder =
+                    Decode.map2 Tuple.pair
+                        (Decode.field "id" ID.decoder)
+                        (Decode.field "rev" Decode.string)
+            in
+            case Decode.decodeValue decoder value of
+                Ok ( id, rev ) ->
+                    ( { model | database = Database.updateRevision id rev model.database }
+                    , NoEffect
+                    )
+
+                Err err ->
+                    Debug.todo (Debug.toString err)
 
         UserEditedNode input ->
             case model.editing of
@@ -125,13 +146,28 @@ update msg model =
 
                 Just editing ->
                     case Content.fromString input of
+                        -- TODO: this has too much knowledge about where the content lives
                         Ok content ->
-                            ( { model
-                                | editing = Just { editing | input = Ok content }
-                                , database = Database.update editing.id (Node.setContent content) model.database
-                              }
-                            , NoEffect
-                            )
+                            let
+                                ( maybeRow, database ) =
+                                    Database.update editing.id (Node.setContent content) model.database
+                            in
+                            case maybeRow of
+                                Just row ->
+                                    ( { model
+                                        | editing = Just { editing | input = Ok (Node.content row.node) }
+                                        , database = database
+                                      }
+                                    , Put (Database.encode row)
+                                    )
+
+                                Nothing ->
+                                    -- TODO: it's not like this problem will
+                                    -- just go away. We have a bad ID! Figure
+                                    -- out a better way to handle it.
+                                    ( { model | editing = Just { editing | input = Ok content } }
+                                    , NoEffect
+                                    )
 
                         Err problems ->
                             ( { model | editing = Just { editing | input = Err ( input, problems ) } }
@@ -158,13 +194,19 @@ perform model effect =
             else
                 Navigation.pushUrl model.key (Route.toString route)
 
+        Put value ->
+            put value
 
-port persistLogEvent : Value -> Cmd msg
+
+port put : Value -> Cmd msg
+
+
+port putSuccessfully : (Value -> msg) -> Sub msg
 
 
 subscriptions : Model key -> Sub Msg
 subscriptions model =
-    Sub.none
+    putSuccessfully PouchDBPutSuccessfully
 
 
 view : Model key -> Browser.Document Msg
