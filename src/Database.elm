@@ -20,6 +20,7 @@ import Node exposing (Node)
 import Random
 import Sort exposing (Sorter)
 import Sort.Dict as Dict exposing (Dict)
+import Sort.Set as Set exposing (Set)
 import Time
 import UUID exposing (UUID)
 
@@ -28,6 +29,7 @@ type Database
     = Database
         { nodes : Dict ID Row
         , seed : Random.Seed
+        , toPersist : Set ID
         }
 
 
@@ -47,6 +49,7 @@ empty seed =
     Database
         { nodes = Dict.empty ID.sorter
         , seed = seed
+        , toPersist = Set.empty ID.sorter
         }
 
 
@@ -78,33 +81,24 @@ insert node (Database database) =
     , Database
         { nodes = Dict.insert id row database.nodes
         , seed = seed
+        , toPersist = Set.insert id database.toPersist
         }
     )
 
 
-update : ID -> (Node -> Node) -> Database -> ( Maybe Row, Database )
+update : ID -> (Node -> Node) -> Database -> Database
 update id updater ((Database database) as db) =
-    case get id db of
-        Just row ->
-            let
-                updated =
-                    { row | node = updater row.node }
-            in
-            ( Just updated
-            , Database { database | nodes = Dict.insert id updated database.nodes }
-            )
-
-        Nothing ->
-            ( Nothing
-            , db
-            )
+    Database
+        { database
+            | nodes =
+                Dict.update id
+                    (Maybe.map (\row -> { row | node = updater row.node }))
+                    database.nodes
+        }
 
 
-{-| This shouldn't get re-persisted just because of a revision update,
-so we don't return the updated Row this time!
--}
 updateRevision : ID -> String -> Database -> Database
-updateRevision id revision (Database database) =
+updateRevision id revision ((Database database) as db) =
     Database
         { database
             | nodes =
@@ -387,10 +381,10 @@ encode row =
         -- TODO: this is _rev specifically for the pouchdb storage. Is that OK?
         , ( "_rev"
           , case row.revision of
-                Just revision ->
-                    Encode.string revision
-
                 Nothing ->
                     Encode.null
+
+                Just revision ->
+                    Encode.string revision
           )
         ]

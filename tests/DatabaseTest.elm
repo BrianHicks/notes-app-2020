@@ -36,16 +36,16 @@ databaseTest =
                 \_ ->
                     emptyFixture
                         |> insert (Node.note Content.empty)
-                        |> (\( { id }, database ) -> get id database)
-                        |> Maybe.map .children
-                        |> Expect.equal (Just [])
+                        |> Tuple.first
+                        |> .children
+                        |> Expect.equal []
             , test "starts without a parent" <|
                 \_ ->
                     emptyFixture
                         |> insert (Node.note Content.empty)
-                        |> (\( { id }, database ) -> get id database)
-                        |> Maybe.map .parent
-                        |> Expect.equal (Just Nothing)
+                        |> Tuple.first
+                        |> .parent
+                        |> Expect.equal Nothing
             ]
         , describe "get"
             [ test "you can get a node again" <|
@@ -287,15 +287,14 @@ databaseTest =
                     in
                     database
                         |> update id (Node.setContent (plainContent "Hey!"))
-                        |> Tuple.first
-                        |> Maybe.map .node
-                        |> Maybe.map Node.content
+                        |> get id
+                        |> Maybe.map (Node.content << .node)
                         |> Expect.equal (Just (plainContent "Hey!"))
             , test "trying to update a non-existent node doesn't change anything" <|
                 \_ ->
                     emptyFixture
                         |> update (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
-                        |> Expect.equal ( Nothing, emptyFixture )
+                        |> Expect.equal emptyFixture
             ]
         , describe "filter nodes"
             [ test "if my filter never matches, the list will be empty" <|

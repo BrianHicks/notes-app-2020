@@ -130,7 +130,7 @@ update msg model =
             in
             case Decode.decodeValue decoder value of
                 Ok ( id, rev ) ->
-                    ( { model | database = Database.updateRevision id rev model.database }
+                    ( { model | database = Database.updateRevision id (Debug.log "rev" rev) model.database }
                     , NoEffect
                     )
 
@@ -146,28 +146,13 @@ update msg model =
 
                 Just editing ->
                     case Content.fromString input of
-                        -- TODO: this has too much knowledge about where the content lives
                         Ok content ->
-                            let
-                                ( maybeRow, database ) =
-                                    Database.update editing.id (Node.setContent content) model.database
-                            in
-                            case maybeRow of
-                                Just row ->
-                                    ( { model
-                                        | editing = Just { editing | input = Ok (Node.content row.node) }
-                                        , database = database
-                                      }
-                                    , Put (Database.encode row)
-                                    )
-
-                                Nothing ->
-                                    -- TODO: it's not like this problem will
-                                    -- just go away. We have a bad ID! Figure
-                                    -- out a better way to handle it.
-                                    ( { model | editing = Just { editing | input = Ok content } }
-                                    , NoEffect
-                                    )
+                            ( { model
+                                | editing = Just { editing | input = Ok content }
+                                , database = Database.update editing.id (Node.setContent content) model.database
+                              }
+                            , NoEffect
+                            )
 
                         Err problems ->
                             ( { model | editing = Just { editing | input = Err ( input, problems ) } }
