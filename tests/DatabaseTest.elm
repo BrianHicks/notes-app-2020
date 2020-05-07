@@ -295,6 +295,15 @@ databaseTest =
                     emptyFixture
                         |> update (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
                         |> Expect.equal emptyFixture
+            , test "doing a no-op update doesn't change anything" <|
+                \_ ->
+                    let
+                        ( { id }, database ) =
+                            insert (Node.note Content.empty) emptyFixture
+                    in
+                    database
+                        |> update id identity
+                        |> Expect.equal database
             ]
         , describe "filter nodes"
             [ test "if my filter never matches, the list will be empty" <|
