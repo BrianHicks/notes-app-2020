@@ -392,6 +392,8 @@ encode row =
         ]
 
 
+{-| TODO: would it make more sense for this to return a set of IDs?
+-}
 toPersist : Database -> ( List Row, Database )
 toPersist ((Database database) as db) =
     ( List.filterMap (\id -> get id db) (Set.toList database.toPersist)
