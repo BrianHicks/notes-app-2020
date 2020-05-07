@@ -24,20 +24,22 @@ import { Elm } from './Main.elm'
 var db = new PouchDB('notes');
 // TODO: set up syncing
 
-db.allDocs({ include_docs: true }).then(allDocs => {
+(async function main() {
+  // get flags
+  var allDocs = await db.allDocs({ include_docs: true })
+
+  // initialize Elm
   var app = Elm.Main.init({
     flags: {
       seed: Date.now(),
       events: allDocs.rows
     }
   })
-  
+
+  // set up ports
   app.ports.put.subscribe((item) => {
     db.put(item)
       .then(success => app.ports.putSuccessfully.send(success))
       .catch(err => console.error(err));
   });
-})
-
-// go!
-
+})();
