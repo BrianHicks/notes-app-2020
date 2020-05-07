@@ -46,6 +46,17 @@ databaseTest =
                         |> Tuple.first
                         |> .parent
                         |> Expect.equal Nothing
+            , test "marks the node to be persisted" <|
+                \_ ->
+                    let
+                        ( row, database ) =
+                            insert (Node.note Content.empty) emptyFixture
+                    in
+                    database
+                        |> toPersist
+                        |> Tuple.first
+                        |> List.map .id
+                        |> Expect.equal [ row.id ]
             ]
         , describe "get"
             [ test "you can get a node again" <|
