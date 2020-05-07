@@ -304,6 +304,18 @@ databaseTest =
                     database
                         |> update id identity
                         |> Expect.equal database
+            , test "updating a node marks it to be persisted" <|
+                \_ ->
+                    let
+                        ( row, database ) =
+                            insert (Node.note Content.empty) emptyFixture
+                    in
+                    database
+                        |> update row.id (Node.setContent (plainContent "Hey!"))
+                        |> toPersist
+                        |> Tuple.first
+                        |> List.map .id
+                        |> Expect.equal [ row.id ]
             ]
         , describe "filter nodes"
             [ test "if my filter never matches, the list will be empty" <|

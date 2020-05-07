@@ -1,7 +1,7 @@
 module Database exposing
     ( Database, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
-    , encode
+    , encode, toPersist
     )
 
 {-|
@@ -10,7 +10,7 @@ module Database exposing
 
 @docs moveInto, moveBefore, moveAfter
 
-@docs encode
+@docs encode, toPersist
 
 -}
 
@@ -389,14 +389,11 @@ encode row =
                     ID.encode parent
           )
         , ( "children", Encode.list ID.encode row.children )
-
-        -- TODO: this is _rev specifically for the pouchdb storage. Is that OK?
-        , ( "_rev"
-          , case row.revision of
-                Nothing ->
-                    Encode.null
-
-                Just revision ->
-                    Encode.string revision
-          )
         ]
+
+
+toPersist : Database -> ( List Row, Database )
+toPersist ((Database database) as db) =
+    ( List.filterMap (\id -> get id db) (Set.toList database.toPersist)
+    , Database { database | toPersist = Set.empty ID.sorter }
+    )
