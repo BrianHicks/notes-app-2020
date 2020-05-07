@@ -359,14 +359,26 @@ insertBeforeHelp target toInsert items soFar =
 
 
 
--- JSON
+-- Storage
 
 
 encode : Row -> Encode.Value
 encode row =
     Encode.object
-        [ -- TODO: this is _id specifically for the pouchdb storage. Is that OK?
+        [ -- TODO: _id and _rev are specifically for the PouchDB storage. Is
+          -- that OK?
           ( "_id", ID.encode row.id )
+        , ( "_rev"
+          , case row.revision of
+                Nothing ->
+                    Encode.null
+
+                Just revision ->
+                    Encode.string revision
+          )
+
+        -- the rest of the fields are the document, so we get to choose
+        -- these names
         , ( "node", Node.encode row.node )
         , ( "parent"
           , case row.parent of
