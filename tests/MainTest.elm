@@ -81,13 +81,13 @@ programTest =
                     |> addNote "What's up?"
                     |> hitShortcutKey [] Escape
                     |> expectViewDoesntHaveInput
+        , test "if I make a syntax error, I should see it" <|
+            \_ ->
+                start
+                    |> clickButton "New Note"
+                    |> fillIn "content" "Content" "test ["
+                    |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the 'link' part of a [link](url)" ])
 
-        -- , test "if I make a syntax error, I should see it" <|
-        --     \_ ->
-        --         start
-        --             |> clickButton "New Note"
-        --             |> fillIn "content" "Content" "test ["
-        --             |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the 'link' part of a [link](url)" ])
         -- , test "after editing a note, hitting enter creates a new child note" <|
         --     \_ ->
         --         start

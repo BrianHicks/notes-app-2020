@@ -253,15 +253,32 @@ viewNode id model =
 
         Just { node } ->
             if Maybe.map .id model.editing == Just id then
-                Html.textarea
-                    [ Attrs.value (Content.toString (Node.content node))
-                    , Attrs.attribute "aria-label" "Content"
-                    , Attrs.id "content"
-                    , Events.onInput UserEditedNode
-                    , Events.onBlur UserFinishedEditing
-                    , editorKeybindings
+                Html.section []
+                    [ Html.textarea
+                        [ case Maybe.map .input model.editing of
+                            Just (Ok content) ->
+                                Attrs.value (Content.toString content)
+
+                            Just (Err ( input, _ )) ->
+                                Attrs.value input
+
+                            -- should not actually be possible; oh well.
+                            Nothing ->
+                                Attrs.value ""
+                        , Attrs.attribute "aria-label" "Content"
+                        , Attrs.id "content"
+                        , Events.onInput UserEditedNode
+                        , Events.onBlur UserFinishedEditing
+                        , editorKeybindings
+                        ]
+                        []
+                    , case Maybe.map .input model.editing of
+                        Just (Err ( _, problems )) ->
+                            Html.ul [] (List.map (\problem -> Html.li [] [ Html.text problem ]) problems)
+
+                        _ ->
+                            Html.text ""
                     ]
-                    []
 
             else
                 Content.toHtml (Node.content node)
