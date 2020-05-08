@@ -385,6 +385,29 @@ databaseTest =
                         |> delete (ID.fromInt 1000)
                         |> Expect.equal database
             ]
+        , describe "persisting nodes"
+            [ test "toPersist should give a list of things that need to be persisted" <|
+                \_ ->
+                    let
+                        ( node, database ) =
+                            insert (Node.note (plainContent "hey")) emptyFixture
+                    in
+                    toPersist database
+                        |> Tuple.first
+                        |> Expect.equal [ node ]
+            , test "toPersist should clear the list oof things to be persisted" <|
+                \_ ->
+                    let
+                        ( node, database ) =
+                            insert (Node.note (plainContent "hey")) emptyFixture
+                    in
+                    database
+                        |> toPersist
+                        |> Tuple.second
+                        |> toPersist
+                        |> Tuple.first
+                        |> Expect.equal []
+            ]
         ]
 
 
