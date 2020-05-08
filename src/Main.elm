@@ -75,9 +75,10 @@ flagsDecoder =
 type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
+    | PouchDBPutSuccessfully Value
+    | TimerTriggeredSave
     | UserClickedNewNote
     | UserEditedNode String
-    | PouchDBPutSuccessfully Value
 
 
 type Effect
@@ -102,6 +103,31 @@ update msg model =
             , NoEffect
             )
 
+        PouchDBPutSuccessfully value ->
+            let
+                decoder =
+                    Decode.map2 Tuple.pair
+                        (Decode.field "id" ID.decoder)
+                        (Decode.field "rev" Decode.string)
+            in
+            case Decode.decodeValue decoder value of
+                Ok ( id, rev ) ->
+                    ( { model | database = Database.updateRevision id rev model.database }
+                    , NoEffect
+                    )
+
+                Err err ->
+                    Debug.todo (Debug.toString err)
+
+        TimerTriggeredSave ->
+            let
+                ( toPersist, database ) =
+                    Database.toPersist model.database
+            in
+            ( { model | database = database }
+            , Batch (List.map (Put << Database.encode) toPersist)
+            )
+
         UserClickedNewNote ->
             let
                 ( row, database ) =
@@ -117,25 +143,9 @@ update msg model =
               }
             , Batch
                 [ PushUrl (Route.Node row.id)
-                , Put (Database.encode row)
+                , NoEffect
                 ]
             )
-
-        PouchDBPutSuccessfully value ->
-            let
-                decoder =
-                    Decode.map2 Tuple.pair
-                        (Decode.field "id" ID.decoder)
-                        (Decode.field "rev" Decode.string)
-            in
-            case Decode.decodeValue decoder value of
-                Ok ( id, rev ) ->
-                    ( { model | database = Database.updateRevision id (Debug.log "rev" rev) model.database }
-                    , NoEffect
-                    )
-
-                Err err ->
-                    Debug.todo (Debug.toString err)
 
         UserEditedNode input ->
             case model.editing of
@@ -191,7 +201,10 @@ port putSuccessfully : (Value -> msg) -> Sub msg
 
 subscriptions : Model key -> Sub Msg
 subscriptions model =
-    putSuccessfully PouchDBPutSuccessfully
+    Sub.batch
+        [ putSuccessfully PouchDBPutSuccessfully
+        , Time.every 1000 (\_ -> TimerTriggeredSave)
+        ]
 
 
 view : Model key -> Browser.Document Msg
