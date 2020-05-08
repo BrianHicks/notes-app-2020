@@ -308,6 +308,10 @@ appendSibling sibling target ((Database db) as database) =
                         db.nodes
                             |> Dict.update parent (Maybe.map (\node -> { node | children = insertAfter sibling target node.children }))
                             |> Dict.update target (Maybe.map (\node -> { node | parent = Just parent }))
+                    , toPersist =
+                        db.toPersist
+                            |> Set.insert parent
+                            |> Set.insert target
                 }
 
 

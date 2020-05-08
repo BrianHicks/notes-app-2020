@@ -209,6 +209,24 @@ databaseTest =
                         |> get parent.id
                         |> Maybe.map .children
                         |> Expect.equal (Just [ second.id, first.id, third.id ])
+            , test "will mark both the moved node and parent as needing update" <|
+                \_ ->
+                    let
+                        ( parent, ( first, ( second, database ) ) ) =
+                            insert (Node.note (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                    in
+                    database
+                        |> moveInto parent.id first.id
+                        |> toPersist
+                        |> Tuple.second
+                        -----
+                        |> moveAfter first.id second.id
+                        |> toPersist
+                        |> Tuple.first
+                        |> List.map .id
+                        |> Expect.equal [ second.id, parent.id ]
             ]
         , describe "finding a sibling"
             [ test "won't work for the only note in the database" <|
