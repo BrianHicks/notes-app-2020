@@ -69,13 +69,13 @@ programTest =
                     |> clickButton "New Note"
                     |> fillIn "content" "Content" "What's up?"
                     |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
+        , test "after editing, blurring finalizes the note" <|
+            \_ ->
+                start
+                    |> addNote "What's up?"
+                    |> blur
+                    |> expectViewDoesntHaveInput
 
-        -- , test "after editing, blurring finalizes the note" <|
-        --     \_ ->
-        --         start
-        --             |> addNote "What's up?"
-        --             |> blur
-        --             |> expectViewDoesntHaveInput
         -- , test "after editing, hitting escape finalizes the note" <|
         --     \_ ->
         --         start

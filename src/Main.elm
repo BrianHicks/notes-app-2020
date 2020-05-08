@@ -80,6 +80,7 @@ type Msg
     | TimerTriggeredSave
     | UserClickedNewNote
     | UserEditedNode String
+    | UserFinishedEditing
 
 
 type Effect
@@ -170,6 +171,13 @@ update msg model =
                             , NoEffect
                             )
 
+        UserFinishedEditing ->
+            -- TODO: this will discard content if it's in the errored
+            -- state. Fix?
+            ( { model | editing = Nothing }
+            , NoEffect
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -250,6 +258,7 @@ viewNode id model =
                     , Attrs.attribute "aria-label" "Content"
                     , Attrs.id "content"
                     , Events.onInput UserEditedNode
+                    , Events.onBlur UserFinishedEditing
                     ]
                     []
 
