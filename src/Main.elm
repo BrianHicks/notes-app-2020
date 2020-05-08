@@ -259,11 +259,31 @@ viewNode id model =
                     , Attrs.id "content"
                     , Events.onInput UserEditedNode
                     , Events.onBlur UserFinishedEditing
+                    , editorKeybindings
                     ]
                     []
 
             else
                 Content.toHtml (Node.content node)
+
+
+editorKeybindings : Attribute Msg
+editorKeybindings =
+    Events.custom "keydown" <|
+        Decode.andThen
+            (\key ->
+                case key of
+                    "Escape" ->
+                        Decode.succeed
+                            { message = UserFinishedEditing
+                            , stopPropagation = False
+                            , preventDefault = False
+                            }
+
+                    _ ->
+                        Decode.fail ("Unhandled key: " ++ key)
+            )
+            (Decode.field "key" Decode.string)
 
 
 main : Program Value (Model Navigation.Key) Msg
