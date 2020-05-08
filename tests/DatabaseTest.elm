@@ -89,6 +89,21 @@ databaseTest =
                         |> get parent.id
                         |> Maybe.map .children
                         |> Expect.equal (Just [ child.id ])
+            , test "marks both the parent and child as unpersisted" <|
+                \_ ->
+                    let
+                        ( parent, ( child, ( _, database ) ) ) =
+                            emptyFixture
+                                |> insert (Node.note (plainContent "parent"))
+                                |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
+                                |> Tuple.mapSecond (Tuple.mapSecond toPersist)
+                    in
+                    database
+                        |> moveInto parent.id child.id
+                        |> toPersist
+                        |> Tuple.first
+                        |> List.map .id
+                        |> Expect.equal [ parent.id, child.id ]
             , test "shows the relationship in .parent" <|
                 \_ ->
                     let

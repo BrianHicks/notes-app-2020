@@ -276,6 +276,7 @@ detachChild child (Database database) =
                         )
                     |> Maybe.withDefault database.nodes
                     |> Dict.update child (Maybe.map (\node -> { node | parent = Nothing }))
+            , toPersist = Set.insert child database.toPersist
         }
 
 
@@ -287,6 +288,10 @@ prependChild parent child (Database database) =
                 database.nodes
                     |> Dict.update parent (Maybe.map (\node -> { node | children = child :: node.children }))
                     |> Dict.update child (Maybe.map (\node -> { node | parent = Just parent }))
+            , toPersist =
+                database.toPersist
+                    |> Set.insert parent
+                    |> Set.insert child
         }
 
 
