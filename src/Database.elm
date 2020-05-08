@@ -88,13 +88,16 @@ insert node (Database database) =
 
 update : ID -> (Node -> Node) -> Database -> Database
 update id updater ((Database database) as db) =
-    Database
-        { database
-            | nodes =
-                Dict.update id
-                    (Maybe.map (\row -> { row | node = updater row.node }))
-                    database.nodes
-        }
+    case get id db of
+        Just row ->
+            Database
+                { database
+                    | nodes = Dict.insert id { row | node = updater row.node } database.nodes
+                    , toPersist = Set.insert id database.toPersist
+                }
+
+        Nothing ->
+            db
 
 
 updateRevision : ID -> String -> Database -> Database

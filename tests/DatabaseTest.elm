@@ -318,8 +318,9 @@ databaseTest =
             , test "updating a node marks it to be persisted" <|
                 \_ ->
                     let
-                        ( row, database ) =
+                        ( row, ( _, database ) ) =
                             insert (Node.note Content.empty) emptyFixture
+                                |> Tuple.mapSecond toPersist
                     in
                     database
                         |> update row.id (Node.setContent (plainContent "Hey!"))
