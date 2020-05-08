@@ -87,12 +87,12 @@ programTest =
                     |> clickButton "New Note"
                     |> fillIn "content" "Content" "test ["
                     |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the 'link' part of a [link](url)" ])
+        , test "after editing a note, hitting enter creates a new child note" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "What's up?" [ "Not much, you?" ]
+                    |> expectNote (Query.has [ Selector.text "Not much, you?" ])
 
-        -- , test "after editing a note, hitting enter creates a new child note" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "What's up?" [ "Not much, you?" ]
-        --             |> expectNote (Query.has [ Selector.text "Not much, you?" ])
         -- , test "after adding two notes, you should be able to click to select either" <|
         --     \_ ->
         --         start

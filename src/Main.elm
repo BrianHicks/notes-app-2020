@@ -81,6 +81,7 @@ type Msg
     | UserClickedNewNote
     | UserEditedNode String
     | UserFinishedEditing
+    | UserHitEnterOnNode
 
 
 type Effect
@@ -178,6 +179,32 @@ update msg model =
             , NoEffect
             )
 
+        UserHitEnterOnNode ->
+            case Maybe.andThen (\editing -> Database.get editing.id model.database) model.editing of
+                Just row ->
+                    let
+                        ( newNode, inserted ) =
+                            Database.insert (Node.node Content.empty) model.database
+
+                        database =
+                            if Node.isNote row.node then
+                                Database.moveInto row.id newNode.id inserted
+
+                            else
+                                Database.moveAfter row.id newNode.id inserted
+                    in
+                    ( { model
+                        | editing = Just { id = newNode.id, input = Ok (Node.content newNode.node) }
+                        , database = database
+                      }
+                    , NoEffect
+                    )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -251,41 +278,55 @@ viewNode id model =
         Nothing ->
             Html.text "Node not found!"
 
-        Just { node } ->
-            if Maybe.map .id model.editing == Just id then
-                Html.section []
-                    [ Html.textarea
-                        [ case Maybe.map .input model.editing of
-                            Just (Ok content) ->
-                                Attrs.value (Content.toString content)
+        Just row ->
+            let
+                tag =
+                    if Node.isNote row.node then
+                        "section"
 
-                            Just (Err ( input, _ )) ->
-                                Attrs.value input
+                    else
+                        "li"
+            in
+            Html.node tag
+                []
+                [ if Maybe.map .id model.editing == Just id then
+                    Html.form []
+                        [ Html.textarea
+                            [ case Maybe.map .input model.editing of
+                                Just (Ok content) ->
+                                    Attrs.value (Content.toString content)
 
-                            -- should not actually be possible; oh well.
-                            Nothing ->
-                                Attrs.value ""
-                        , Attrs.attribute "aria-label" "Content"
-                        , Attrs.id "content"
-                        , Events.onInput UserEditedNode
-                        , Events.onBlur UserFinishedEditing
-                        , editorKeybindings
+                                Just (Err ( input, _ )) ->
+                                    Attrs.value input
+
+                                -- should not actually be possible; oh well.
+                                Nothing ->
+                                    Attrs.value ""
+                            , Attrs.attribute "aria-label" "Content"
+                            , Attrs.id "content"
+                            , Events.onInput UserEditedNode
+                            , Events.onBlur UserFinishedEditing
+                            , editorKeybindings id
+                            ]
+                            []
+                        , case Maybe.map .input model.editing of
+                            Just (Err ( _, problems )) ->
+                                Html.ul [] (List.map (\problem -> Html.li [] [ Html.text problem ]) problems)
+
+                            _ ->
+                                Html.text ""
                         ]
-                        []
-                    , case Maybe.map .input model.editing of
-                        Just (Err ( _, problems )) ->
-                            Html.ul [] (List.map (\problem -> Html.li [] [ Html.text problem ]) problems)
 
-                        _ ->
-                            Html.text ""
-                    ]
-
-            else
-                Content.toHtml (Node.content node)
+                  else
+                    Content.toHtml (Node.content row.node)
+                , row.children
+                    |> List.map (\child -> viewNode child model)
+                    |> Html.ul []
+                ]
 
 
-editorKeybindings : Attribute Msg
-editorKeybindings =
+editorKeybindings : ID -> Attribute Msg
+editorKeybindings id =
     Events.custom "keydown" <|
         Decode.andThen
             (\key ->
@@ -295,6 +336,13 @@ editorKeybindings =
                             { message = UserFinishedEditing
                             , stopPropagation = False
                             , preventDefault = False
+                            }
+
+                    "Enter" ->
+                        Decode.succeed
+                            { message = UserHitEnterOnNode
+                            , stopPropagation = True
+                            , preventDefault = True
                             }
 
                     _ ->
