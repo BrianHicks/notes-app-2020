@@ -1,12 +1,12 @@
 module Database exposing
-    ( Database, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+    ( Database, Row, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
     , encode, toPersist
     )
 
 {-|
 
-@docs Database, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+@docs Database, Row, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
 
 @docs moveInto, moveBefore, moveAfter
 
