@@ -33,8 +33,8 @@ start =
         |> ProgramTest.withSimulatedEffects testPerform
         |> ProgramTest.start
             (Encode.object
-                [ ( "events", Encode.list identity [] )
-                , ( "seed", Encode.int 0 )
+                [ ( "seed", Encode.int 0 )
+                , ( "rows", Encode.list identity [] )
                 ]
             )
 

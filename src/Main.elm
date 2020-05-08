@@ -45,7 +45,7 @@ type alias Model key =
 init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
     let
-        { seed } =
+        { seed, rows } =
             case Decode.decodeValue flagsDecoder flags of
                 Ok stuff ->
                     stuff
@@ -53,7 +53,7 @@ init flags url key =
                 Err err ->
                     Debug.todo (Debug.toString err)
     in
-    ( { database = Database.empty seed -- TODO: load data
+    ( { database = Database.load seed rows
       , url = url
       , key = key
       , route = Route.parse url
@@ -66,10 +66,11 @@ init flags url key =
     )
 
 
-flagsDecoder : Decoder { seed : Random.Seed }
+flagsDecoder : Decoder { seed : Random.Seed, rows : List Database.Row }
 flagsDecoder =
-    Decode.map (\seed -> { seed = seed })
+    Decode.map2 (\seed rows -> { seed = seed, rows = rows })
         (Decode.field "seed" (Decode.map Random.initialSeed Decode.int))
+        (Decode.field "rows" (Decode.list (Decode.field "doc" Database.decoder)))
 
 
 type Msg

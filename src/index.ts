@@ -32,7 +32,7 @@ var db = new PouchDB('notes');
   var app = Elm.Main.init({
     flags: {
       seed: Date.now(),
-      events: allDocs.rows
+      rows: allDocs.rows
     }
   })
 

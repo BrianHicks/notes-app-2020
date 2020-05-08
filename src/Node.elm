@@ -2,7 +2,7 @@ module Node exposing
     ( Node, content, setContent, isEmpty
     , note, isNote
     , node
-    , encode
+    , encode, decoder
     )
 
 {-|
@@ -13,10 +13,11 @@ module Node exposing
 
 @docs node
 
-@docs encode
+@docs encode, decoder
 
 -}
 
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Node.Content as Content exposing (Content)
 
@@ -88,3 +89,27 @@ encodeMetadata meta =
     case meta of
         Note ->
             Encode.string "note"
+
+
+decoder : Decoder Node
+decoder =
+    Decode.map2
+        (\metadata content_ ->
+            Node { metadata = metadata, content = content_ }
+        )
+        (Decode.field "metadata" (Decode.nullable metadataDecoder))
+        (Decode.field "content" Content.decoder)
+
+
+metadataDecoder : Decoder Metadata
+metadataDecoder =
+    Decode.andThen
+        (\kind ->
+            case kind of
+                "note" ->
+                    Decode.succeed Note
+
+                _ ->
+                    Decode.fail ("I don't know about " ++ kind ++ " metadata.")
+        )
+        Decode.string

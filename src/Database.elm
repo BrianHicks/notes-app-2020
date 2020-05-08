@@ -1,20 +1,21 @@
 module Database exposing
-    ( Database, Row, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+    ( Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
     , moveInto, moveBefore, moveAfter
-    , encode, toPersist
+    , decoder, encode, toPersist
     )
 
 {-|
 
-@docs Database, Row, empty, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+@docs Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
 
 @docs moveInto, moveBefore, moveAfter
 
-@docs encode, toPersist
+@docs decoder, encode, toPersist
 
 -}
 
 import Database.ID as ID exposing (ID)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Node exposing (Node)
 import Random
@@ -50,6 +51,22 @@ empty seed =
         { nodes = Dict.empty ID.sorter
         , seed = seed
         , toPersist = Set.empty ID.sorter
+        }
+
+
+load : Random.Seed -> List Row -> Database
+load seed rows =
+    let
+        (Database database) =
+            empty seed
+    in
+    Database
+        { database
+            | nodes =
+                List.foldl
+                    (\row -> Dict.insert row.id row)
+                    database.nodes
+                    rows
         }
 
 
@@ -363,6 +380,16 @@ insertBeforeHelp target toInsert items soFar =
 
 
 -- Storage
+
+
+decoder : Decoder Row
+decoder =
+    Decode.map5 Row
+        (Decode.field "_id" ID.decoder)
+        (Decode.field "node" Node.decoder)
+        (Decode.field "parent" (Decode.nullable ID.decoder))
+        (Decode.field "children" (Decode.list ID.decoder))
+        (Decode.field "_rev" (Decode.nullable Decode.string))
 
 
 encode : Row -> Encode.Value
