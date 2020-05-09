@@ -87,6 +87,7 @@ type Msg
     | UserWantsToEditNode ID
     | UserWantsToIndentNode
     | UserWantsToDedentNode
+    | UserHitBackspaceOnEmptyNode
 
 
 type Effect
@@ -288,6 +289,25 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserHitBackspaceOnEmptyNode ->
+            let
+                maybeRow =
+                    model.editing
+                        |> Maybe.map .id
+                        |> Maybe.andThen (\id -> Database.get id model.database)
+            in
+            case maybeRow of
+                Just row ->
+                    ( { model
+                        | database = Database.delete row.id model.database
+                        , editing = Nothing
+                      }
+                    , NoEffect
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -401,7 +421,7 @@ viewNode id model =
                             , Attrs.id "editor"
                             , Events.onInput UserEditedNode
                             , Events.onBlur UserFinishedEditing
-                            , editorKeybindings id
+                            , editorKeybindings row
                             ]
                             []
                         , case Maybe.map .input model.editing of
@@ -426,8 +446,8 @@ viewNode id model =
                 ]
 
 
-editorKeybindings : ID -> Attribute Msg
-editorKeybindings id =
+editorKeybindings : Database.Row -> Attribute Msg
+editorKeybindings row =
     Decode.map2 Tuple.pair
         (Decode.field "key" Decode.string)
         (Decode.field "shiftKey" Decode.bool)
@@ -459,6 +479,18 @@ editorKeybindings id =
                             , stopPropagation = True
                             , preventDefault = True
                             }
+
+                    "Backspace" ->
+                        -- TODO: remove demeter chain!
+                        if Content.isEmpty (Node.content row.node) && List.isEmpty row.children then
+                            Decode.succeed
+                                { message = UserHitBackspaceOnEmptyNode
+                                , stopPropagation = False
+                                , preventDefault = False
+                                }
+
+                        else
+                            Decode.fail "Not removing non-empty node"
 
                     _ ->
                         Decode.fail ("Unhandled key: " ++ key)

@@ -42,6 +42,7 @@ type alias Row =
 
     -- PouchDB state
     , revision : Maybe String
+    , deleted : Bool
     }
 
 
@@ -78,6 +79,14 @@ isEmpty (Database database) =
 get : ID -> Database -> Maybe Row
 get id (Database database) =
     Dict.get id database.nodes
+        |> Maybe.andThen
+            (\row ->
+                if row.deleted then
+                    Nothing
+
+                else
+                    Just row
+            )
 
 
 insert : Node -> Database -> ( Row, Database )
@@ -92,6 +101,7 @@ insert node (Database database) =
             , parent = Nothing
             , children = []
             , revision = Nothing
+            , deleted = False
             }
     in
     ( row
@@ -131,21 +141,27 @@ updateRevision id revision ((Database database) as db) =
 delete : ID -> Database -> Database
 delete toDelete ((Database database) as db) =
     case get toDelete db of
-        Just node ->
+        Just row ->
             let
-                withParentHandled =
-                    case node.parent of
-                        Just parentID ->
-                            Dict.update
-                                parentID
-                                (Maybe.map (\parent -> { parent | children = List.filter ((/=) toDelete) parent.children }))
+                ( withParentHandled, newToPersist ) =
+                    case Maybe.andThen (\id -> get id db) row.parent of
+                        Just parent ->
+                            ( Dict.insert parent.id
+                                { parent | children = List.filter ((/=) toDelete) parent.children }
                                 database.nodes
+                            , Set.insert parent.id database.toPersist
+                            )
 
                         Nothing ->
-                            database.nodes
+                            ( database.nodes
+                            , database.toPersist
+                            )
             in
             Database
-                { database | nodes = Dict.remove toDelete withParentHandled }
+                { database
+                    | nodes = Dict.insert toDelete { row | deleted = True } withParentHandled
+                    , toPersist = Set.insert toDelete newToPersist
+                }
 
         Nothing ->
             db
@@ -397,19 +413,24 @@ insertBeforeHelp target toInsert items soFar =
 
 decoder : Decoder Row
 decoder =
-    Decode.map5 Row
+    Decode.map6 Row
         (Decode.field "_id" ID.decoder)
         (Decode.field "node" Node.decoder)
         (Decode.field "parent" (Decode.nullable ID.decoder))
         (Decode.field "children" (Decode.list ID.decoder))
         (Decode.field "_rev" (Decode.nullable Decode.string))
+        (Decode.oneOf
+            [ Decode.field "_deleted" Decode.bool
+            , Decode.succeed False
+            ]
+        )
 
 
 encode : Row -> Encode.Value
 encode row =
     Encode.object
-        [ -- TODO: _id and _rev are specifically for the PouchDB storage. Is
-          -- that OK?
+        [ -- TODO: _id, _rev, and _deleted are specifically for the PouchDB
+          -- storage. Is that OK?
           ( "_id", ID.encode row.id )
         , ( "_rev"
           , case row.revision of
@@ -419,6 +440,7 @@ encode row =
                 Just revision ->
                     Encode.string revision
           )
+        , ( "_deleted", Encode.bool row.deleted )
 
         -- the rest of the fields are the document, so we get to choose
         -- these names

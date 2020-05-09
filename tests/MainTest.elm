@@ -168,21 +168,18 @@ programTest =
                         [ Selector.text "Grandchild 1"
                         , Selector.text "Grandchild 2"
                         ]
+        , test "hitting backspace in an empty node removes it from the note" <|
+            \_ ->
+                start
+                    |> addNote "Note"
+                    |> hitShortcutKey [] Enter
+                    |> hitShortcutKey [] Backspace
+                    |> expectNote
+                        (Query.find [ Selector.containing [ Selector.text "Note" ] ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.count (Expect.equal 0)
+                        )
 
-        -- , test "hitting backspace in an empty node removes it from the note" <|
-        --     \_ ->
-        --         start
-        --             |> addNote "Note"
-        --             |> hitShortcutKey [] Enter
-        --             |> hitShortcutKey [] Backspace
-        --             |> expectNote
-        --                 (Query.find
-        --                     [ Selector.tag "h1"
-        --                     , Selector.containing [ Selector.text "Note" ]
-        --                     ]
-        --                     >> Query.children [ Selector.tag "li" ]
-        --                     >> Query.count (Expect.equal 0)
-        --                 )
         -- , test "hitting alt-up while editing moves the node up" <|
         --     \_ ->
         --         start
