@@ -4,7 +4,7 @@ import Database
 import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -99,13 +99,15 @@ programTest =
                     |> addNote "Not much."
                     |> clickButton "What's up?"
                     |> expectSidebar (Query.has [ Selector.text "What's up?" ])
+        , test "after a note has been edited, clicking it repoens it for editing" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Hey, I'm a Note!" []
+                    |> within
+                        (Query.find [ Selector.tag "section" ])
+                        (clickButton "Hey, I'm a Note!")
+                    |> expectAnEditingNode
 
-        -- , test "after a note has been edited, clicking it repoens it for editing" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Hey, I'm a Note!" []
-        --             |> clickButton "Hey, I'm a Note!"
-        --             |> expectAnEditingNode
         -- , test "after a child has been edited, clicking it reopens it for editing" <|
         --     \_ ->
         --         start

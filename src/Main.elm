@@ -83,6 +83,7 @@ type Msg
     | UserFinishedEditing
     | UserHitEnterOnNode
     | UserSelectedNoteInList ID
+    | UserWantsToEditNode ID
 
 
 type Effect
@@ -211,6 +212,18 @@ update msg model =
             , PushUrl (Route.Node id)
             )
 
+        UserWantsToEditNode id ->
+            case Database.get id model.database of
+                Just row ->
+                    ( { model | editing = Just { id = id, input = Ok (Node.content row.node) } }
+                    , NoEffect
+                    )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -267,7 +280,7 @@ viewApplication model =
                     Html.li []
                         [ Html.button
                             [ Events.onClick (UserSelectedNoteInList id) ]
-                            [ Content.toHtml (Node.content node) ]
+                            (Content.toHtml (Node.content node))
                         ]
                 )
             |> Html.ul []
@@ -331,10 +344,16 @@ viewNode id model =
                         ]
 
                   else
-                    Content.toHtml (Node.content row.node)
-                , row.children
-                    |> List.map (\child -> viewNode child model)
-                    |> Html.ul []
+                    Html.button
+                        [ Events.onClick (UserWantsToEditNode row.id) ]
+                        (Content.toHtml (Node.content row.node))
+                , if List.isEmpty row.children then
+                    Html.text ""
+
+                  else
+                    row.children
+                        |> List.map (\child -> viewNode child model)
+                        |> Html.ul []
                 ]
 
 

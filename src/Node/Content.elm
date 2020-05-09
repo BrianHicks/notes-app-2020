@@ -64,9 +64,9 @@ toList (Content guts) =
     guts
 
 
-toHtml : Content -> Html msg
+toHtml : Content -> List (Html msg)
 toHtml (Content guts) =
-    Html.div [] (List.map nodeToHtml guts)
+    List.map nodeToHtml guts
 
 
 isEmpty : Content -> Bool
