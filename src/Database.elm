@@ -257,27 +257,27 @@ nextNode id database =
 
 
 detachChild : ID -> Database -> Database
-detachChild child (Database database) =
-    Database
-        { database
-            | nodes =
-                database.nodes
-                    |> Dict.get child
-                    |> Maybe.andThen .parent
-                    |> Maybe.map
-                        (\oldParent ->
-                            Dict.update oldParent
-                                (Maybe.map
-                                    (\node ->
-                                        { node | children = List.filter ((/=) child) node.children }
-                                    )
-                                )
-                                database.nodes
-                        )
-                    |> Maybe.withDefault database.nodes
-                    |> Dict.update child (Maybe.map (\node -> { node | parent = Nothing }))
-            , toPersist = Set.insert child database.toPersist
-        }
+detachChild child ((Database db) as database) =
+    case
+        get child database
+            |> Maybe.andThen .parent
+            |> Maybe.andThen (\id -> get id database)
+    of
+        Just parent ->
+            Database
+                { db
+                    | nodes =
+                        db.nodes
+                            |> Dict.insert parent.id { parent | children = List.filter ((/=) child) parent.children }
+                            |> Dict.update child (Maybe.map (\row -> { row | parent = Nothing }))
+                    , toPersist =
+                        db.toPersist
+                            |> Set.insert child
+                            |> Set.insert parent.id
+                }
+
+        Nothing ->
+            database
 
 
 prependChild : ID -> ID -> Database -> Database
@@ -328,6 +328,10 @@ prependSibling sibling target ((Database db) as database) =
                         db.nodes
                             |> Dict.update parent (Maybe.map (\node -> { node | children = insertBefore sibling target node.children }))
                             |> Dict.update target (Maybe.map (\node -> { node | parent = Just parent }))
+                    , toPersist =
+                        db.toPersist
+                            |> Set.insert parent
+                            |> Set.insert target
                 }
 
 
