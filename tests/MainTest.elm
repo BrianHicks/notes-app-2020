@@ -188,19 +188,19 @@ programTest =
                     |> addNote ""
                     |> hitShortcutKey [] Backspace
                     |> expectBrowserUrl (Expect.equal "https://localhost/")
+        , test "hitting alt-up while editing moves the node up" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "First", "Second" ]
+                    |> clickButton "Second"
+                    |> hitShortcutKey [ Alt ] ArrowUp
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Second"
+                        , Selector.text "First"
+                        ]
 
-        -- , test "hitting alt-up while editing moves the node up" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "First", "Second" ]
-        --             |> clickButton "Second"
-        --             |> hitShortcutKey [ Alt ] ArrowUp
-        --             |> hitShortcutKey [] Escape
-        --             |> expectSiblingsIn
-        --                 (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
-        --                 [ Selector.text "Second"
-        --                 , Selector.text "First"
-        --                 ]
         -- , test "hitting alt-down while editing moves the node down" <|
         --     \_ ->
         --         start

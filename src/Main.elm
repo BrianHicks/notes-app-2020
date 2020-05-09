@@ -88,6 +88,7 @@ type Msg
     | UserWantsToIndentNode
     | UserWantsToDedentNode
     | UserHitBackspaceOnEmptyNode
+    | UserWantsToMoveNodeUp
 
 
 type Effect
@@ -313,6 +314,28 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserWantsToMoveNodeUp ->
+            let
+                maybeTarget =
+                    Maybe.Extra.orListLazy
+                        [ \_ ->
+                            model.editing
+                                |> Maybe.andThen (\{ id } -> Database.previousSibling id model.database)
+                        , \_ ->
+                            model.editing
+                                |> Maybe.andThen (\{ id } -> Database.get id model.database)
+                                |> Maybe.andThen .parent
+                        ]
+            in
+            case Maybe.map2 Tuple.pair model.editing maybeTarget of
+                Just ( { id }, target ) ->
+                    ( { model | database = Database.moveBefore target id model.database }
+                    , FocusOnEditor
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -460,11 +483,18 @@ viewNode id model =
 
 editorKeybindings : Database.Row -> Attribute Msg
 editorKeybindings row =
-    Decode.map2 Tuple.pair
+    Decode.map3
+        (\key shiftKey altKey ->
+            { key = key
+            , shiftKey = shiftKey
+            , altKey = altKey
+            }
+        )
         (Decode.field "key" Decode.string)
         (Decode.field "shiftKey" Decode.bool)
+        (Decode.field "altKey" Decode.bool)
         |> Decode.andThen
-            (\( key, shiftKey ) ->
+            (\{ key, shiftKey, altKey } ->
                 case key of
                     "Escape" ->
                         Decode.succeed
@@ -503,6 +533,17 @@ editorKeybindings row =
 
                         else
                             Decode.fail "Not removing non-empty node"
+
+                    "ArrowUp" ->
+                        if altKey then
+                            Decode.succeed
+                                { message = UserWantsToMoveNodeUp
+                                , stopPropagation = True
+                                , preventDefault = True
+                                }
+
+                        else
+                            Decode.fail "ignoring ArrowDown without modifier"
 
                     _ ->
                         Decode.fail ("Unhandled key: " ++ key)
