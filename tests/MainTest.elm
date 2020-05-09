@@ -132,24 +132,24 @@ programTest =
                             >> Query.first
                             >> Query.has [ Selector.text "Child" ]
                         )
+        , test "when adding a note, shift-tab dedents" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [ Shift ] Tab
+                    |> hitShortcutKey [] Escape
+                    |> expectNote
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Parent" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.first
+                            >> Query.hasNot [ Selector.text "Child" ]
+                        )
 
-        -- , test "when adding a note, shift-tab dedents" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "Parent", "Child" ]
-        --             |> clickButton "Child"
-        --             |> hitShortcutKey [] Tab
-        --             |> hitShortcutKey [ Shift ] Tab
-        --             |> hitShortcutKey [] Escape
-        --             |> expectNote
-        --                 (Query.find
-        --                     [ Selector.tag "li"
-        --                     , Selector.containing [ Selector.text "Parent" ]
-        --                     ]
-        --                     >> Query.children [ Selector.tag "li" ]
-        --                     >> Query.first
-        --                     >> Query.hasNot [ Selector.text "Child" ]
-        --                 )
         -- , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
         --     \_ ->
         --         start

@@ -86,6 +86,7 @@ type Msg
     | UserSelectedNoteInList ID
     | UserWantsToEditNode ID
     | UserWantsToIndentNode
+    | UserWantsToDedentNode
 
 
 type Effect
@@ -259,6 +260,34 @@ update msg model =
                     , NoEffect
                     )
 
+        UserWantsToDedentNode ->
+            let
+                current =
+                    Maybe.map .id model.editing
+
+                newParent =
+                    current
+                        |> Maybe.andThen (\id -> Database.get id model.database)
+                        |> Maybe.andThen .parent
+                        |> Maybe.andThen (\id -> Database.get id model.database)
+                        |> Maybe.andThen
+                            (\parent ->
+                                if Node.isNote parent.node then
+                                    Nothing
+
+                                else
+                                    Just parent
+                            )
+            in
+            case Maybe.map2 Tuple.pair current newParent of
+                Just ( id, parent ) ->
+                    ( { model | database = Database.moveAfter parent.id id model.database }
+                    , FocusOnEditor
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -399,9 +428,11 @@ viewNode id model =
 
 editorKeybindings : ID -> Attribute Msg
 editorKeybindings id =
-    Events.custom "keydown" <|
-        Decode.andThen
-            (\key ->
+    Decode.map2 Tuple.pair
+        (Decode.field "key" Decode.string)
+        (Decode.field "shiftKey" Decode.bool)
+        |> Decode.andThen
+            (\( key, shiftKey ) ->
                 case key of
                     "Escape" ->
                         Decode.succeed
@@ -419,7 +450,12 @@ editorKeybindings id =
 
                     "Tab" ->
                         Decode.succeed
-                            { message = UserWantsToIndentNode
+                            { message =
+                                if shiftKey then
+                                    UserWantsToDedentNode
+
+                                else
+                                    UserWantsToIndentNode
                             , stopPropagation = True
                             , preventDefault = True
                             }
@@ -427,7 +463,7 @@ editorKeybindings id =
                     _ ->
                         Decode.fail ("Unhandled key: " ++ key)
             )
-            (Decode.field "key" Decode.string)
+        |> Events.custom "keydown"
 
 
 main : Program Value (Model Navigation.Key) Msg
