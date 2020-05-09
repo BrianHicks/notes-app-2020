@@ -85,6 +85,7 @@ type Msg
     | UserHitEnterOnNode
     | UserSelectedNoteInList ID
     | UserWantsToEditNode ID
+    | UserWantsToIndentNode
 
 
 type Effect
@@ -221,6 +222,35 @@ update msg model =
             case Database.get id model.database of
                 Just row ->
                     ( { model | editing = Just { id = id, input = Ok (Node.content row.node) } }
+                    , FocusOnEditor
+                    )
+
+                Nothing ->
+                    ( model
+                    , NoEffect
+                    )
+
+        UserWantsToIndentNode ->
+            let
+                current =
+                    Maybe.map .id model.editing
+
+                newParent =
+                    current
+                        |> Maybe.andThen (\id -> Database.previousSibling id model.database)
+                        |> Maybe.andThen (\id -> Database.get id model.database)
+            in
+            case Maybe.map2 Tuple.pair current newParent of
+                Just ( id, parent ) ->
+                    ( { model
+                        | database =
+                            case List.reverse parent.children of
+                                lastChild :: _ ->
+                                    Database.moveAfter lastChild id model.database
+
+                                [] ->
+                                    Database.moveInto parent.id id model.database
+                      }
                     , FocusOnEditor
                     )
 
@@ -383,6 +413,13 @@ editorKeybindings id =
                     "Enter" ->
                         Decode.succeed
                             { message = UserHitEnterOnNode
+                            , stopPropagation = True
+                            , preventDefault = True
+                            }
+
+                    "Tab" ->
+                        Decode.succeed
+                            { message = UserWantsToIndentNode
                             , stopPropagation = True
                             , preventDefault = True
                             }

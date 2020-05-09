@@ -116,23 +116,23 @@ programTest =
                     |> addNoteAndChildren "Note" [ "I'm a child!" ]
                     |> clickButton "I'm a child!"
                     |> expectAnEditingNode
+        , test "when adding a note, tab indents" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [] Escape
+                    |> expectNote
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Parent" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                            >> Query.first
+                            >> Query.has [ Selector.text "Child" ]
+                        )
 
-        -- , test "when adding a note, tab indents" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "Parent", "Child" ]
-        --             |> clickButton "Child"
-        --             |> hitShortcutKey [] Tab
-        --             |> hitShortcutKey [] Escape
-        --             |> expectNote
-        --                 (Query.find
-        --                     [ Selector.tag "li"
-        --                     , Selector.containing [ Selector.text "Parent" ]
-        --                     ]
-        --                     >> Query.children [ Selector.tag "li" ]
-        --                     >> Query.first
-        --                     >> Query.has [ Selector.text "Child" ]
-        --                 )
         -- , test "when adding a note, shift-tab dedents" <|
         --     \_ ->
         --         start
