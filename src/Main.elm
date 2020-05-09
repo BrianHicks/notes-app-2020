@@ -95,6 +95,7 @@ type Effect
     | Batch (List Effect)
     | LoadUrl String
     | PushUrl Route
+    | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
 
@@ -302,7 +303,11 @@ update msg model =
                         | database = Database.delete row.id model.database
                         , editing = Nothing
                       }
-                    , NoEffect
+                    , if Node.isNote row.node then
+                        ReplaceUrl Route.Root
+
+                      else
+                        NoEffect
                     )
 
                 Nothing ->
@@ -327,6 +332,13 @@ perform model effect =
 
             else
                 Navigation.pushUrl model.key (Route.toString route)
+
+        ReplaceUrl route ->
+            if model.route == route then
+                Cmd.none
+
+            else
+                Navigation.replaceUrl model.key (Route.toString route)
 
         Put value ->
             put value

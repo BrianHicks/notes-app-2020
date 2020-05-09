@@ -4,7 +4,7 @@ import Database
 import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, expectBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -53,6 +53,9 @@ testPerform effect =
 
         PushUrl url ->
             Navigation.pushUrl (Route.toString url)
+
+        ReplaceUrl url ->
+            Navigation.replaceUrl (Route.toString url)
 
         Put _ ->
             -- port!
@@ -179,6 +182,12 @@ programTest =
                             >> Query.children [ Selector.tag "li" ]
                             >> Query.count (Expect.equal 0)
                         )
+        , test "deleting a note while navigated to it navigates away" <|
+            \_ ->
+                start
+                    |> addNote ""
+                    |> hitShortcutKey [] Backspace
+                    |> expectBrowserUrl (Expect.equal "https://localhost/")
 
         -- , test "hitting alt-up while editing moves the node up" <|
         --     \_ ->
