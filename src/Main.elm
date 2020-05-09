@@ -82,6 +82,7 @@ type Msg
     | UserEditedNode String
     | UserFinishedEditing
     | UserHitEnterOnNode
+    | UserSelectedNoteInList ID
 
 
 type Effect
@@ -205,6 +206,11 @@ update msg model =
                     , NoEffect
                     )
 
+        UserSelectedNoteInList id ->
+            ( model
+            , PushUrl (Route.Node id)
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -256,7 +262,14 @@ viewApplication model =
         [ Html.button [ Events.onClick UserClickedNewNote ] [ Html.text "New Note" ]
         , model.database
             |> Database.filter Node.isNote
-            |> List.map (\{ node } -> Html.li [] [ Content.toHtml (Node.content node) ])
+            |> List.map
+                (\{ id, node } ->
+                    Html.li []
+                        [ Html.button
+                            [ Events.onClick (UserSelectedNoteInList id) ]
+                            [ Content.toHtml (Node.content node) ]
+                        ]
+                )
             |> Html.ul []
             |> List.singleton
             |> Html.nav []

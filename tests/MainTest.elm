@@ -92,14 +92,14 @@ programTest =
                 start
                     |> addNoteAndChildren "What's up?" [ "Not much, you?" ]
                     |> expectNote (Query.has [ Selector.text "Not much, you?" ])
+        , test "after adding two notes, you should be able to click to select either" <|
+            \_ ->
+                start
+                    |> addNote "What's up?"
+                    |> addNote "Not much."
+                    |> clickButton "What's up?"
+                    |> expectSidebar (Query.has [ Selector.text "What's up?" ])
 
-        -- , test "after adding two notes, you should be able to click to select either" <|
-        --     \_ ->
-        --         start
-        --             |> addNote "What's up?"
-        --             |> addNote "Not much."
-        --             |> clickButton "What's up?"
-        --             |> expectSidebar (Query.has [ Selector.text "What's up?" ])
         -- , test "after a note has been edited, clicking it repoens it for editing" <|
         --     \_ ->
         --         start
