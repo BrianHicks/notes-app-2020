@@ -110,13 +110,13 @@ programTest =
                         (Query.find [ Selector.tag "section" ])
                         (clickButton "Hey, I'm a Note!")
                     |> expectAnEditingNode
+        , test "after a child has been edited, clicking it reopens it for editing" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "I'm a child!" ]
+                    |> clickButton "I'm a child!"
+                    |> expectAnEditingNode
 
-        -- , test "after a child has been edited, clicking it reopens it for editing" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "I'm a child!" ]
-        --             |> clickButton "I'm a child!"
-        --             |> expectAnEditingNode
         -- , test "when adding a note, tab indents" <|
         --     \_ ->
         --         start
