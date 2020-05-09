@@ -58,6 +58,9 @@ testPerform effect =
             -- port!
             SCmd.none
 
+        FocusOnEditor ->
+            SCmd.none
+
 
 programTest : Test
 programTest =
@@ -67,7 +70,7 @@ programTest =
             \_ ->
                 start
                     |> clickButton "New Note"
-                    |> fillIn "content" "Content" "What's up?"
+                    |> fillIn "editor" "Content" "What's up?"
                     |> expectSidebar (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "What's up?" ])
         , test "after editing, blurring finalizes the note" <|
             \_ ->
@@ -85,7 +88,7 @@ programTest =
             \_ ->
                 start
                     |> clickButton "New Note"
-                    |> fillIn "content" "Content" "test ["
+                    |> fillIn "editor" "Content" "test ["
                     |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the 'link' part of a [link](url)" ])
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
@@ -236,7 +239,7 @@ programTest =
 
 addNote : String -> NotesTest -> NotesTest
 addNote text =
-    clickButton "New Note" >> fillIn "content" "Content" text
+    clickButton "New Note" >> fillIn "editor" "Content" text
 
 
 addNoteAndChildren : String -> List String -> NotesTest -> NotesTest
@@ -249,7 +252,7 @@ addNoteAndChildren note siblings test =
 
         addSiblings =
             siblings
-                |> List.map (fillIn "content" "Content")
+                |> List.map (fillIn "editor" "Content")
                 |> List.intersperse (hitShortcutKey [] Enter)
     in
     List.foldl (\action progress -> action progress) withNote addSiblings
@@ -291,7 +294,7 @@ type Modifier
 
 hitShortcutKey : List Modifier -> Key -> NotesTest -> NotesTest
 hitShortcutKey modifiers key =
-    simulateDomEvent (Query.find [ Selector.id "content" ]) (keyDown modifiers key)
+    simulateDomEvent (Query.find [ Selector.id "editor" ]) (keyDown modifiers key)
 
 
 keyDown : List Modifier -> Key -> ( String, Encode.Value )
@@ -329,5 +332,5 @@ input : Selector
 input =
     Selector.all
         [ Selector.tag "textarea"
-        , Selector.id "content"
+        , Selector.id "editor"
         ]

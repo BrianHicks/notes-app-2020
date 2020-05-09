@@ -78,6 +78,7 @@ type Msg
     | UrlChanged Url
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
+    | FocusedOnEditor
     | UserClickedNewNote
     | UserEditedNode String
     | UserFinishedEditing
@@ -92,6 +93,7 @@ type Effect
     | LoadUrl String
     | PushUrl Route
     | Put Value
+    | FocusOnEditor
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -133,6 +135,9 @@ update msg model =
             , Batch (List.map (Put << Database.encode) toPersist)
             )
 
+        FocusedOnEditor ->
+            ( model, NoEffect )
+
         UserClickedNewNote ->
             let
                 ( row, database ) =
@@ -148,7 +153,7 @@ update msg model =
               }
             , Batch
                 [ PushUrl (Route.Node row.id)
-                , NoEffect
+                , FocusOnEditor
                 ]
             )
 
@@ -199,7 +204,7 @@ update msg model =
                         | editing = Just { id = newNode.id, input = Ok (Node.content newNode.node) }
                         , database = database
                       }
-                    , NoEffect
+                    , FocusOnEditor
                     )
 
                 Nothing ->
@@ -216,7 +221,7 @@ update msg model =
             case Database.get id model.database of
                 Just row ->
                     ( { model | editing = Just { id = id, input = Ok (Node.content row.node) } }
-                    , NoEffect
+                    , FocusOnEditor
                     )
 
                 Nothing ->
@@ -246,6 +251,11 @@ perform model effect =
 
         Put value ->
             put value
+
+        FocusOnEditor ->
+            Task.attempt
+                (\_ -> FocusedOnEditor)
+                (Dom.focus "editor")
 
 
 port put : Value -> Cmd msg
@@ -329,7 +339,7 @@ viewNode id model =
                                 Nothing ->
                                     Attrs.value ""
                             , Attrs.attribute "aria-label" "Content"
-                            , Attrs.id "content"
+                            , Attrs.id "editor"
                             , Events.onInput UserEditedNode
                             , Events.onBlur UserFinishedEditing
                             , editorKeybindings id
