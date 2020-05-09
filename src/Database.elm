@@ -143,7 +143,7 @@ delete toDelete ((Database database) as db) =
     case get toDelete db of
         Just row ->
             let
-                ( withParentHandled, newToPersist ) =
+                ( newNodes, newToPersist ) =
                     case Maybe.andThen (\id -> get id db) row.parent of
                         Just parent ->
                             ( Dict.insert parent.id
@@ -159,8 +159,8 @@ delete toDelete ((Database database) as db) =
             in
             Database
                 { database
-                    | nodes = Dict.insert toDelete { row | deleted = True } withParentHandled
-                    , toPersist = Set.insert toDelete newToPersist
+                    | nodes = Dict.insert row.id { row | deleted = True } newNodes
+                    , toPersist = Set.insert row.id newToPersist
                 }
 
         Nothing ->
@@ -355,7 +355,7 @@ filter : (Node -> Bool) -> Database -> List Row
 filter shouldInclude (Database database) =
     Dict.foldr
         (\_ current previous ->
-            if shouldInclude current.node then
+            if not current.deleted && shouldInclude current.node then
                 current :: previous
 
             else
@@ -461,6 +461,7 @@ encode row =
 -}
 toPersist : Database -> ( List Row, Database )
 toPersist ((Database database) as db) =
-    ( List.filterMap (\id -> get id db) (Set.toList database.toPersist)
+    ( -- not using `get` here since it removes deleted nodes
+      List.filterMap (\id -> Dict.get id database.nodes) (Set.toList database.toPersist)
     , Database { database | toPersist = Set.empty ID.sorter }
     )
