@@ -149,26 +149,26 @@ programTest =
                             >> Query.first
                             >> Query.hasNot [ Selector.text "Child" ]
                         )
+        , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Child", "Grandchild 1", "Grandchild 2" ]
+                    |> clickButton "Grandchild 1"
+                    |> hitShortcutKey [] Tab
+                    |> clickButton "Grandchild 2"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find
+                            [ Selector.tag "li"
+                            , Selector.containing [ Selector.text "Child" ]
+                            ]
+                            >> Query.children [ Selector.tag "li" ]
+                        )
+                        [ Selector.text "Grandchild 1"
+                        , Selector.text "Grandchild 2"
+                        ]
 
-        -- , test "when a child is tabbed into a list with other children, it's inserted as the last child" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "Child", "Grandchild 1", "Grandchild 2" ]
-        --             |> clickButton "Grandchild 1"
-        --             |> hitShortcutKey [] Tab
-        --             |> clickButton "Grandchild 2"
-        --             |> hitShortcutKey [] Tab
-        --             |> hitShortcutKey [] Escape
-        --             |> expectSiblingsIn
-        --                 (Query.find
-        --                     [ Selector.tag "li"
-        --                     , Selector.containing [ Selector.text "Child" ]
-        --                     ]
-        --                     >> Query.children [ Selector.tag "li" ]
-        --                 )
-        --                 [ Selector.text "Grandchild 1"
-        --                 , Selector.text "Grandchild 2"
-        --                 ]
         -- , test "hitting backspace in an empty node removes it from the note" <|
         --     \_ ->
         --         start
