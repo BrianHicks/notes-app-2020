@@ -73,8 +73,11 @@ Of course, I could also keep a second index with all the contents by note ID...
      - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
          - Html.Keyed? Blocking keyup defaults as well as keydown?
 - [ ] nice searching for the links
-- [ ] persistence
+- [x] persistence
 - [ ] nice design
+- [ ] order notes according to most recently updated
+- [ ] allow multiple notes to be edited concurrently
+- [ ] come up with a consistent design for keybindings (e.g. alt moves edit, alt+shift moves node)
 
 Someday/maybe
 
@@ -82,23 +85,8 @@ Someday/maybe
   - (likely) markdown
   - (less likely) rich text of some kind
 - [ ] metadata
-- [ ] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
+- [x] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
 - [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
-
-### The Plan for Storage
-
-I want stored notes to eventually sync like a CRDT so I can learn how to do that, and so as to avoid conflicts.
-That means, probably:
-
-- a hybrid logical clock for timestamps
-- a LWW-map for modifying attributes
-
-For now I'm *not* going to implement P2P stuff like a Merkle DAG or whatever; I'll probably just sync with something off the shelf like pouchdb/couchdb.
-Maybe sometime in the future I could move to a P2P backend, but let's start a little simpler.
-
-#### Left to do on That
-
-- [ ] make insert require a time or return an effect somehow
 
 ### Notes to Self
 
