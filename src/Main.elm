@@ -348,6 +348,7 @@ update msg model =
                             model.editing
                                 |> Maybe.andThen (\{ id } -> Database.get id model.database)
                                 |> Maybe.andThen .parent
+                                |> Maybe.andThen (\id -> Database.nextSibling id model.database)
                         ]
             in
             case Maybe.map2 Tuple.pair model.editing maybeTarget of

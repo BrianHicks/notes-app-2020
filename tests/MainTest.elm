@@ -212,34 +212,33 @@ programTest =
                         [ Selector.text "Second"
                         , Selector.text "First"
                         ]
-
-        -- , test "hitting alt-up when the child is the first child moves it above the parent" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "Parent", "Child" ]
-        --             |> clickButton "Child"
-        --             |> hitShortcutKey [] Tab
-        --             |> hitShortcutKey [ Alt ] ArrowUp
-        --             |> hitShortcutKey [] Escape
-        --             |> expectSiblingsIn
-        --                 (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
-        --                 [ Selector.text "Child"
-        --                 , Selector.text "Parent"
-        --                 ]
-        -- , test "hitting alt-down when the child is the last child moves it below the parent's next sibling" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "Parent", "Child", "Aunt" ]
-        --             |> clickButton "Child"
-        --             |> hitShortcutKey [] Tab
-        --             |> hitShortcutKey [ Alt ] ArrowDown
-        --             |> hitShortcutKey [] Escape
-        --             |> expectSiblingsIn
-        --                 (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
-        --                 [ Selector.text "Parent"
-        --                 , Selector.text "Aunt"
-        --                 , Selector.text "Child"
-        --                 ]
+        , test "hitting alt-up when the child is the first child moves it above the parent" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Parent", "Child" ]
+                    |> clickButton "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [ Alt ] ArrowUp
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Child"
+                        , Selector.text "Parent"
+                        ]
+        , test "hitting alt-down when the child is the last child moves it below the parent's next sibling" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Parent", "Child", "Aunt" ]
+                    |> clickButton "Child"
+                    |> hitShortcutKey [] Tab
+                    |> hitShortcutKey [ Alt ] ArrowDown
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Parent"
+                        , Selector.text "Aunt"
+                        , Selector.text "Child"
+                        ]
         ]
 
 
