@@ -72,8 +72,12 @@ Of course, I could also keep a second index with all the contents by note ID...
      - [ ] move to the previous sibling when I backspace through a node
      - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
          - Html.Keyed? Blocking keyup defaults as well as keydown?
-- [ ] nice searching for the links
+- [ ] navigation by link
+- [ ] search
+  - [ ] finding nodes and navigating to their notes
+  - [ ] backlinks
 - [x] persistence
+- [ ] offline support (webworker, caching?)
 - [ ] nice design
 - [ ] order notes according to most recently updated
 - [ ] allow multiple notes to be edited concurrently
