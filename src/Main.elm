@@ -89,6 +89,7 @@ type Msg
     | UserWantsToDedentNode
     | UserHitBackspaceOnEmptyNode
     | UserWantsToMoveNodeUp
+    | UserWantsToMoveNodeDown
 
 
 type Effect
@@ -336,6 +337,28 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserWantsToMoveNodeDown ->
+            let
+                maybeTarget =
+                    Maybe.Extra.orListLazy
+                        [ \_ ->
+                            model.editing
+                                |> Maybe.andThen (\{ id } -> Database.nextSibling id model.database)
+                        , \_ ->
+                            model.editing
+                                |> Maybe.andThen (\{ id } -> Database.get id model.database)
+                                |> Maybe.andThen .parent
+                        ]
+            in
+            case Maybe.map2 Tuple.pair model.editing maybeTarget of
+                Just ( { id }, target ) ->
+                    ( { model | database = Database.moveAfter target id model.database }
+                    , FocusOnEditor
+                    )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -543,7 +566,18 @@ editorKeybindings row =
                                 }
 
                         else
-                            Decode.fail "ignoring ArrowDown without modifier"
+                            Decode.fail "ignoring ArrowUp without modifier"
+
+                    "ArrowDown" ->
+                        if altKey then
+                            Decode.succeed
+                                { message = UserWantsToMoveNodeDown
+                                , stopPropagation = True
+                                , preventDefault = True
+                                }
+
+                        else
+                            Decode.fail "Ignoring ArrowUp without modifier"
 
                     _ ->
                         Decode.fail ("Unhandled key: " ++ key)

@@ -200,19 +200,19 @@ programTest =
                         [ Selector.text "Second"
                         , Selector.text "First"
                         ]
+        , test "hitting alt-down while editing moves the node down" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "First", "Second" ]
+                    |> clickButton "First"
+                    |> hitShortcutKey [ Alt ] ArrowDown
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
+                        [ Selector.text "Second"
+                        , Selector.text "First"
+                        ]
 
-        -- , test "hitting alt-down while editing moves the node down" <|
-        --     \_ ->
-        --         start
-        --             |> addNoteAndChildren "Note" [ "First", "Second" ]
-        --             |> clickButton "First"
-        --             |> hitShortcutKey [ Alt ] ArrowDown
-        --             |> hitShortcutKey [] Escape
-        --             |> expectSiblingsIn
-        --                 (Query.find [ Selector.tag "section" ] >> Query.children [ Selector.tag "li" ])
-        --                 [ Selector.text "Second"
-        --                 , Selector.text "First"
-        --                 ]
         -- , test "hitting alt-up when the child is the first child moves it above the parent" <|
         --     \_ ->
         --         start
