@@ -192,17 +192,24 @@ programTest =
                     |> addNote "Note"
                     |> hitShortcutKey [] Enter
                     |> hitShortcutKey [] Backspace
+                    |> hitShortcutKey [] Escape
                     |> expectNote
                         (Query.find [ Selector.containing [ Selector.text "Note" ] ]
                             >> Query.children [ Selector.tag "li" ]
                             >> Query.count (Expect.equal 0)
                         )
-        , test "deleting a note while navigated to it navigates away" <|
+        , test "hitting backspace at the beginning of a node joins it with the previous node" <|
             \_ ->
                 start
-                    |> addNote ""
+                    |> addNoteAndChildren "Note" [ "base", "ball" ]
+                    |> clickButton "ball"
+                    |> moveSelectionToOffset 0 0
                     |> hitShortcutKey [] Backspace
-                    |> expectBrowserUrl (Expect.equal "https://localhost/")
+                    |> hitShortcutKey [] Escape
+                    |> expectNote
+                        (Query.find [ Selector.tag "li" ]
+                            >> Query.has [ Selector.text "baseball" ]
+                        )
         , test "hitting alt-up while editing moves the node up" <|
             \_ ->
                 start

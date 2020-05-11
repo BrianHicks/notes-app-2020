@@ -33,13 +33,15 @@ type alias Model key =
     , route : Route
 
     -- view state
-    , editing :
-        Maybe
-            { id : ID
-            , input : Result ( String, List String ) Content
-            , selection : { start : Int, end : Int }
-            }
+    , editing : Maybe Editing
     , selection : Maybe Selection
+    }
+
+
+type alias Editing =
+    { id : ID
+    , input : Result ( String, List String ) Content
+    , selection : { start : Int, end : Int }
     }
 
 
@@ -88,7 +90,7 @@ type Msg
     | UserWantsToEditNode ID
     | UserWantsToIndentNode
     | UserWantsToDedentNode
-    | UserHitBackspaceOnEmptyNode
+    | UserHitBackspaceAtBeginningOfNode
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
@@ -317,24 +319,37 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
-        UserHitBackspaceOnEmptyNode ->
+        UserHitBackspaceAtBeginningOfNode ->
             let
                 maybeRow =
-                    model.editing
-                        |> Maybe.map .id
+                    Maybe.andThen (\{ id } -> Database.get id model.database) model.editing
+
+                maybeTarget =
+                    Maybe.Extra.orListLazy
+                        [ \_ -> Maybe.andThen (\{ id } -> Database.previousSibling id model.database) maybeRow
+                        , \_ -> Maybe.andThen .parent maybeRow
+                        ]
                         |> Maybe.andThen (\id -> Database.get id model.database)
             in
-            case maybeRow of
-                Just row ->
+            case Maybe.map2 Tuple.pair maybeRow maybeTarget of
+                Just ( row, target ) ->
+                    let
+                        updatedContent =
+                            Content.append (Node.content target.node) (Node.content row.node)
+                    in
                     ( { model
-                        | database = Database.delete row.id model.database
-                        , editing = Nothing
+                        | database =
+                            model.database
+                                |> Database.update target.id (Node.setContent updatedContent)
+                                |> Database.delete row.id
+                        , editing =
+                            Just
+                                { id = target.id
+                                , input = Ok updatedContent
+                                , selection = { start = 0, end = 0 }
+                                }
                       }
-                    , if Node.isNote row.node then
-                        ReplaceUrl Route.Root
-
-                      else
-                        NoEffect
+                    , FocusOnEditor
                     )
 
                 Nothing ->
@@ -498,40 +513,49 @@ viewNode id model =
             in
             Html.node tag
                 []
-                [ if Maybe.map .id model.editing == Just id then
-                    Html.form []
-                        [ Html.textarea
-                            [ case Maybe.map .input model.editing of
-                                Just (Ok content) ->
-                                    Attrs.value (Content.toString content)
+                [ case model.editing of
+                    Just editing ->
+                        if id == editing.id then
+                            Html.form []
+                                [ Html.textarea
+                                    [ case Maybe.map .input model.editing of
+                                        Just (Ok content) ->
+                                            Attrs.value (Content.toString content)
 
-                                Just (Err ( input, _ )) ->
-                                    Attrs.value input
+                                        Just (Err ( input, _ )) ->
+                                            Attrs.value input
 
-                                -- should not actually be possible; oh well.
-                                Nothing ->
-                                    Attrs.value ""
-                            , Attrs.attribute "aria-label" "Content"
-                            , Attrs.id "editor"
-                            , Attrs.attribute "is" "node-input"
-                            , Events.onInput UserEditedNode
-                            , Events.onBlur UserFinishedEditing
-                            , editorKeybindings row
-                            , onSelectionChange UserChangedSelection
-                            ]
-                            []
-                        , case Maybe.map .input model.editing of
-                            Just (Err ( _, problems )) ->
-                                Html.ul [] (List.map (\problem -> Html.li [] [ Html.text problem ]) problems)
+                                        -- should not actually be possible; oh well.
+                                        Nothing ->
+                                            Attrs.value ""
+                                    , Attrs.attribute "aria-label" "Content"
+                                    , Attrs.id "editor"
+                                    , Attrs.attribute "is" "node-input"
+                                    , Events.onInput UserEditedNode
+                                    , Events.onBlur UserFinishedEditing
+                                    , editorKeybindings editing row
+                                    , onSelectionChange UserChangedSelection
+                                    ]
+                                    []
+                                , case Maybe.map .input model.editing of
+                                    Just (Err ( _, problems )) ->
+                                        Html.ul [] (List.map (\problem -> Html.li [] [ Html.text problem ]) problems)
 
-                            _ ->
-                                Html.text ""
-                        ]
+                                    _ ->
+                                        Html.text ""
+                                ]
 
-                  else
-                    Html.button
-                        [ Events.onClick (UserWantsToEditNode row.id) ]
-                        (Content.toHtml (Node.content row.node))
+                        else
+                            -- TODO: remove duplication here
+                            Html.button
+                                [ Events.onClick (UserWantsToEditNode row.id) ]
+                                (Content.toHtml (Node.content row.node))
+
+                    Nothing ->
+                        -- TODO: remove duplication here
+                        Html.button
+                            [ Events.onClick (UserWantsToEditNode row.id) ]
+                            (Content.toHtml (Node.content row.node))
                 , if List.isEmpty row.children then
                     Html.text ""
 
@@ -542,8 +566,8 @@ viewNode id model =
                 ]
 
 
-editorKeybindings : Database.Row -> Attribute Msg
-editorKeybindings row =
+editorKeybindings : Editing -> Database.Row -> Attribute Msg
+editorKeybindings editing row =
     Decode.map3
         (\key shiftKey altKey ->
             { key = key
@@ -584,10 +608,9 @@ editorKeybindings row =
                             }
 
                     "Backspace" ->
-                        -- TODO: remove demeter chain!
-                        if Content.isEmpty (Node.content row.node) && List.isEmpty row.children then
+                        if editing.selection.start == 0 && editing.selection.end == 0 && List.isEmpty row.children then
                             Decode.succeed
-                                { message = UserHitBackspaceOnEmptyNode
+                                { message = UserHitBackspaceAtBeginningOfNode
                                 , stopPropagation = False
                                 , preventDefault = False
                                 }
