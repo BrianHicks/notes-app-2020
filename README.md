@@ -30,17 +30,21 @@ This is my implementation of a note-taking app, organized around the following p
 
 ## Keyboard Shortcuts
 
-| Context        | Shortcut                                              | Action                |
-|----------------|-------------------------------------------------------|-----------------------|
-| Editing a Note | <kbd>Alt</kbd>-<kbd>Up</kbd>                          | Move edit cursor up   |
-|                | <kbd>Alt</kbd>-<kbd>Down</kbd>                        | Move edit cursor down |
-|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Up</kbd>         | Move node up          |
-|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Down</kbd>       | Move node down        |
-|                | <kbd>Tab</kbd>                                        | Indent                |
-|                | <kbd>Shift</kbd>-<kbd>Tab</kbd>                       | Dedent                |
-|                | <kbd>Enter</kbd>                                      | Split node at cursor  |
-|                | <kbd>Backspace</kbd> (in empty node with no children) | Delete node           |
-|                | <kbd>Esc</kbd>                                        | Stop editing          |
+| Context        | Shortcut                                              | Action                          |
+|----------------|-------------------------------------------------------|---------------------------------|
+| Editing a Note | <kbd>Alt</kbd>-<kbd>Up</kbd>                          | Move edit cursor up             |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Up</kbd>         | Move node up                    |
+|                | <kbd>Alt</kbd>-<kbd>Down</kbd>                        | Move edit cursor down           |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Down</kbd>       | Move node down                  |
+|                | <kbd>Alt</kbd>-<kbd>Right</kbd>                       | Move edit cursor to first child |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Right</kbd>      | Indent                          |
+|                | <kbd>Alt</kbd>-<kbd>Left</kbd>                        | Move edit cursor to parent      |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Left</kbd>       | Dedent                          |
+|                | <kbd>Tab</kbd>                                        | Indent                          |
+|                | <kbd>Shift</kbd>-<kbd>Tab</kbd>                       | Dedent                          |
+|                | <kbd>Enter</kbd>                                      | Split node at cursor            |
+|                | <kbd>Backspace</kbd> (in empty node with no children) | Delete node                     |
+|                | <kbd>Esc</kbd>                                        | Stop editing                    |
 
 ## Interaction Ideas
 
