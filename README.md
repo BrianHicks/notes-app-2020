@@ -10,16 +10,7 @@ This is my implementation of a note-taking app, organized around the following p
 
 - **Notes are for _me_.**
   Sharing is important but secondary, and exporting should be fine in most cases.
-  Importing is pretty important here too!
-
-- **If I can't organize things I need to do, I'm not going to use the tool.**
-  It should handle TODOs nicely (due/defer, mark/complete/cancel, recurrence rules?)
-  It should also be possible to reorder/filter todos in some sort of aggregate view.
-
-- **Aggregate views to reveal structure.**
-  These look like queries.
-  Maybe I want to see only the first marked TODO in each note?
-  Should be doable.
+  Note, though, that this means I want importing to work great so I can slurp in stuff from multiple places!
 
 - **Anything I can see, I can edit.**
   There should be as few read-only views in the app as I can manage.
@@ -28,35 +19,36 @@ This is my implementation of a note-taking app, organized around the following p
   I want to be able to navigate completely with the keyboard.
   Vim-ish keybindings, if possible!
 
-I'm not 100% sure about whether this should be plain text editing or a tree/outline editor.
-For one thing, I think that flatter is better when it comes to information.
-If I'm going to have links create structure, why have an outline?
-But on the other hand, infinite parenthetical asides are really great for capturing the overview of a thought and being able to drill down as necessary.
-It's also way easier to narrow a search to a specific node in an outline view; you're more likely to get exactly the thought you were searching for or referring to.
+- **If I can't organize things I need to do, I'm not going to use the tool.**
+  It should handle TODOs nicely (due/defer, mark/complete/cancel, recurrence rules?)
+  It should also be possible to reorder/filter todos in some sort of aggregate view.
 
-I feel like a hybrid approach might be nice too: outline view by default, with the ability to break out into a document view, or focus into it.
-Roam does this, but I'm not really a fan of the UX for enabling/disabling it.
+- **Aggregate views reveal structure.**
+  These look like queries.
+  Maybe I want to see only the first marked TODO in each note?
+  Should be doable.
 
-Some other ideas...
+## Keyboard Shortcuts
+
+| Context        | Shortcut                                              | Action                |
+|----------------|-------------------------------------------------------|-----------------------|
+| Editing a Note | <kbd>Alt</kbd>-<kbd>Up</kbd>                          | Move edit cursor up   |
+|                | <kbd>Alt</kbd>-<kbd>Down</kbd>                        | Move edit cursor down |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Up</kbd>         | Move node up          |
+|                | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Down</kbd>       | Move node down        |
+|                | <kbd>Tab</kbd>                                        | Indent                |
+|                | <kbd>Shift</kbd>-<kbd>Tab</kbd>                       | Dedent                |
+|                | <kbd>Enter</kbd>                                      | Split node at cursor  |
+|                | <kbd>Backspace</kbd> (in empty node with no children) | Delete node           |
+|                | <kbd>Esc</kbd>                                        | Stop editing          |
+
+## Interaction Ideas
 
 - It'd be cool to be able to select/export a group of notes.
   These could either be viewed in a read-only mode or imported into someone else's database.
   I guess it would also be possible to structure the export with CRDTs for easy merges.
 - It'd be cool to persistently save a database somewhere shared, but that potentially violates the "no formal structure" principle so it needs to be done carefully.
-
-## Technical Ideas
-
-Just jotting down some ideas prior to actually building this.
-
-I think it may make sense to store all note parts in a big dictionary.
-Pros: simple, uniform, `O(log n)` access for a single node.
-Cons: Potentially costly to retrieve all the nodes in the document.
-
-So I guess ideally I'd like to assign IDs in a way that are likely to be serial.
-Then selecting a subtree would maybe be easier.
-The [LSEQ](https://hal.archives-ouvertes.fr/hal-00921633/document) algorithm might be appropriate here?
-
-Of course, I could also keep a second index with all the contents by note ID...
+- It'd be super slick to do something like [idea fight](https://idea-fight.hoelz.ro) where one could order the children of a node.
 
 ## Next things to do
 
@@ -89,8 +81,7 @@ Someday/maybe
   - (likely) markdown
   - (less likely) rich text of some kind
 - [ ] metadata
-- [x] at some point, I want to move away from using ints for IDs and go to UUIDs. Possible UUID1s?
-- [ ] It'd be super slick to do an idea-fight kind of thing where one could order the children of a node.
+- [x] at some point, I want to move away from using ints for IDs and go to UUIDs. Possibly UUID1s?
 
 ### Notes to Self
 
@@ -98,7 +89,6 @@ elm-rte-toolkit looks cool, and it may make sense to add it later, but don't go 
 Keep things simple as long as possible!
 
 ## Layout
-
 
 ```
 ┌────────────────────────────┬─────────────────────────────────────────┬────────────────────────────┐
