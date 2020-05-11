@@ -33,7 +33,7 @@ init config =
 -- SEARCH
 
 
-search : String -> Index ref a -> Dict ref (Set ( Int, Int ))
+search : String -> Index comparable a -> Dict comparable (Set ( Int, Int ))
 search term ((Index idx) as outer) =
     case stems term of
         [] ->
@@ -45,13 +45,19 @@ search term ((Index idx) as outer) =
         firstStem :: rest ->
             List.foldl
                 (\newStem soFar ->
-                    soFar
+                    Dict.merge
+                        (\_ _ result -> result)
+                        (\key left right progress -> Dict.insert key (Set.union left right) progress)
+                        (\_ _ result -> result)
+                        soFar
+                        (searchForStem newStem.stem outer)
+                        Dict.empty
                 )
                 (searchForStem firstStem.stem outer)
                 rest
 
 
-searchForStem : String -> Index ref a -> Dict ref (Set ( Int, Int ))
+searchForStem : String -> Index comparable a -> Dict comparable (Set ( Int, Int ))
 searchForStem stem (Index { reverse }) =
     Dict.get stem reverse
         |> Maybe.withDefault Dict.empty

@@ -49,4 +49,12 @@ searchTest =
                     |> index { id = 1, content = "two" }
                     |> search "one"
                     |> Expect.equal Dict.empty
+        , test "search terms must all match for a row to be returned" <|
+            \_ ->
+                emptyIndex
+                    |> index { id = 1, content = "one" }
+                    |> index { id = 2, content = "two" }
+                    |> index { id = 3, content = "one two" }
+                    |> search "one two"
+                    |> Expect.equal (Dict.singleton 3 (Set.fromList [ ( 0, 3 ), ( 4, 7 ) ]))
         ]
