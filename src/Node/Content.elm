@@ -1,12 +1,12 @@
 module Node.Content exposing
-    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt
+    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
     , Node, text, noteLink, link
     , encode, decoder
     )
 
 {-|
 
-@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt
+@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
 
 @docs Node, text, noteLink, link
 
@@ -119,6 +119,11 @@ splitAtHelp howMuch soFar nodes =
                     ( List.reverse (left :: soFar)
                     , right :: rest
                     )
+
+
+append : Content -> Content -> Content
+append (Content nodesA) (Content nodesB) =
+    fromList (nodesA ++ nodesB)
 
 
 
