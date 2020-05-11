@@ -6,26 +6,29 @@ module Search exposing (Index, init, search, index)
 
 -}
 
-import Dict exposing (Dict)
 import Parser exposing ((|.), (|=), Parser)
-import Set exposing (Set)
+import Sort exposing (Sorter)
+import Sort.Dict as Dict exposing (Dict)
+import Sort.Set as Set exposing (Set)
 import Stemmer
 
 
-type Index ref a
+type Index ref doc
     = Index
-        { ref : a -> ref
-        , fields : List (a -> String)
+        { ref : doc -> ref
+        , sorter : Sorter ref
+        , fields : List (doc -> String)
         , reverse : Dict String (Dict ref (Set ( Int, Int )))
         }
 
 
-init : { ref : a -> comparable, fields : List (a -> String) } -> Index comparable a
+init : { ref : doc -> ref, sorter : Sorter ref, fields : List (doc -> String) } -> Index ref doc
 init config =
     Index
         { ref = config.ref
+        , sorter = config.sorter
         , fields = config.fields
-        , reverse = Dict.empty
+        , reverse = Dict.empty Sort.alphabetical
         }
 
 
@@ -33,11 +36,11 @@ init config =
 -- SEARCH
 
 
-search : String -> Index comparable a -> Dict comparable (Set ( Int, Int ))
+search : String -> Index ref doc -> Dict ref (Set ( Int, Int ))
 search term ((Index idx) as outer) =
     case stems term of
         [] ->
-            Dict.empty
+            Dict.empty idx.sorter
 
         [ { stem } ] ->
             searchForStem stem outer
@@ -46,21 +49,26 @@ search term ((Index idx) as outer) =
             List.foldl
                 (\newStem soFar ->
                     Dict.merge
+                        idx.sorter
                         (\_ _ result -> result)
-                        (\key left right progress -> Dict.insert key (Set.union left right) progress)
+                        (\key left right progress ->
+                            Dict.insert key
+                                (Set.union (Sort.custom Basics.compare) left right)
+                                progress
+                        )
                         (\_ _ result -> result)
                         soFar
                         (searchForStem newStem.stem outer)
-                        Dict.empty
+                        (Dict.empty idx.sorter)
                 )
                 (searchForStem firstStem.stem outer)
                 rest
 
 
-searchForStem : String -> Index comparable a -> Dict comparable (Set ( Int, Int ))
-searchForStem stem (Index { reverse }) =
-    Dict.get stem reverse
-        |> Maybe.withDefault Dict.empty
+searchForStem : String -> Index ref doc -> Dict ref (Set ( Int, Int ))
+searchForStem stem (Index idx) =
+    Dict.get stem idx.reverse
+        |> Maybe.withDefault (Dict.empty idx.sorter)
 
 
 
@@ -96,12 +104,20 @@ index doc (Index idx) =
                                                                         Just (Set.insert ( start, end ) spans)
 
                                                                     Nothing ->
-                                                                        Just (Set.singleton ( start, end ))
+                                                                        Just
+                                                                            (Set.singleton
+                                                                                (Sort.custom Basics.compare)
+                                                                                ( start, end )
+                                                                            )
                                                             )
                                                         |> Just
 
                                                 Nothing ->
-                                                    Just (Dict.singleton (idx.ref doc) (Set.singleton ( start, end )))
+                                                    Just
+                                                        (Dict.singleton idx.sorter
+                                                            (idx.ref doc)
+                                                            (Set.singleton (Sort.custom Basics.compare) ( start, end ))
+                                                        )
                                         )
                                 )
                                 reverseOuter
@@ -162,7 +178,7 @@ stemsParser =
 
 whitespaceChars : Set Char
 whitespaceChars =
-    Set.fromList [ '\u{000D}', '\n', '\t', ' ' ]
+    Set.fromList (Sort.custom Basics.compare) [ '\u{000D}', '\n', '\t', ' ' ]
 
 
 stemsLoop : List Stem -> Parser (Parser.Step (List Stem) (List Stem))
@@ -171,7 +187,7 @@ stemsLoop soFar =
         [ Parser.succeed (\_ -> Parser.Done (List.reverse soFar))
             |= Parser.end
         , Parser.succeed (\_ -> Parser.Loop soFar)
-            |= chompAtLeastOne (\c -> Set.member c whitespaceChars)
+            |= chompAtLeastOne (Set.memberOf whitespaceChars)
         , Parser.succeed
             (\start word end ->
                 Parser.Loop
@@ -183,7 +199,7 @@ stemsLoop soFar =
                     )
             )
             |= Parser.getOffset
-            |= Parser.getChompedString (chompAtLeastOne (\c -> not (Set.member c whitespaceChars)))
+            |= Parser.getChompedString (chompAtLeastOne (\c -> not (Set.memberOf whitespaceChars c)))
             |= Parser.getOffset
         ]
 

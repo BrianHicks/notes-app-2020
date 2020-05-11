@@ -1,9 +1,10 @@
 module SearchTest exposing (..)
 
-import Dict
 import Expect
 import Search exposing (..)
 import Set
+import Sort
+import Sort.Dict as Dict
 import Test exposing (..)
 
 
@@ -17,6 +18,7 @@ emptyIndex : Index Int Doc
 emptyIndex =
     init
         { ref = .id
+        , sorter = Sort.increasing
         , fields = [ .content ]
         }
 
@@ -28,27 +30,31 @@ searchTest =
             \_ ->
                 emptyIndex
                     |> search "test"
-                    |> Expect.equal Dict.empty
+                    |> Dict.keys
+                    |> Expect.equal []
         , test "indexing a node makes it searchable" <|
             \_ ->
                 emptyIndex
                     |> index { id = 1, content = "test" }
                     |> search "test"
-                    |> Expect.equal (Dict.singleton 1 (Set.fromList [ ( 0, 4 ) ]))
+                    |> Dict.keys
+                    |> Expect.equal [ 1 ]
         , test "searching returns only relevant matches" <|
             \_ ->
                 emptyIndex
                     |> index { id = 1, content = "one" }
                     |> index { id = 2, content = "two" }
                     |> search "one"
-                    |> Expect.equal (Dict.singleton 1 (Set.fromList [ ( 0, 3 ) ]))
+                    |> Dict.keys
+                    |> Expect.equal [ 1 ]
         , test "re-indexing a document removes old terms from the index" <|
             \_ ->
                 emptyIndex
                     |> index { id = 1, content = "one" }
                     |> index { id = 1, content = "two" }
                     |> search "one"
-                    |> Expect.equal Dict.empty
+                    |> Dict.keys
+                    |> Expect.equal []
         , test "search terms must all match for a doc to be returned" <|
             \_ ->
                 emptyIndex
@@ -56,5 +62,6 @@ searchTest =
                     |> index { id = 2, content = "two" }
                     |> index { id = 3, content = "one two" }
                     |> search "one two"
-                    |> Expect.equal (Dict.singleton 3 (Set.fromList [ ( 0, 3 ), ( 4, 7 ) ]))
+                    |> Dict.keys
+                    |> Expect.equal [ 3 ]
         ]
