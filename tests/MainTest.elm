@@ -98,6 +98,21 @@ programTest =
                 start
                     |> addNoteAndChildren "What's up?" [ "Not much, you?" ]
                     |> expectNote (Query.has [ Selector.text "Not much, you?" ])
+        , test "when I hit enter with my cursor in the middle of the text, it splits there" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Parent" [ "baseball" ]
+                    |> clickButton "baseball"
+                    |> moveSelectionToOffset 4 4
+                    |> hitShortcutKey [] Enter
+                    |> hitShortcutKey [] Escape
+                    |> expectSiblingsIn
+                        (Query.find [ Selector.tag "section" ]
+                            >> Query.children [ Selector.tag "li" ]
+                        )
+                        [ Selector.text "base"
+                        , Selector.text "ball"
+                        ]
         , test "after adding two notes, you should be able to click to select either" <|
             \_ ->
                 start
@@ -244,7 +259,9 @@ programTest =
 
 addNote : String -> NotesTest -> NotesTest
 addNote text =
-    clickButton "New Note" >> fillIn "editor" "Content" text
+    clickButton "New Note"
+        >> fillIn "editor" "Content" text
+        >> moveSelectionToOffset (String.length text) (String.length text)
 
 
 addNoteAndChildren : String -> List String -> NotesTest -> NotesTest
@@ -257,8 +274,14 @@ addNoteAndChildren note siblings test =
 
         addSiblings =
             siblings
-                |> List.map (fillIn "editor" "Content")
-                |> List.intersperse (hitShortcutKey [] Enter)
+                |> List.map
+                    (\content ->
+                        [ fillIn "editor" "Content" content
+                        , moveSelectionToOffset (String.length content) (String.length content)
+                        ]
+                    )
+                |> List.intersperse [ hitShortcutKey [] Enter ]
+                |> List.concat
     in
     List.foldl (\action progress -> action progress) withNote addSiblings
         |> hitShortcutKey [] Escape
@@ -339,3 +362,8 @@ input =
         [ Selector.tag "textarea"
         , Selector.id "editor"
         ]
+
+
+moveSelectionToOffset : Int -> Int -> NotesTest -> NotesTest
+moveSelectionToOffset start_ end_ =
+    ProgramTest.update (UserChangedSelection { start = start_, end = end_ })

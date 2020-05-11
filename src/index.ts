@@ -1,21 +1,21 @@
 // custom element
-class NoteInput extends HTMLTextAreaElement {
+class NodeInput extends HTMLTextAreaElement {
   connectedCallback() {
     var self = this;
-    
+
+    // TODO: remove this in the disconnectedCallback (or whatever it's called)
     document.addEventListener('selectionchange', function(event) {
       if (event.target.activeElement !== self) { return; }
 
       self.dispatchEvent(new CustomEvent('note-input-selectionchange', { detail: {
-        selectionStart: self.selectionStart,
-        selectionEnd: self.selectionEnd,
-        length: self.textLength
+        start: self.selectionStart,
+        end: self.selectionEnd
       })});
     });
   }
 }
 
-customElements.define('note-input', NoteInput, { extends: 'textarea' });
+customElements.define('node-input', NodeInput, { extends: 'textarea' });
 
 // storage
 import PouchDB from 'pouchdb';

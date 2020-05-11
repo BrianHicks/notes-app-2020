@@ -196,11 +196,21 @@ update msg model =
             )
 
         UserHitEnterOnNode ->
-            case Maybe.andThen (\editing -> Database.get editing.id model.database) model.editing of
-                Just row ->
+            case
+                Maybe.map2 Tuple.pair
+                    model.editing
+                    (Maybe.andThen (\editing -> Database.get editing.id model.database) model.editing)
+            of
+                Just ( editing, row ) ->
                     let
+                        ( leftContent, rightContent ) =
+                            -- demeter chain?
+                            Content.splitAt editing.selection.start (Node.content row.node)
+
                         ( newNode, inserted ) =
-                            Database.insert (Node.node Content.empty) model.database
+                            model.database
+                                |> Database.update row.id (Node.setContent leftContent)
+                                |> Database.insert (Node.node rightContent)
 
                         database =
                             if Node.isNote row.node then
