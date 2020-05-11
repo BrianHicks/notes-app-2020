@@ -562,9 +562,17 @@ viewRow id model =
 
 viewNode : ID -> Node -> Html Msg
 viewNode id node =
-    Html.button
-        [ Events.onClick (UserWantsToEditNode id) ]
-        (Content.toHtml (Node.content node))
+    let
+        inner =
+            Html.button
+                [ Events.onClick (UserWantsToEditNode id) ]
+                (Content.toHtml (Node.content node))
+    in
+    if Node.isNote node then
+        Html.h1 [] [ inner ]
+
+    else
+        inner
 
 
 editorKeybindings : Editing -> Database.Row -> Attribute Msg
