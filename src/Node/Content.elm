@@ -50,6 +50,7 @@ fromList nodes =
             )
             []
         |> List.reverse
+        |> List.filter (not << nodeIsEmpty)
         |> Content
 
 
@@ -202,18 +203,31 @@ splitNodeAt howMuch node =
     case node of
         Text text_ ->
             ( Text (String.left howMuch text_)
-            , Text (String.right howMuch text_)
+            , Text (String.dropLeft howMuch text_)
             )
 
         NoteLink text_ ->
             ( NoteLink (String.left howMuch text_)
-            , NoteLink (String.right howMuch text_)
+            , NoteLink (String.dropLeft howMuch text_)
             )
 
         Link link_ ->
             ( Link { link_ | text = String.left howMuch link_.text }
-            , Link { link_ | text = String.right howMuch link_.text }
+            , Link { link_ | text = String.dropLeft howMuch link_.text }
             )
+
+
+nodeIsEmpty : Node -> Bool
+nodeIsEmpty node =
+    case node of
+        Text text_ ->
+            String.isEmpty text_
+
+        NoteLink text_ ->
+            String.isEmpty text_
+
+        Link link_ ->
+            String.isEmpty link_.text
 
 
 

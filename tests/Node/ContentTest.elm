@@ -108,6 +108,18 @@ contentTest =
                             ( fromList [ noteLink "a" ]
                             , fromList [ noteLink "b" ]
                             )
+            , fuzz2 (Fuzz.intRange 1 10) (Fuzz.intRange 1 10) "splitting plain text behaves the same as the String module" <|
+                \splitPoint contentLength ->
+                    let
+                        content =
+                            String.concat (List.repeat contentLength "a")
+                    in
+                    fromList [ text content ]
+                        |> splitAt splitPoint
+                        |> Expect.equal
+                            ( fromList [ text (String.left splitPoint content) ]
+                            , fromList [ text (String.dropLeft splitPoint content) ]
+                            )
             ]
         , fuzz contentFuzzer "toString and fromString roundtrip successfully" <|
             \content -> content |> toString |> fromString |> Expect.equal (Ok content)
