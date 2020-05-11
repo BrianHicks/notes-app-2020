@@ -17,6 +17,7 @@
             "elm/url": "1.0.0",
             "elm-community/array-extra": "2.1.0",
             "elm-community/maybe-extra": "5.2.0",
+            "rluiten/stemmer": "1.0.4",
             "rtfeldman/elm-css": "16.0.1",
             "rtfeldman/elm-hex": "1.0.0",
             "rtfeldman/elm-iso8601-date-strings": "1.1.3",
