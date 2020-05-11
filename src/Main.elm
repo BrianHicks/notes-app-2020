@@ -492,12 +492,12 @@ viewApplication model =
                 Html.text "Select or create a note!"
 
             Route.Node id ->
-                viewNode id model
+                viewRow id model
         ]
 
 
-viewNode : ID -> Model key -> Html Msg
-viewNode id model =
+viewRow : ID -> Model key -> Html Msg
+viewRow id model =
     case Database.get id model.database of
         Nothing ->
             Html.text "Node not found!"
@@ -546,24 +546,25 @@ viewNode id model =
                                 ]
 
                         else
-                            -- TODO: remove duplication here
-                            Html.button
-                                [ Events.onClick (UserWantsToEditNode row.id) ]
-                                (Content.toHtml (Node.content row.node))
+                            viewNode row.id row.node
 
                     Nothing ->
-                        -- TODO: remove duplication here
-                        Html.button
-                            [ Events.onClick (UserWantsToEditNode row.id) ]
-                            (Content.toHtml (Node.content row.node))
+                        viewNode row.id row.node
                 , if List.isEmpty row.children then
                     Html.text ""
 
                   else
                     row.children
-                        |> List.map (\child -> viewNode child model)
+                        |> List.map (\child -> viewRow child model)
                         |> Html.ul []
                 ]
+
+
+viewNode : ID -> Node -> Html Msg
+viewNode id node =
+    Html.button
+        [ Events.onClick (UserWantsToEditNode id) ]
+        (Content.toHtml (Node.content node))
 
 
 editorKeybindings : Editing -> Database.Row -> Attribute Msg
