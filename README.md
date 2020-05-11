@@ -42,7 +42,7 @@ This is my implementation of a note-taking app, organized around the following p
 | <kbd>Alt</kbd>-<kbd>Shift</kbd>-<kbd>Left</kbd>  | Dedent                          | No          |
 | <kbd>Tab</kbd>                                   | Indent                          | Yes         |
 | <kbd>Shift</kbd>-<kbd>Tab</kbd>                  | Dedent                          | Yes         |
-| <kbd>Enter</kbd>                                 | Split node at cursor            | Partially   |
+| <kbd>Enter</kbd>                                 | Split node at cursor            | Yes         |
 | <kbd>Backspace</kbd>                             | Join nodes                      | Yes         |
 | <kbd>Esc</kbd>                                   | Stop editing                    | Yes         |
 
