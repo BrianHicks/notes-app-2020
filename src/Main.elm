@@ -37,6 +37,7 @@ type alias Model key =
         Maybe
             { id : ID
             , input : Result ( String, List String ) Content
+            , selection : { start : Int, end : Int }
             }
     , selection : Maybe Selection
     }
@@ -90,6 +91,7 @@ type Msg
     | UserHitBackspaceOnEmptyNode
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
+    | UserChangedSelection { start : Int, end : Int }
 
 
 type Effect
@@ -155,6 +157,7 @@ update msg model =
                     Just
                         { id = row.id
                         , input = Ok Content.empty
+                        , selection = { start = 0, end = 0 }
                         }
               }
             , Batch
@@ -207,7 +210,12 @@ update msg model =
                                 Database.moveAfter row.id newNode.id inserted
                     in
                     ( { model
-                        | editing = Just { id = newNode.id, input = Ok (Node.content newNode.node) }
+                        | editing =
+                            Just
+                                { id = newNode.id
+                                , input = Ok (Node.content newNode.node)
+                                , selection = { start = 0, end = 0 }
+                                }
                         , database = database
                       }
                     , FocusOnEditor
@@ -226,7 +234,14 @@ update msg model =
         UserWantsToEditNode id ->
             case Database.get id model.database of
                 Just row ->
-                    ( { model | editing = Just { id = id, input = Ok (Node.content row.node) } }
+                    ( { model
+                        | editing =
+                            Just
+                                { id = id
+                                , input = Ok (Node.content row.node)
+                                , selection = { start = 0, end = 0 }
+                                }
+                      }
                     , FocusOnEditor
                     )
 
@@ -360,6 +375,16 @@ update msg model =
                 Nothing ->
                     ( model, NoEffect )
 
+        UserChangedSelection selection ->
+            ( { model
+                | editing =
+                    Maybe.map
+                        (\editing -> { editing | selection = selection })
+                        model.editing
+              }
+            , NoEffect
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -478,9 +503,11 @@ viewNode id model =
                                     Attrs.value ""
                             , Attrs.attribute "aria-label" "Content"
                             , Attrs.id "editor"
+                            , Attrs.attribute "is" "node-input"
                             , Events.onInput UserEditedNode
                             , Events.onBlur UserFinishedEditing
                             , editorKeybindings row
+                            , onSelectionChange UserChangedSelection
                             ]
                             []
                         , case Maybe.map .input model.editing of
@@ -584,6 +611,21 @@ editorKeybindings row =
                         Decode.fail ("Unhandled key: " ++ key)
             )
         |> Events.custom "keydown"
+
+
+onSelectionChange : ({ start : Int, end : Int } -> msg) -> Attribute msg
+onSelectionChange msg =
+    Decode.map2
+        (\start end ->
+            msg
+                { start = start
+                , end = end
+                }
+        )
+        (Decode.field "start" Decode.int)
+        (Decode.field "end" Decode.int)
+        |> Decode.field "detail"
+        |> Events.on "note-input-selectionchange"
 
 
 main : Program Value (Model Navigation.Key) Msg
