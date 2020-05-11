@@ -49,7 +49,7 @@ searchTest =
                     |> index { id = 1, content = "two" }
                     |> search "one"
                     |> Expect.equal Dict.empty
-        , test "search terms must all match for a row to be returned" <|
+        , test "search terms must all match for a doc to be returned" <|
             \_ ->
                 emptyIndex
                     |> index { id = 1, content = "one" }
