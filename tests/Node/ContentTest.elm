@@ -70,6 +70,45 @@ contentTest =
                         |> Result.map toList
                         |> Expect.equal (Ok [ link { text = "markdown links", href = "https://www.google.com" } ])
             ]
+        , describe "splitAt"
+            [ test "splits text correctly" <|
+                \_ ->
+                    fromList [ text "baseball" ]
+                        |> splitAt 4
+                        |> Expect.equal
+                            ( fromList [ text "base" ]
+                            , fromList [ text "ball" ]
+                            )
+            , test "splits note links correctly" <|
+                \_ ->
+                    fromList [ noteLink "baseball" ]
+                        |> splitAt 4
+                        |> Expect.equal
+                            ( fromList [ noteLink "base" ]
+                            , fromList [ noteLink "ball" ]
+                            )
+            , test "splits links correctly" <|
+                \_ ->
+                    fromList [ link { text = "baseball", href = "https://bytes.zone" } ]
+                        |> splitAt 4
+                        |> Expect.equal
+                            ( fromList [ link { text = "base", href = "https://bytes.zone" } ]
+                            , fromList [ link { text = "ball", href = "https://bytes.zone" } ]
+                            )
+            , fuzz2 (Fuzz.intRange -1 0) contentFuzzer "no change for a split at or below 0" <|
+                \splitPoint content ->
+                    content
+                        |> splitAt splitPoint
+                        |> Expect.equal ( fromList [], content )
+            , test "splits correctly at boundaries" <|
+                \_ ->
+                    fromList [ noteLink "a", noteLink "b" ]
+                        |> splitAt 1
+                        |> Expect.equal
+                            ( fromList [ noteLink "a" ]
+                            , fromList [ noteLink "b" ]
+                            )
+            ]
         , fuzz contentFuzzer "toString and fromString roundtrip successfully" <|
             \content -> content |> toString |> fromString |> Expect.equal (Ok content)
         ]

@@ -1,12 +1,12 @@
 module Node.Content exposing
-    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty
+    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt
     , Node, text, noteLink, link
     , encode, decoder
     )
 
 {-|
 
-@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty
+@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt
 
 @docs Node, text, noteLink, link
 
@@ -49,6 +49,7 @@ fromList nodes =
                         next :: prev
             )
             []
+        |> List.reverse
         |> Content
 
 
@@ -72,6 +73,52 @@ toHtml (Content guts) =
 isEmpty : Content -> Bool
 isEmpty (Content guts) =
     List.isEmpty guts
+
+
+splitAt : Int -> Content -> ( Content, Content )
+splitAt howMuch (Content nodes) =
+    let
+        ( left, right ) =
+            splitAtHelp howMuch [] nodes
+    in
+    ( Content left, Content right )
+
+
+splitAtHelp : Int -> List Node -> List Node -> ( List Node, List Node )
+splitAtHelp howMuch soFar nodes =
+    if howMuch <= 0 then
+        ( List.reverse soFar
+        , nodes
+        )
+
+    else
+        case nodes of
+            [] ->
+                ( List.reverse soFar
+                , nodes
+                )
+
+            node :: rest ->
+                let
+                    currentLength =
+                        nodeLength node
+                in
+                if howMuch > currentLength then
+                    splitAtHelp (howMuch - currentLength) (node :: soFar) rest
+
+                else if howMuch == currentLength then
+                    ( List.reverse (node :: soFar)
+                    , rest
+                    )
+
+                else
+                    let
+                        ( left, right ) =
+                            splitNodeAt howMuch node
+                    in
+                    ( List.reverse (left :: soFar)
+                    , right :: rest
+                    )
 
 
 
@@ -130,6 +177,38 @@ nodeToHtml node =
                 , Html.text guts.text
                 , Html.span [] [ Html.text "]]" ]
                 ]
+
+
+nodeLength : Node -> Int
+nodeLength node =
+    case node of
+        Text text_ ->
+            String.length text_
+
+        NoteLink text_ ->
+            String.length text_
+
+        Link link_ ->
+            String.length link_.text
+
+
+splitNodeAt : Int -> Node -> ( Node, Node )
+splitNodeAt howMuch node =
+    case node of
+        Text text_ ->
+            ( Text (String.left howMuch text_)
+            , Text (String.right howMuch text_)
+            )
+
+        NoteLink text_ ->
+            ( NoteLink (String.left howMuch text_)
+            , NoteLink (String.right howMuch text_)
+            )
+
+        Link link_ ->
+            ( Link { link_ | text = String.left howMuch link_.text }
+            , Link { link_ | text = String.right howMuch link_.text }
+            )
 
 
 
