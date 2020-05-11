@@ -32,7 +32,21 @@ searchTest =
         , test "indexing a node makes it searchable" <|
             \_ ->
                 emptyIndex
-                    |> index { id = 1, content = "test testing tested" }
+                    |> index { id = 1, content = "test" }
                     |> search "test"
-                    |> Expect.equal (Dict.singleton 1 (Set.fromList [ ( 0, 4 ), ( 5, 12 ), ( 13, 19 ) ]))
+                    |> Expect.equal (Dict.singleton 1 (Set.fromList [ ( 0, 4 ) ]))
+        , test "searching returns only relevant matches" <|
+            \_ ->
+                emptyIndex
+                    |> index { id = 1, content = "one" }
+                    |> index { id = 2, content = "two" }
+                    |> search "one"
+                    |> Expect.equal (Dict.singleton 1 (Set.fromList [ ( 0, 3 ) ]))
+        , test "re-indexing a document removes old terms from the index" <|
+            \_ ->
+                emptyIndex
+                    |> index { id = 1, content = "one" }
+                    |> index { id = 1, content = "two" }
+                    |> search "one"
+                    |> Expect.equal Dict.empty
         ]

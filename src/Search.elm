@@ -34,17 +34,27 @@ init config =
 
 
 search : String -> Index ref a -> Dict ref (Set ( Int, Int ))
-search term (Index idx) =
+search term ((Index idx) as outer) =
     case stems term of
         [] ->
             Dict.empty
 
         [ { stem } ] ->
-            Dict.get stem idx.reverse
-                |> Maybe.withDefault Dict.empty
+            searchForStem stem outer
 
-        _ ->
-            Debug.todo "eh"
+        firstStem :: rest ->
+            List.foldl
+                (\newStem soFar ->
+                    soFar
+                )
+                (searchForStem firstStem.stem outer)
+                rest
+
+
+searchForStem : String -> Index ref a -> Dict ref (Set ( Int, Int ))
+searchForStem stem (Index { reverse }) =
+    Dict.get stem reverse
+        |> Maybe.withDefault Dict.empty
 
 
 
@@ -53,9 +63,13 @@ search term (Index idx) =
 
 index : a -> Index comparable a -> Index comparable a
 index doc (Index idx) =
+    let
+        (Index clean) =
+            remove doc (Index idx)
+    in
     -- AAAAAAAAAAAAAAAAAAAHHHHHHHHH REFACTOR ME AND ADD TYPES
     Index
-        { idx
+        { clean
             | reverse =
                 List.foldl
                     (\extractor reverseOuter ->
@@ -86,8 +100,29 @@ index doc (Index idx) =
                                 )
                                 reverseOuter
                     )
-                    idx.reverse
+                    clean.reverse
                     idx.fields
+        }
+
+
+
+-- REMOVE
+
+
+remove : a -> Index comparable a -> Index comparable a
+remove doc (Index idx) =
+    let
+        ref =
+            idx.ref doc
+    in
+    Index
+        { idx
+            | reverse =
+                Dict.map
+                    (\term refs ->
+                        Dict.remove ref refs
+                    )
+                    idx.reverse
         }
 
 
