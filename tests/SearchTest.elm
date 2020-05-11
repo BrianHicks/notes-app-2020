@@ -24,7 +24,12 @@ emptyIndex =
 searchTest : Test
 searchTest =
     describe "Search"
-        [ test "indexing a node makes it searchable" <|
+        [ test "searching for a term not present in the index gets no results" <|
+            \_ ->
+                emptyIndex
+                    |> search "test"
+                    |> Expect.equal Dict.empty
+        , test "indexing a node makes it searchable" <|
             \_ ->
                 emptyIndex
                     |> index { id = 1, content = "test testing tested" }
