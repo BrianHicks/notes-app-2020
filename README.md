@@ -56,7 +56,13 @@ This is my implementation of a note-taking app, organized around the following p
 
 ## Next things to do
 
-- [ ] nice design
+- [x] basic tree editing
+   - [x] ability to move a node up and down as well as in and out
+       - [x] moving up and down to siblings
+       - [x] if you're at the first child, moving up goes to the parent.
+       - [x] if you're at the last child, moving down goes to the parent's next sibling.
+- [x] persistence
+- [x] nice design
 - [ ] navigation by link
 - [ ] tree editing
    - [ ] moving non-edit focus around
@@ -78,15 +84,6 @@ This is my implementation of a note-taking app, organized around the following p
 - [ ] allow multiple notes to be edited concurrently
 - [ ] more metadata (todos, etc)
 
-### Finished
-
-- [x] persistence
-- [x] at some point, I want to move away from using ints for IDs and go to UUIDs. Possibly UUID1s?
-- [x] basic tree editing
-   - [x] ability to move a node up and down as well as in and out
-       - [x] moving up and down to siblings
-       - [x] if you're at the first child, moving up goes to the parent.
-       - [x] if you're at the last child, moving down goes to the parent's next sibling.
 
 ### Notes to Self
 
