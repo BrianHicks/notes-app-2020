@@ -229,7 +229,13 @@ nodeToHtml node =
                 [ decoration Colors.greyLight [ Html.text "[" ]
                 , decoration Colors.greenDark [ Html.text guts.text ]
                 , decoration Colors.greyLight [ Html.text "](" ]
-                , decoration Colors.greenLight [ Html.text "★" ]
+                , Html.span
+                    [ Attrs.css
+                        [ Css.color (Colors.toCss Colors.greenDark)
+                        , Css.fontSize (Css.em 0.7)
+                        ]
+                    ]
+                    [ Html.text "★" ]
                 , decoration Colors.greyLight [ Html.text ")" ]
                 ]
 
