@@ -4,6 +4,7 @@ import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Navigation
 import Css
+import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
 import Html.Styled as Html exposing (Attribute, Html)
@@ -463,14 +464,29 @@ subscriptions model =
 view : Model key -> Browser.Document Msg
 view model =
     { title = "Notes"
-    , body = [ Html.toUnstyled (viewApplication model) ]
+    , body =
+        List.map Html.toUnstyled
+            [ Css.Reset.meyerV2
+            , Css.Reset.borderBoxV201408
+            , viewApplication model
+            ]
     }
 
 
 viewApplication : Model key -> Html Msg
 viewApplication model =
-    Html.main_ []
-        [ Html.button [ Events.onClick UserClickedNewNote ] [ Html.text "New Note" ]
+    Html.main_
+        [ css
+            [ Css.property "display" "grid"
+            , Css.property "grid-template-columns" "350px 1fr"
+            , Css.property "grid-template-rows" "auto 1fr"
+            , Css.property "grid-template-areas" "\"header note\" \"list note\" "
+            , Css.height (Css.vh 100)
+            , Css.width (Css.pct 100)
+            ]
+        ]
+        [ Html.div [ css [ Css.property "grid-area" "header" ] ]
+            [ Html.button [ Events.onClick UserClickedNewNote ] [ Html.text "New Note" ] ]
         , model.database
             |> Database.filter Node.isNote
             |> List.map
@@ -483,16 +499,18 @@ viewApplication model =
                 )
             |> Html.ul []
             |> List.singleton
-            |> Html.nav []
-        , case model.route of
-            Route.NotFound ->
-                Html.text "Not found!"
+            |> Html.nav [ css [ Css.property "grid-area" "list" ] ]
+        , Html.div [ css [ Css.property "grid-area" "note" ] ]
+            [ case model.route of
+                Route.NotFound ->
+                    Html.text "Not found!"
 
-            Route.Root ->
-                Html.text "Select or create a note!"
+                Route.Root ->
+                    Html.text "Select or create a note!"
 
-            Route.Node id ->
-                viewRow id model
+                Route.Node id ->
+                    viewRow id model
+            ]
         ]
 
 
