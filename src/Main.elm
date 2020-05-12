@@ -674,7 +674,7 @@ viewRow id model =
                         |> Html.ul
                             [ Attrs.css
                                 [ Css.paddingLeft (Css.px 20)
-                                , Css.listStylePosition Css.inside
+                                , Css.listStylePosition Css.outside
                                 , Css.listStyleType Css.disc
                                 ]
                             ]
