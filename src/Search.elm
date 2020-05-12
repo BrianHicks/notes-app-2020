@@ -18,6 +18,7 @@ type Index ref doc
         { ref : doc -> ref
         , sorter : Sorter ref
         , toString : doc -> String
+        , forward : Dict ref (List Stem)
         , reverse : Dict String (Set ref)
         }
 
@@ -28,6 +29,7 @@ init config =
         { ref = config.ref
         , sorter = config.sorter
         , toString = config.toString
+        , forward = Dict.empty config.sorter
         , reverse = Dict.empty Sort.alphabetical
         }
 
@@ -80,10 +82,10 @@ index doc (Index idx) =
         ref =
             idx.ref doc
     in
-    -- AAAAAAAAAAAAAAAAAAAHHHHHHHHH REFACTOR ME AND ADD TYPES
     Index
         { clean
-            | reverse =
+            | forward = Dict.insert ref docStems clean.forward
+            , reverse =
                 List.foldl
                     (\{ stem, start, end } ->
                         Dict.update stem
@@ -111,7 +113,11 @@ remove doc (Index idx) =
         ref =
             idx.ref doc
     in
-    Index { idx | reverse = Dict.map (\term refs -> Set.remove ref refs) idx.reverse }
+    Index
+        { idx
+            | forward = Dict.remove ref idx.forward
+            , reverse = Dict.map (\term refs -> Set.remove ref refs) idx.reverse
+        }
 
 
 
