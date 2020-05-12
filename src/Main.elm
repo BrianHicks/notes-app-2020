@@ -492,6 +492,7 @@ viewApplication model =
             , Css.property "grid-template-columns" "350px 1fr"
             , Css.property "grid-template-rows" "auto 1fr"
             , Css.property "grid-template-areas" "\"header note\" \"list note\" "
+            , Css.property "grid-column-gap" "10px"
             , Css.height (Css.vh 100)
             , Css.width (Css.pct 100)
             ]
@@ -522,7 +523,13 @@ viewApplication model =
 
 viewHeader : List (Attribute Never) -> Html Msg
 viewHeader attrs =
-    Html.header attrs
+    Html.header
+        (Attrs.css
+            [ Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            , Css.borderRight3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            ]
+            :: attrs
+        )
         [ Button.button UserClickedNewNote
             [ Button.transparent
             , Button.css [ Css.padding (Css.px 10) ]
@@ -539,7 +546,15 @@ viewHeader attrs =
 
 viewNav : List (Attribute Never) -> Maybe ID -> List Database.Row -> Html Msg
 viewNav attrs activeId rows =
-    Html.nav attrs
+    Html.nav
+        (Attrs.css
+            [ Css.height (Css.pct 100)
+            , Css.borderRight3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            , Css.overflowY Css.scroll
+            , Css.overflowX Css.hidden
+            ]
+            :: attrs
+        )
         [ rows
             |> List.map (\row -> Html.li [] [ viewNavLink activeId row ])
             |> Html.ul []
@@ -548,7 +563,36 @@ viewNav attrs activeId rows =
 
 viewNavLink : Maybe ID -> Database.Row -> Html Msg
 viewNavLink activeId { id, node } =
-    Content.toHtml (UserSelectedNoteInList id) [] (Node.content node)
+    Content.toHtml (UserSelectedNoteInList id)
+        [ Attrs.css
+            [ Css.height (Css.px 50)
+            , Css.padding (Css.px 10)
+
+            -- left align, but center vertically
+            , Css.displayFlex
+            , Css.flexDirection Css.row
+            , Css.justifyContent Css.left
+            , Css.alignItems Css.center
+            , Css.overflow Css.hidden
+
+            -- surround by borders
+            , Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
+            , Css.property "transition" "all 0.25s"
+
+            -- highlight the active node
+            , -- TODO: make an isActive helper that checks if a child is active too
+              if activeId == Just id then
+                Css.batch
+                    [ Css.borderLeftColor (Colors.toCss Colors.greenLight)
+                    , Css.backgroundColor (Colors.toCss Colors.whiteLight)
+                    ]
+
+              else
+                Css.batch []
+            ]
+        ]
+        (Node.content node)
 
 
 viewRow : ID -> Model key -> Html Msg
