@@ -525,8 +525,7 @@ viewHeader attrs =
         [ Html.button
             [ Events.onClick UserClickedNewNote ]
             [ Icons.chick
-                { width = 50
-                , height = 50
+                { height = 40
                 , shell = Colors.blackDark
                 , chick = Colors.blackLight
                 }
