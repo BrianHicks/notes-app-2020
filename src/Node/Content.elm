@@ -14,9 +14,10 @@ module Node.Content exposing
 
 -}
 
-import Accessibility.Styled as Html exposing (Html)
+import Accessibility.Styled as Html exposing (Attribute, Html)
 import Css
 import Html.Styled.Attributes as Attrs
+import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
@@ -68,9 +69,25 @@ toList (Content guts) =
     guts
 
 
-toHtml : Content -> List (Html msg)
-toHtml (Content guts) =
-    List.map nodeToHtml guts
+toHtml : msg -> List (Attribute Never) -> Content -> Html msg
+toHtml onClick attrs ((Content guts) as outer) =
+    Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
+        [ Html.button
+            [ Events.onClick onClick
+            , Attrs.css
+                [ Css.width (Css.pct 100)
+                , Css.height (Css.pct 100)
+                , Css.position Css.absolute
+                , Css.margin Css.zero
+                , Css.padding Css.zero
+                , Css.border Css.zero
+                , Css.opacity Css.zero
+                , Css.zIndex (Css.int 0)
+                ]
+            ]
+            [ Html.text (toString outer) ]
+        , Html.div [] (List.map nodeToHtml guts)
+        ]
 
 
 isEmpty : Content -> Bool
@@ -181,7 +198,12 @@ nodeToHtml node =
             Html.text text_
 
         NoteLink name ->
-            Html.a []
+            Html.a
+                [ Attrs.css
+                    [ Css.zIndex (Css.int 1)
+                    , Css.position Css.relative
+                    ]
+                ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
                 , decoration Colors.greenDark [ Html.text name ]
                 , decoration Colors.greyLight [ Html.text "]]" ]
@@ -194,6 +216,8 @@ nodeToHtml node =
                 , Attrs.css
                     [ Css.color Css.inherit
                     , Css.textDecoration Css.none
+                    , Css.zIndex (Css.int 1)
+                    , Css.position Css.relative
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[" ]

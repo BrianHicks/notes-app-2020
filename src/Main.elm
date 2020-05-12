@@ -544,10 +544,7 @@ viewNav attrs activeId rows =
             |> List.map
                 (\{ id, node } ->
                     Html.li []
-                        [ Html.button
-                            [ Events.onClick (UserSelectedNoteInList id) ]
-                            (Content.toHtml (Node.content node))
-                        ]
+                        [ Content.toHtml (UserSelectedNoteInList id) [] (Node.content node) ]
                 )
             |> Html.ul []
         ]
@@ -621,9 +618,7 @@ viewNode : ID -> Node -> Html Msg
 viewNode id node =
     let
         inner =
-            Html.button
-                [ Events.onClick (UserWantsToEditNode id) ]
-                (Content.toHtml (Node.content node))
+            Content.toHtml (UserWantsToEditNode id) [] (Node.content node)
     in
     if Node.isNote node then
         Html.h1 [] [ inner ]
