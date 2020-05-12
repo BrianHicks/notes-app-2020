@@ -1,25 +1,25 @@
 // custom element
 class NodeInput extends HTMLTextAreaElement {
   connectedCallback() {
-    var self = this;
+    var element = this;
 
     this.style.height = this.scrollHeight + "px";
-    self.addEventListener("input", function() {
+    this.addEventListener("input", function() {
       console.log(this);
       this.style.height = this.scrollHeight + "px";
     });
 
     // TODO: remove this in the disconnectedCallback (or whatever it's called)
     document.addEventListener("selectionchange", function(event) {
-      if (event.target.activeElement !== self) {
+      if (event.target.activeElement !== element) {
         return;
       }
 
-      self.dispatchEvent(
+      element.dispatchEvent(
         new CustomEvent("note-input-selectionchange", {
           detail: {
-            start: self.selectionStart,
-            end: self.selectionEnd
+            start: element.selectionStart,
+            end: element.selectionEnd
           }
         })
       );
