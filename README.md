@@ -133,3 +133,9 @@ Keep things simple as long as possible!
 
 - [Roam](https://roamresearch.com) does bidirectional links amazingly well.
 - [Bear](https://bear.app) has a really nice user experience.
+
+## Icons
+
+TODO: I need to add this to an in-app page somewhere.
+
+- chick by Symbolon from the Noun Project
