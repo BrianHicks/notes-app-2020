@@ -14,11 +14,13 @@ module Node.Content exposing
 
 -}
 
-import Html.Styled as Html exposing (Html)
+import Accessibility.Styled as Html exposing (Html)
+import Css
 import Html.Styled.Attributes as Attrs
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
+import Widgets.Colors as Colors
 
 
 type Content
@@ -170,18 +172,35 @@ nodeToString node =
 
 nodeToHtml : Node -> Html msg
 nodeToHtml node =
+    let
+        decoration color =
+            Html.span [ Attrs.css [ Css.color (Colors.toCss color) ] ]
+    in
     case node of
         Text text_ ->
             Html.text text_
 
         NoteLink name ->
-            Html.a [] [ Html.text name ]
+            Html.a []
+                [ decoration Colors.greyLight [ Html.text "[[" ]
+                , Html.text name
+                , decoration Colors.greyLight [ Html.text "]]" ]
+                ]
 
         Link guts ->
-            Html.a [ Attrs.href guts.href ]
-                [ Html.span [] [ Html.text "[[" ]
+            Html.a
+                [ Attrs.href guts.href
+                , Attrs.target "_blank"
+                , Attrs.css
+                    [ Css.color Css.inherit
+                    , Css.textDecoration Css.none
+                    ]
+                ]
+                [ decoration Colors.greyLight [ Html.text "[" ]
                 , Html.text guts.text
-                , Html.span [] [ Html.text "]]" ]
+                , decoration Colors.greyLight [ Html.text "](" ]
+                , decoration Colors.yellowLight [ Html.text "★" ]
+                , decoration Colors.greyLight [ Html.text ")" ]
                 ]
 
 
