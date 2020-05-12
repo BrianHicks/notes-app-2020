@@ -492,7 +492,7 @@ viewApplication model =
             [ Css.property "display" "grid"
             , Css.property "grid-template-columns" "350px 1fr"
             , Css.property "grid-template-rows" "auto 1fr"
-            , Css.property "grid-template-areas" "\"header note\" \"list note\" "
+            , Css.property "grid-template-areas" "\"header .\" \"list note\" "
             , Css.property "grid-column-gap" "10px"
             , Css.height (Css.vh 100)
             , Css.width (Css.pct 100)
@@ -617,12 +617,17 @@ viewRow id model =
                 tag =
                     if Node.isNote row.node then
                         Html.section
+                            [ Attrs.css
+                                [ Css.maxWidth (Css.em 40)
+                                , Css.margin2 Css.zero Css.auto
+                                ]
+                            ]
 
                     else
                         Html.li
+                            [ Attrs.css [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ] ] ]
             in
             tag
-                []
                 [ case model.editing of
                     Just editing ->
                         if id == editing.id then
@@ -666,7 +671,13 @@ viewRow id model =
                   else
                     row.children
                         |> List.map (\child -> viewRow child model)
-                        |> Html.ul []
+                        |> Html.ul
+                            [ Attrs.css
+                                [ Css.paddingLeft (Css.px 20)
+                                , Css.listStylePosition Css.inside
+                                , Css.listStyleType Css.disc
+                                ]
+                            ]
                 ]
 
 
