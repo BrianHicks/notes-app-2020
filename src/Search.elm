@@ -1,6 +1,14 @@
 module Search exposing (Index, init, search, index)
 
-{-|
+{-| I think this might eventually be useful as a separate package. There are a
+few things I'd like to do first, though:
+
+  - well-defined document scoring
+  - index multiple fields on the document (probably best done by
+    combining/weighting multiple Index instances)
+  - fallback search strategies: taking out words
+  - specific search strategies: exact search in particular
+  - maybe saving/loading to JSON
 
 @docs Index, init, search, index
 
