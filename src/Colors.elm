@@ -1,5 +1,6 @@
 module Colors exposing
-    ( pinkLight, pinkDark
+    ( toCss
+    , pinkLight, pinkDark
     , yellowLight, yellowDark
     , redLight, redDark
     , cyanLight, cyanDark
@@ -9,11 +10,12 @@ module Colors exposing
     , purpleLight, purpleDark
     , greyLight, greyDark
     , blackLight, blackDark
-    , whiteLight, whiteDark
+    , whiteLightest, whiteLight, whiteDark
     )
 
 {-|
 
+@docs toCss
 @docs pinkLight, pinkDark
 @docs yellowLight, yellowDark
 @docs redLight, redDark
@@ -24,11 +26,21 @@ module Colors exposing
 @docs purpleLight, purpleDark
 @docs greyLight, greyDark
 @docs blackLight, blackDark
-@docs whiteLight, whiteDark
+@docs whiteLightest, whiteLight, whiteDark
 
 -}
 
 import Color exposing (Color)
+import Css
+
+
+toCss : Color -> Css.Color
+toCss color =
+    let
+        ( hue, saturation, lightness ) =
+            Color.toHSL color
+    in
+    Css.hsl hue (saturation / 100) (lightness / 100)
 
 
 
@@ -191,3 +203,13 @@ whiteLight =
 whiteDark : Color
 whiteDark =
     Color.fromRGB ( 0xDC, 0xDD, 0xE1 )
+
+
+
+-- not from a palette
+
+
+{-| -}
+whiteLightest : Color
+whiteLightest =
+    Color.fromRGB ( 0xFB, 0xFB, 0xFB )
