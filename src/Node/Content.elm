@@ -84,6 +84,10 @@ toHtml onClick attrs ((Content guts) as outer) =
                 , Css.opacity Css.zero
                 , Css.top (Css.px 0)
                 , Css.left (Css.px 0)
+
+                -- interactive elements under this just need to set
+                -- `position: relative` and a `z-index` higher than 0 to
+                -- pop above and be clickable!
                 , Css.zIndex (Css.int 0)
                 ]
             ]
