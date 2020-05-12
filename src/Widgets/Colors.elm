@@ -1,4 +1,4 @@
-module Colors exposing
+module Widgets.Colors exposing
     ( toCss
     , pinkLight, pinkDark
     , yellowLight, yellowDark

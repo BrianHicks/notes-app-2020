@@ -5,7 +5,6 @@ import Accessibility.Styled.Style exposing (invisible)
 import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Navigation
-import Colors
 import Css
 import Css.Global
 import Css.Reset
@@ -28,6 +27,7 @@ import Task
 import Time exposing (Posix)
 import UUID exposing (UUID)
 import Url exposing (Url)
+import Widgets.Colors as Colors
 import Widgets.Icons as Icons
 
 
