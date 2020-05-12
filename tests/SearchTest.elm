@@ -64,4 +64,12 @@ searchTest =
                     |> search "one two"
                     |> Dict.keys
                     |> Expect.equal [ 3 ]
+        , test "search terms must match in order to be returned" <|
+            \_ ->
+                emptyIndex
+                    |> index { id = 1, content = "one two" }
+                    |> index { id = 2, content = "two one" }
+                    |> search "one two"
+                    |> Dict.keys
+                    |> Expect.equal [ 1 ]
         ]

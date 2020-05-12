@@ -40,7 +40,11 @@ init config =
 
 search : String -> Index ref doc -> Dict ref (Set ( Int, Int ))
 search term ((Index idx) as outer) =
-    case stems term of
+    let
+        termStems =
+            stems term
+    in
+    case termStems of
         [] ->
             Dict.empty idx.sorter
 
@@ -51,12 +55,25 @@ search term ((Index idx) as outer) =
                 (searchForStem stem outer)
 
         firstStem :: rest ->
+            let
+                subsequence =
+                    -- currying! This returns a partially applied function
+                    -- to use in `containsSubsequence` below.
+                    List.map (\term_ doc -> term_.stem == doc.stem) termStems
+            in
             rest
                 |> List.foldl
                     (\newStem soFar -> Set.keepIf (Set.memberOf (searchForStem newStem.stem outer)) soFar)
                     (searchForStem firstStem.stem outer)
                 |> Set.foldl
-                    (\item soFar -> Dict.insert item (Set.empty (Sort.custom Basics.compare)) soFar)
+                    (\item soFar ->
+                        case Maybe.map (containsSubsequence subsequence) (Dict.get item idx.forward) of
+                            Just True ->
+                                Dict.insert item (Set.empty (Sort.custom Basics.compare)) soFar
+
+                            _ ->
+                                soFar
+                    )
                     (Dict.empty idx.sorter)
 
 
@@ -64,6 +81,23 @@ searchForStem : String -> Index ref doc -> Set ref
 searchForStem stem (Index idx) =
     Dict.get stem idx.reverse
         |> Maybe.withDefault (Set.empty idx.sorter)
+
+
+containsSubsequence : List (a -> Bool) -> List a -> Bool
+containsSubsequence conds items =
+    case ( conds, items ) of
+        ( [], _ ) ->
+            True
+
+        ( _, [] ) ->
+            False
+
+        ( cond :: restConds, item :: restItems ) ->
+            if cond item then
+                containsSubsequence restConds restItems
+
+            else
+                containsSubsequence conds restItems
 
 
 
