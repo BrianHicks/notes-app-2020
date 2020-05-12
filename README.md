@@ -95,39 +95,7 @@ Keep things simple as long as possible!
 
 ## Layout
 
-```
-┌────────────────────────────┬─────────────────────────────────────────┬────────────────────────────┐
-│    Logo and menu items     │                                         │                            │
-│                            │                                         │                            │
-├────────────────────────────┤     note title (biggish! H1!)           │       note inspector       │
-│Title title                 │                                         │                            │
-│first bullet point, second  │                                         │ holds note metadata, edits │
-├────────────────────────────┤     • first bullet point                │   user metadata for both   │
-│Title title                 │     • second bullet point               │selected node and in general│
-│first bullet point, second  │     • third bullet point                │                            │
-├────────────────────────────┤       • sub bullet                      │                            │
-│Title title                 │       • sub bullet                      ├────────────────────────────┤
-│first bullet point, second  │     • conclusion                        │                            │
-├────────────────────────────┤                                         │                            │
-│Title title                 │  ┌───────────────────────────────────┐  │                            │
-│first bullet point, second  │  │                                   │  │                            │
-├────────────────────────────┤  │                                   │  │                            │
-│Title title                 │  │            links space            │  │                            │
-│first bullet point, second  │  │                                   │  │                            │
-├────────────────────────────┤  │ holds incoming links to this note │  │      references space      │
-│Title title                 │  │        for easy navigation        │  │                            │
-│first bullet point, second  │  │                                   │  │  holds pinned items in an  │
-├────────────────────────────┤  │                                   │  │      editable format       │
-│                            │  └───────────────────────────────────┘  │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-│                            │                                         │                            │
-└────────────────────────────┴─────────────────────────────────────────┴────────────────────────────┘
-```
+![](./docs/screenshot.png)
 
 ## Prior Art
 
