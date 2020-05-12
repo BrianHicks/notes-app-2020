@@ -183,7 +183,7 @@ nodeToHtml node =
         NoteLink name ->
             Html.a []
                 [ decoration Colors.greyLight [ Html.text "[[" ]
-                , Html.text name
+                , decoration Colors.greenDark [ Html.text name ]
                 , decoration Colors.greyLight [ Html.text "]]" ]
                 ]
 
@@ -197,9 +197,9 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[" ]
-                , Html.text guts.text
+                , decoration Colors.greenDark [ Html.text guts.text ]
                 , decoration Colors.greyLight [ Html.text "](" ]
-                , decoration Colors.yellowLight [ Html.text "★" ]
+                , decoration Colors.greenLight [ Html.text "★" ]
                 , decoration Colors.greyLight [ Html.text ")" ]
                 ]
 
