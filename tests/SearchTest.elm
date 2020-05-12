@@ -19,7 +19,7 @@ emptyIndex =
     init
         { ref = .id
         , sorter = Sort.increasing
-        , fields = [ .content ]
+        , toString = .content
         }
 
 

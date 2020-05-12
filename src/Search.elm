@@ -17,17 +17,17 @@ type Index ref doc
     = Index
         { ref : doc -> ref
         , sorter : Sorter ref
-        , fields : List (doc -> String)
+        , toString : doc -> String
         , reverse : Dict String (Dict ref (Set ( Int, Int )))
         }
 
 
-init : { ref : doc -> ref, sorter : Sorter ref, fields : List (doc -> String) } -> Index ref doc
+init : { ref : doc -> ref, sorter : Sorter ref, toString : doc -> String } -> Index ref doc
 init config =
     Index
         { ref = config.ref
         , sorter = config.sorter
-        , fields = config.fields
+        , toString = config.toString
         , reverse = Dict.empty Sort.alphabetical
         }
 
@@ -80,50 +80,46 @@ index doc (Index idx) =
     let
         (Index clean) =
             remove doc (Index idx)
+
+        docStems =
+            stems (idx.toString doc)
     in
     -- AAAAAAAAAAAAAAAAAAAHHHHHHHHH REFACTOR ME AND ADD TYPES
     Index
         { clean
             | reverse =
                 List.foldl
-                    (\extractor reverseOuter ->
-                        doc
-                            |> extractor
-                            |> stems
-                            |> List.foldl
-                                (\{ stem, start, end } ->
-                                    Dict.update stem
-                                        (\maybeRefToSpans ->
-                                            case maybeRefToSpans of
-                                                Just refToSpans ->
-                                                    refToSpans
-                                                        |> Dict.update (idx.ref doc)
-                                                            (\maybeSpans ->
-                                                                case maybeSpans of
-                                                                    Just spans ->
-                                                                        Just (Set.insert ( start, end ) spans)
+                    (\{ stem, start, end } ->
+                        Dict.update stem
+                            (\maybeRefToSpans ->
+                                case maybeRefToSpans of
+                                    Just refToSpans ->
+                                        refToSpans
+                                            |> Dict.update (idx.ref doc)
+                                                (\maybeSpans ->
+                                                    case maybeSpans of
+                                                        Just spans ->
+                                                            Just (Set.insert ( start, end ) spans)
 
-                                                                    Nothing ->
-                                                                        Just
-                                                                            (Set.singleton
-                                                                                (Sort.custom Basics.compare)
-                                                                                ( start, end )
-                                                                            )
-                                                            )
-                                                        |> Just
+                                                        Nothing ->
+                                                            Just
+                                                                (Set.singleton
+                                                                    (Sort.custom Basics.compare)
+                                                                    ( start, end )
+                                                                )
+                                                )
+                                            |> Just
 
-                                                Nothing ->
-                                                    Just
-                                                        (Dict.singleton idx.sorter
-                                                            (idx.ref doc)
-                                                            (Set.singleton (Sort.custom Basics.compare) ( start, end ))
-                                                        )
-                                        )
-                                )
-                                reverseOuter
+                                    Nothing ->
+                                        Just
+                                            (Dict.singleton idx.sorter
+                                                (idx.ref doc)
+                                                (Set.singleton (Sort.custom Basics.compare) ( start, end ))
+                                            )
+                            )
                     )
                     clean.reverse
-                    idx.fields
+                    docStems
         }
 
 
