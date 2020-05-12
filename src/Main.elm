@@ -27,6 +27,7 @@ import Task
 import Time exposing (Posix)
 import UUID exposing (UUID)
 import Url exposing (Url)
+import Widgets.Button as Button
 import Widgets.Colors as Colors
 import Widgets.Icons as Icons
 
@@ -522,10 +523,12 @@ viewApplication model =
 viewHeader : List (Attribute Never) -> Html Msg
 viewHeader attrs =
     Html.header attrs
-        [ Html.button
-            [ Events.onClick UserClickedNewNote ]
+        [ Button.button UserClickedNewNote
+            [ Button.transparent
+            , Button.css [ Css.padding (Css.px 10) ]
+            ]
             [ Icons.chick
-                { height = 40
+                { height = 30
                 , shell = Colors.blackDark
                 , chick = Colors.blackLight
                 }
