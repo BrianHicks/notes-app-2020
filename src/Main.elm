@@ -619,6 +619,7 @@ viewRow id model =
                         Html.section
                             [ Attrs.css
                                 [ Css.maxWidth (Css.em 40)
+                                , Css.padding2 Css.zero (Css.px 25)
                                 , Css.margin2 Css.zero Css.auto
                                 ]
                             ]
