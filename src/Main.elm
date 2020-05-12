@@ -541,13 +541,14 @@ viewNav : List (Attribute Never) -> Maybe ID -> List Database.Row -> Html Msg
 viewNav attrs activeId rows =
     Html.nav attrs
         [ rows
-            |> List.map
-                (\{ id, node } ->
-                    Html.li []
-                        [ Content.toHtml (UserSelectedNoteInList id) [] (Node.content node) ]
-                )
+            |> List.map (\row -> Html.li [] [ viewNavLink activeId row ])
             |> Html.ul []
         ]
+
+
+viewNavLink : Maybe ID -> Database.Row -> Html Msg
+viewNavLink activeId { id, node } =
+    Content.toHtml (UserSelectedNoteInList id) [] (Node.content node)
 
 
 viewRow : ID -> Model key -> Html Msg
