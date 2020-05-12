@@ -82,6 +82,8 @@ toHtml onClick attrs ((Content guts) as outer) =
                 , Css.padding Css.zero
                 , Css.border Css.zero
                 , Css.opacity Css.zero
+                , Css.top (Css.px 0)
+                , Css.left (Css.px 0)
                 , Css.zIndex (Css.int 0)
                 ]
             ]
