@@ -1,16 +1,20 @@
 port module Main exposing (..)
 
+import Accessibility.Styled as Html exposing (Attribute, Html)
+import Accessibility.Styled.Style exposing (invisible)
 import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Navigation
+import Colors
 import Css
+import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
-import Html.Styled as Html exposing (Attribute, Html)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Html.Styled.Keyed as Keyed
+import Icons
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
@@ -468,6 +472,12 @@ view model =
         List.map Html.toUnstyled
             [ Css.Reset.meyerV2
             , Css.Reset.borderBoxV201408
+            , Css.Global.global
+                [ Css.Global.body
+                    [ Css.backgroundColor (Colors.toCss Colors.whiteLightest)
+                    , Css.color (Colors.toCss Colors.blackDark)
+                    ]
+                ]
             , viewApplication model
             ]
     }
@@ -485,21 +495,16 @@ viewApplication model =
             , Css.width (Css.pct 100)
             ]
         ]
-        [ Html.div [ css [ Css.property "grid-area" "header" ] ]
-            [ Html.button [ Events.onClick UserClickedNewNote ] [ Html.text "New Note" ] ]
-        , model.database
-            |> Database.filter Node.isNote
-            |> List.map
-                (\{ id, node } ->
-                    Html.li []
-                        [ Html.button
-                            [ Events.onClick (UserSelectedNoteInList id) ]
-                            (Content.toHtml (Node.content node))
-                        ]
-                )
-            |> Html.ul []
-            |> List.singleton
-            |> Html.nav [ css [ Css.property "grid-area" "list" ] ]
+        [ viewHeader [ css [ Css.property "grid-area" "header" ] ]
+        , viewNav [ css [ Css.property "grid-area" "list" ] ]
+            (case model.route of
+                Route.Node id ->
+                    Just id
+
+                _ ->
+                    Nothing
+            )
+            (Database.filter Node.isNote model.database)
         , Html.div [ css [ Css.property "grid-area" "note" ] ]
             [ case model.route of
                 Route.NotFound ->
@@ -514,6 +519,38 @@ viewApplication model =
         ]
 
 
+viewHeader : List (Attribute Never) -> Html Msg
+viewHeader attrs =
+    Html.header attrs
+        [ Html.button
+            [ Events.onClick UserClickedNewNote ]
+            [ Icons.chick
+                { width = 50
+                , height = 50
+                , shell = Colors.blackDark
+                , chick = Colors.blackLight
+                }
+            , Html.span invisible [ Html.text "New Note" ]
+            ]
+        ]
+
+
+viewNav : List (Attribute Never) -> Maybe ID -> List Database.Row -> Html Msg
+viewNav attrs activeId rows =
+    Html.nav attrs
+        [ rows
+            |> List.map
+                (\{ id, node } ->
+                    Html.li []
+                        [ Html.button
+                            [ Events.onClick (UserSelectedNoteInList id) ]
+                            (Content.toHtml (Node.content node))
+                        ]
+                )
+            |> Html.ul []
+        ]
+
+
 viewRow : ID -> Model key -> Html Msg
 viewRow id model =
     case Database.get id model.database of
@@ -524,12 +561,12 @@ viewRow id model =
             let
                 tag =
                     if Node.isNote row.node then
-                        "section"
+                        Html.section
 
                     else
-                        "li"
+                        Html.li
             in
-            Html.node tag
+            tag
                 []
                 [ case model.editing of
                     Just editing ->
