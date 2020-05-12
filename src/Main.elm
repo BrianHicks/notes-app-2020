@@ -566,8 +566,7 @@ viewNavLink : Maybe ID -> Database.Row -> Html Msg
 viewNavLink activeId { id, node } =
     Content.toHtml (UserSelectedNoteInList id)
         [ Attrs.css
-            [ Css.height (Css.px 50)
-            , Css.padding (Css.px 10)
+            [ Css.padding (Css.px 10)
             , Css.width (Css.pct 100)
 
             -- it's always text!
