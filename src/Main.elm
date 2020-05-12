@@ -685,7 +685,7 @@ viewRow id model =
                         |> List.map (\child -> viewRow child model)
                         |> Html.ul
                             [ Attrs.css
-                                [ Css.paddingLeft (Css.px 20)
+                                [ Css.paddingLeft (Css.px 30)
                                 , Css.listStylePosition Css.outside
                                 , Css.listStyleType Css.disc
                                 ]
