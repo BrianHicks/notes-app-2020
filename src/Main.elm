@@ -633,7 +633,19 @@ viewRow id model =
                         if id == editing.id then
                             Html.form []
                                 [ Html.textarea
-                                    [ case Maybe.map .input model.editing of
+                                    [ Attrs.css
+                                        [ if Node.isNote row.node then
+                                            Text.h1
+
+                                          else
+                                            Text.text
+                                        , Css.width (Css.pct 100)
+                                        , Css.border Css.zero
+                                        , Css.backgroundColor Css.transparent
+                                        , Css.resize Css.none
+                                        , Css.height Css.zero
+                                        ]
+                                    , case Maybe.map .input model.editing of
                                         Just (Ok content) ->
                                             Attrs.value (Content.toString content)
 

@@ -3,6 +3,12 @@ class NodeInput extends HTMLTextAreaElement {
   connectedCallback() {
     var self = this;
 
+    this.style.height = this.scrollHeight + "px";
+    self.addEventListener("input", function() {
+      console.log(this);
+      this.style.height = this.scrollHeight + "px";
+    });
+
     // TODO: remove this in the disconnectedCallback (or whatever it's called)
     document.addEventListener("selectionchange", function(event) {
       if (event.target.activeElement !== self) {
