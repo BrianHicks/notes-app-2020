@@ -56,36 +56,37 @@ This is my implementation of a note-taking app, organized around the following p
 
 ## Next things to do
 
+- [ ] nice design
+- [ ] navigation by link
 - [ ] tree editing
-   - [x] ability to move a node up and down as well as in and out
-       - [x] moving up and down to siblings. Uncontroversial!
-       - [x] if you're at the first child, moving up goes to the parent.
-       - [x] if you're at the last child, moving down goes to the parent's next sibling.
    - [ ] moving non-edit focus around
        - [ ] hitting up and down keys should go to the previous/next sibling
            - [ ] this might mean adding rich text support with like elm-rte
    - refinements on existing behavior
-     - [ ] move to the previous sibling when I backspace through a node
+     - [x] move to the previous sibling when I backspace through a node
      - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
          - Html.Keyed? Blocking keyup defaults as well as keydown?
-- [ ] navigation by link
 - [ ] search
   - [ ] finding nodes and navigating to their notes
   - [ ] backlinks
-- [x] persistence
-- [ ] offline support (webworker, caching?)
-- [ ] nice design
 - [ ] order notes according to most recently updated
-- [ ] allow multiple notes to be edited concurrently
 - [ ] come up with a consistent design for keybindings (e.g. alt moves edit, alt+shift moves node)
-
-Someday/maybe
-
+- [ ] offline support (webworker, caching?)
 - [ ] exporting to
   - (likely) markdown
   - (less likely) rich text of some kind
-- [ ] metadata
+- [ ] allow multiple notes to be edited concurrently
+- [ ] more metadata (todos, etc)
+
+### Finished
+
+- [x] persistence
 - [x] at some point, I want to move away from using ints for IDs and go to UUIDs. Possibly UUID1s?
+- [x] basic tree editing
+   - [x] ability to move a node up and down as well as in and out
+       - [x] moving up and down to siblings
+       - [x] if you're at the first child, moving up goes to the parent.
+       - [x] if you're at the last child, moving down goes to the parent's next sibling.
 
 ### Notes to Self
 
