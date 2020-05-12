@@ -65,13 +65,15 @@ This is my implementation of a note-taking app, organized around the following p
 - [x] nice design
 - [ ] navigation by link
 - [ ] tree editing
-   - [ ] moving non-edit focus around
-       - [ ] hitting up and down keys should go to the previous/next sibling
-           - [ ] this might mean adding rich text support with like elm-rte
+   - [ ] moving edit focus around
+       - [ ] hitting alt-up and alt-down should go to the previous/next sibling
    - refinements on existing behavior
      - [x] move to the previous sibling when I backspace through a node
      - [ ] hitting tab/shift-tab should preserve the cursor position, if possible
          - Html.Keyed? Blocking keyup defaults as well as keydown?
+     - [ ] alt-shift-up and alt-shift-down to move nodes
+     - [ ] preserve cursor position when joining nodes with backspace (put it at the join point)
+     - [ ] delete selected text when splitting with enter (but if it's collapsed, no change)
 - [ ] search
   - [ ] finding nodes and navigating to their notes
   - [ ] backlinks
