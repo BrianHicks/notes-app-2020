@@ -1,4 +1,4 @@
-module Icons exposing (chick)
+module Widgets.Icons exposing (chick)
 
 import Color exposing (Color)
 import Html.Styled exposing (Html)

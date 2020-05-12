@@ -14,7 +14,6 @@ import Database.ID as ID exposing (ID)
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
 import Html.Styled.Keyed as Keyed
-import Icons
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
@@ -29,6 +28,7 @@ import Task
 import Time exposing (Posix)
 import UUID exposing (UUID)
 import Url exposing (Url)
+import Widgets.Icons as Icons
 
 
 type alias Model key =
