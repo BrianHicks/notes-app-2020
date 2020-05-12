@@ -62,9 +62,11 @@ search term ((Index idx) as outer) =
                     List.map (\term_ doc -> term_.stem == doc.stem) termStems
             in
             rest
+                -- get a set of docs which contain all the terms
                 |> List.foldl
                     (\newStem soFar -> Set.keepIf (Set.memberOf (searchForStem newStem.stem outer)) soFar)
                     (searchForStem firstStem.stem outer)
+                -- only return docs which contain all the terms *in order*
                 |> Set.foldl
                     (\item soFar ->
                         case Maybe.map (containsSubsequence subsequence) (Dict.get item idx.forward) of
