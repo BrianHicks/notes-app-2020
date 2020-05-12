@@ -38,7 +38,7 @@ init config =
 -- SEARCH
 
 
-search : String -> Index ref doc -> Dict ref (Set ( Int, Int ))
+search : String -> Index ref doc -> List { ref : ref }
 search term ((Index idx) as outer) =
     let
         termStems =
@@ -46,12 +46,12 @@ search term ((Index idx) as outer) =
     in
     case termStems of
         [] ->
-            Dict.empty idx.sorter
+            []
 
         [ { stem } ] ->
-            Set.foldl
-                (\item soFar -> Dict.insert item (Set.empty (Sort.custom Basics.compare)) soFar)
-                (Dict.empty idx.sorter)
+            Set.foldr
+                (\ref matches -> { ref = ref } :: matches)
+                []
                 (searchForStem stem outer)
 
         firstStem :: rest ->
@@ -67,16 +67,16 @@ search term ((Index idx) as outer) =
                     (\newStem soFar -> Set.keepIf (Set.memberOf (searchForStem newStem.stem outer)) soFar)
                     (searchForStem firstStem.stem outer)
                 -- only return docs which contain all the terms *in order*
-                |> Set.foldl
-                    (\item soFar ->
-                        case Maybe.map (containsSubsequence subsequence) (Dict.get item idx.forward) of
+                |> Set.foldr
+                    (\potentialMatch matches ->
+                        case Maybe.map (containsSubsequence subsequence) (Dict.get potentialMatch idx.forward) of
                             Just True ->
-                                Dict.insert item (Set.empty (Sort.custom Basics.compare)) soFar
+                                { ref = potentialMatch } :: matches
 
                             _ ->
-                                soFar
+                                matches
                     )
-                    (Dict.empty idx.sorter)
+                    []
 
 
 searchForStem : String -> Index ref doc -> Set ref
