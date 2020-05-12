@@ -529,8 +529,8 @@ viewHeader attrs =
             ]
             [ Icons.chick
                 { height = 30
-                , shell = Colors.blackDark
-                , chick = Colors.blackLight
+                , shell = Colors.greyDark
+                , chick = Colors.yellowDark
                 }
             , Html.span invisible [ Html.text "New Note" ]
             ]
