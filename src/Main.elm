@@ -30,6 +30,7 @@ import Url exposing (Url)
 import Widgets.Button as Button
 import Widgets.Colors as Colors
 import Widgets.Icons as Icons
+import Widgets.Text as Text
 
 
 type alias Model key =
@@ -567,6 +568,17 @@ viewNavLink activeId { id, node } =
         [ Attrs.css
             [ Css.height (Css.px 50)
             , Css.padding (Css.px 10)
+            , Css.width (Css.pct 100)
+
+            -- it's always text!
+            , Text.text
+            , Css.Global.descendants
+                [ Css.Global.everything
+                    [ Css.textOverflow Css.ellipsis
+                    , Css.overflow Css.hidden
+                    , Css.whiteSpace Css.noWrap
+                    ]
+                ]
 
             -- left align, but center vertically
             , Css.displayFlex
@@ -661,15 +673,16 @@ viewRow id model =
 
 viewNode : ID -> Node -> Html Msg
 viewNode id node =
-    let
-        inner =
-            Content.toHtml (UserWantsToEditNode id) [] (Node.content node)
-    in
-    if Node.isNote node then
-        Html.h1 [] [ inner ]
+    Content.toHtml (UserWantsToEditNode id)
+        [ Attrs.css
+            [ if Node.isNote node then
+                Text.h1
 
-    else
-        inner
+              else
+                Text.text
+            ]
+        ]
+        (Node.content node)
 
 
 editorKeybindings : Editing -> Database.Row -> Attribute Msg
