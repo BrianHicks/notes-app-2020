@@ -38,6 +38,7 @@ type alias Model key =
     , url : Url
     , key : key
     , route : Route
+    , currentTime : Posix
 
     -- view state
     , editing : Maybe Editing
@@ -55,7 +56,7 @@ type alias Editing =
 init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
     let
-        { seed, rows } =
+        { seed, rows, now } =
             case Decode.decodeValue flagsDecoder flags of
                 Ok stuff ->
                     stuff
@@ -67,6 +68,7 @@ init flags url key =
       , url = url
       , key = key
       , route = Route.Root
+      , currentTime = now
 
       -- view state
       , editing = Nothing
@@ -76,10 +78,16 @@ init flags url key =
     )
 
 
-flagsDecoder : Decoder { seed : Random.Seed, rows : List Database.Row }
+flagsDecoder : Decoder { now : Posix, seed : Random.Seed, rows : List Database.Row }
 flagsDecoder =
-    Decode.map2 (\seed rows -> { seed = seed, rows = rows })
-        (Decode.field "seed" (Decode.map Random.initialSeed Decode.int))
+    Decode.map2
+        (\millis rows ->
+            { now = Time.millisToPosix millis
+            , seed = Random.initialSeed millis
+            , rows = rows
+            }
+        )
+        (Decode.field "now" Decode.int)
         (Decode.field "rows" (Decode.list (Decode.field "doc" Database.decoder)))
 
 
@@ -87,6 +95,7 @@ type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
     | UrlChangedAt Url Posix
+    | GotCurrentTime Posix
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
     | FocusedOnEditor
@@ -148,6 +157,11 @@ update msg model =
                     ( { model | route = route }
                     , NoEffect
                     )
+
+        GotCurrentTime now ->
+            ( { model | currentTime = now }
+            , NoEffect
+            )
 
         PouchDBPutSuccessfully value ->
             let
@@ -543,6 +557,11 @@ subscriptions model =
     Sub.batch
         [ putSuccessfully PouchDBPutSuccessfully
         , Time.every 1000 (\_ -> TimerTriggeredSave)
+
+        -- Using a 1-second resolution is more than enough for most UI
+        -- concerns. If it needs to be more precise, crank this down! But
+        -- remember aware that it'll be a lot of updates and not precise ticks.
+        , Time.every 1000 GotCurrentTime
         ]
 
 

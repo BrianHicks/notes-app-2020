@@ -40,7 +40,7 @@ db.allDocs({ include_docs: true }, function(err, allDocs) {
   // initialize Elm
   var app = Elm.Main.init({
     flags: {
-      seed: Date.now(),
+      now: new Date().getTime(),
       rows: allDocs.rows
     }
   });
