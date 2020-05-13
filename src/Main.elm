@@ -64,18 +64,18 @@ init flags url key =
                 Err err ->
                     Debug.todo (Debug.toString err)
     in
-    ( { database = Database.load seed rows
-      , url = url
-      , key = key
-      , route = Route.Root
-      , currentTime = now
+    update
+        (UrlChanged url)
+        { database = Database.load seed rows
+        , url = url
+        , key = key
+        , route = Route.Root
+        , currentTime = now
 
-      -- view state
-      , editing = Nothing
-      , selection = Nothing
-      }
-    , GetTimeAnd (UrlChangedAt url)
-    )
+        -- view state
+        , editing = Nothing
+        , selection = Nothing
+        }
 
 
 flagsDecoder : Decoder { now : Posix, seed : Random.Seed, rows : List Database.Row }
