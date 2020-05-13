@@ -176,8 +176,8 @@ text =
 
 
 noteLink : List Node -> Node
-noteLink nodes =
-    NoteLink nodes
+noteLink children =
+    NoteLink children
 
 
 link : { text : String, href : String } -> Node
@@ -191,8 +191,8 @@ nodeToString node =
         Text text_ ->
             text_
 
-        NoteLink nodes ->
-            "[[" ++ String.concat (List.map nodeToString nodes) ++ "]]"
+        NoteLink children ->
+            "[[" ++ String.concat (List.map nodeToString children) ++ "]]"
 
         Link guts ->
             "[" ++ guts.text ++ "](" ++ guts.href ++ ")"
@@ -208,7 +208,7 @@ nodeToHtml node =
         Text text_ ->
             Html.text text_
 
-        NoteLink nodes ->
+        NoteLink children ->
             Html.a
                 [ Attrs.css
                     [ Css.zIndex (Css.int 1)
@@ -216,7 +216,7 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
-                , decoration Colors.greenDark (List.map nodeToPlainHtml nodes)
+                , decoration Colors.greenDark (List.map nodeToPlainHtml children)
                 , decoration Colors.greyLight [ Html.text "]]" ]
                 ]
 
@@ -251,10 +251,10 @@ nodeToPlainHtml node =
         Text text_ ->
             Html.text text_
 
-        NoteLink nodes ->
+        NoteLink children ->
             Html.span []
                 [ Html.text "[["
-                , Html.span [] (List.map nodeToPlainHtml nodes)
+                , Html.span [] (List.map nodeToPlainHtml children)
                 , Html.text "]]"
                 ]
 
@@ -268,8 +268,8 @@ nodeLength node =
         Text text_ ->
             String.length text_
 
-        NoteLink nodes ->
-            List.sum (List.map nodeLength nodes)
+        NoteLink children ->
+            List.sum (List.map nodeLength children)
 
         Link link_ ->
             String.length link_.text
@@ -307,8 +307,8 @@ nodeIsEmpty node =
         NoteLink [] ->
             True
 
-        NoteLink nodes ->
-            List.all nodeIsEmpty nodes
+        NoteLink children ->
+            List.all nodeIsEmpty children
 
         Link link_ ->
             String.isEmpty link_.text
@@ -533,10 +533,10 @@ encodeNode node =
                 , ( "text", Encode.string text_ )
                 ]
 
-        NoteLink nodes ->
+        NoteLink children ->
             Encode.object
                 [ ( "kind", Encode.string "noteLink" )
-                , ( "children", Encode.list encodeNode nodes )
+                , ( "children", Encode.list encodeNode children )
                 ]
 
         Link guts ->
