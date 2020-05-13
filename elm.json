@@ -7,6 +7,7 @@
     "dependencies": {
         "direct": {
             "BrianHicks/elm-css-reset": "1.0.1",
+            "NoRedInk/elm-json-decode-pipeline": "1.0.0",
             "TSFoster/elm-uuid": "3.0.1",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",

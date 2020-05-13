@@ -63,17 +63,17 @@ init flags url key =
                 Err err ->
                     Debug.todo (Debug.toString err)
     in
-    applyRoutingRules
-        url
-        { database = Database.load seed rows
-        , url = url
-        , key = key
-        , route = Route.Root
+    ( { database = Database.load seed rows
+      , url = url
+      , key = key
+      , route = Route.Root
 
-        -- view state
-        , editing = Nothing
-        , selection = Nothing
-        }
+      -- view state
+      , editing = Nothing
+      , selection = Nothing
+      }
+    , GetTimeAnd (UrlChangedAt url)
+    )
 
 
 flagsDecoder : Decoder { seed : Random.Seed, rows : List Database.Row }
@@ -86,13 +86,16 @@ flagsDecoder =
 type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
+    | UrlChangedAt Url Posix
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
     | FocusedOnEditor
     | UserClickedNewNote
+    | UserClickedNewNoteAt Posix
     | UserEditedNode String
     | UserFinishedEditing
     | UserHitEnterOnNode
+    | UserHitEnterOnNodeAt Posix
     | UserSelectedNoteInList ID
     | UserWantsToEditNode ID
     | UserWantsToIndentNode
@@ -102,6 +105,7 @@ type Msg
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
     | UserWantsToOpenNoteWithTitle Content
+    | UserWantsToOpenNoteWithTitleAt Content Posix
 
 
 type Effect
@@ -125,7 +129,23 @@ update msg model =
             ( model, LoadUrl url )
 
         UrlChanged url ->
-            applyRoutingRules url model
+            ( model, GetTimeAnd (UrlChangedAt url) )
+
+        UrlChangedAt url now ->
+            case Route.parse url of
+                Route.NodeByTitle content ->
+                    let
+                        ( id, database ) =
+                            findOrCreateNoteWithTitle now content model.database
+                    in
+                    ( { model | database = database }
+                    , ReplaceUrl (Route.NodeById id)
+                    )
+
+                route ->
+                    ( { model | route = route }
+                    , NoEffect
+                    )
 
         PouchDBPutSuccessfully value ->
             let
@@ -156,9 +176,14 @@ update msg model =
             ( model, NoEffect )
 
         UserClickedNewNote ->
+            ( model
+            , GetTimeAnd UserClickedNewNoteAt
+            )
+
+        UserClickedNewNoteAt now ->
             let
                 ( row, database ) =
-                    Database.insert (Node.title Content.empty) model.database
+                    Database.insert now (Node.title Content.empty) model.database
             in
             ( { model
                 | database = database
@@ -210,6 +235,11 @@ update msg model =
                     )
 
         UserHitEnterOnNode ->
+            ( model
+            , GetTimeAnd UserHitEnterOnNodeAt
+            )
+
+        UserHitEnterOnNodeAt now ->
             case
                 Maybe.map2 Tuple.pair
                     model.editing
@@ -224,7 +254,7 @@ update msg model =
                         ( newNode, inserted ) =
                             model.database
                                 |> Database.update row.id (Node.setContent leftContent)
-                                |> Database.insert (Node.node rightContent)
+                                |> Database.insert now (Node.node rightContent)
 
                         database =
                             if Node.isTitle row.node then
@@ -423,37 +453,24 @@ update msg model =
             )
 
         UserWantsToOpenNoteWithTitle content ->
+            ( model
+            , GetTimeAnd (UserWantsToOpenNoteWithTitleAt content)
+            )
+
+        UserWantsToOpenNoteWithTitleAt content now ->
             let
                 ( id, database ) =
-                    findOrCreateNoteWithTitle content model.database
+                    findOrCreateNoteWithTitle now content model.database
             in
             ( { model | database = database }
             , PushUrl (Route.NodeById id)
             )
 
 
-applyRoutingRules : Url -> Model key -> ( Model key, Effect )
-applyRoutingRules url model =
-    case Route.parse url of
-        Route.NodeByTitle content ->
-            let
-                ( id, database ) =
-                    findOrCreateNoteWithTitle content model.database
-            in
-            ( { model | database = database }
-            , ReplaceUrl (Route.NodeById id)
-            )
-
-        route ->
-            ( { model | route = route }
-            , NoEffect
-            )
-
-
 {-| TODO: should this go in Database?
 -}
-findOrCreateNoteWithTitle : Content -> Database -> ( ID, Database )
-findOrCreateNoteWithTitle content database =
+findOrCreateNoteWithTitle : Posix -> Content -> Database -> ( ID, Database )
+findOrCreateNoteWithTitle now content database =
     case Database.filter (\node -> Node.content node == content) database of
         title :: _ ->
             ( title.id
@@ -461,7 +478,7 @@ findOrCreateNoteWithTitle content database =
             )
 
         [] ->
-            Database.insert (Node.title content) database
+            Database.insert now (Node.title content) database
                 |> Tuple.mapFirst .id
 
 

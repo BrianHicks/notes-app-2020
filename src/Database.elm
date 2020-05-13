@@ -15,7 +15,9 @@ module Database exposing
 -}
 
 import Database.ID as ID exposing (ID)
+import Iso8601
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as Pipeline
 import Json.Encode as Encode
 import Node exposing (Node)
 import Random
@@ -39,6 +41,8 @@ type alias Row =
     , node : Node
     , parent : Maybe ID
     , children : List ID
+    , created : Time.Posix
+    , updated : Time.Posix
 
     -- PouchDB state
     , revision : Maybe String
@@ -89,8 +93,8 @@ get id (Database database) =
             )
 
 
-insert : Node -> Database -> ( Row, Database )
-insert node (Database database) =
+insert : Time.Posix -> Node -> Database -> ( Row, Database )
+insert created node (Database database) =
     let
         ( id, seed ) =
             Random.step ID.generator database.seed
@@ -100,6 +104,8 @@ insert node (Database database) =
             , node = node
             , parent = Nothing
             , children = []
+            , created = created
+            , updated = created
             , revision = Nothing
             , deleted = False
             }
@@ -413,17 +419,15 @@ insertBeforeHelp target toInsert items soFar =
 
 decoder : Decoder Row
 decoder =
-    Decode.map6 Row
-        (Decode.field "_id" ID.decoder)
-        (Decode.field "node" Node.decoder)
-        (Decode.field "parent" (Decode.nullable ID.decoder))
-        (Decode.field "children" (Decode.list ID.decoder))
-        (Decode.field "_rev" (Decode.nullable Decode.string))
-        (Decode.oneOf
-            [ Decode.field "_deleted" Decode.bool
-            , Decode.succeed False
-            ]
-        )
+    Decode.succeed Row
+        |> Pipeline.required "_id" ID.decoder
+        |> Pipeline.required "node" Node.decoder
+        |> Pipeline.required "parent" (Decode.nullable ID.decoder)
+        |> Pipeline.required "children" (Decode.list ID.decoder)
+        |> Pipeline.optional "created" Iso8601.decoder (Time.millisToPosix 0)
+        |> Pipeline.optional "updated" Iso8601.decoder (Time.millisToPosix 0)
+        |> Pipeline.required "_rev" (Decode.nullable Decode.string)
+        |> Pipeline.optional "_deleted" Decode.bool False
 
 
 encode : Row -> Encode.Value
@@ -454,6 +458,8 @@ encode row =
                     ID.encode parent
           )
         , ( "children", Encode.list ID.encode row.children )
+        , ( "created", Iso8601.encode row.created )
+        , ( "updated", Iso8601.encode row.updated )
         ]
 
 
