@@ -63,7 +63,7 @@ This is my implementation of a note-taking app, organized around the following p
        - [x] if you're at the last child, moving down goes to the parent's next sibling.
 - [x] persistence
 - [x] nice design
-- [ ] navigation by link
+- [x] navigation by link
 - [ ] sidebar improvements
    - [ ] display and sort by last modified time
    - [ ] show first couple rows of content
