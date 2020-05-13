@@ -2,8 +2,14 @@ module Node.ContentTest exposing (..)
 
 import Expect
 import Fuzz exposing (Fuzzer)
+import Html.Attributes as Attrs
+import Html.Styled as Html
 import Node.Content exposing (..)
+import Route
 import Test exposing (..)
+import Test.Html.Event as Event
+import Test.Html.Query as Query
+import Test.Html.Selector as Selector
 
 
 contentTest : Test
@@ -125,6 +131,89 @@ contentTest =
             ]
         , fuzz contentFuzzer "toString and fromString roundtrip successfully" <|
             \content -> content |> toString |> fromString |> Expect.equal (Ok content)
+        , describe "toHtml"
+            [ test "clicking the result activates the content" <|
+                \_ ->
+                    fromList [ text "Hello" ]
+                        |> toHtml "Clicked" []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.find
+                            [ Selector.tag "button"
+                            , Selector.containing [ Selector.text "Hello" ]
+                            ]
+                        |> Event.simulate Event.click
+                        |> Event.expect "Clicked"
+            , test "renders clickable links" <|
+                \_ ->
+                    fromList [ link { children = [ text "bytes.zone" ], href = "https://bytes.zone" } ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.has
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href "https://bytes.zone")
+                            , Selector.containing [ Selector.text "bytes.zone" ]
+                            ]
+            , test "links inside links are not clickable" <|
+                \_ ->
+                    fromList
+                        [ link
+                            { children = [ link { children = [ text "Hey" ], href = "https://bad.example.com" } ]
+                            , href = "https://good.example.com"
+                            }
+                        ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.hasNot
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href "https://bad.example.com")
+                            ]
+            , test "note links inside links are not clickable" <|
+                \_ ->
+                    let
+                        child =
+                            noteLink [ text "Hello" ]
+                    in
+                    fromList
+                        [ link
+                            { children = [ child ]
+                            , href = "https://good.example.com"
+                            }
+                        ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.hasNot
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ child ]))))
+                            ]
+            , test "links inside note links are not clickable" <|
+                \_ ->
+                    fromList [ noteLink [ link { children = [ text "Hello" ], href = "https://bad.example.com" } ] ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.hasNot
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href "https://bad.example.com")
+                            ]
+            , test "note links inside note links are not clickable" <|
+                \_ ->
+                    let
+                        child =
+                            noteLink [ text "Hello" ]
+                    in
+                    fromList [ noteLink [ child ] ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.hasNot
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ child ]))))
+                            ]
+            ]
         ]
 
 
