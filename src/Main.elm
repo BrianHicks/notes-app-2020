@@ -93,6 +93,7 @@ type Msg
     | UserClickedNewNote
     | UserClickedNewNoteAt Posix
     | UserEditedNode String
+    | UserEditedNodeAt String Posix
     | UserFinishedEditing
     | UserHitEnterOnNode
     | UserHitEnterOnNodeAt Posix
@@ -101,6 +102,7 @@ type Msg
     | UserWantsToIndentNode
     | UserWantsToDedentNode
     | UserHitBackspaceAtBeginningOfNode
+    | UserHitBackspaceAtBeginningOfNodeAt Posix
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
@@ -201,6 +203,11 @@ update msg model =
             )
 
         UserEditedNode input ->
+            ( model
+            , GetTimeAnd (UserEditedNodeAt input)
+            )
+
+        UserEditedNodeAt input now ->
             case model.editing of
                 Nothing ->
                     ( model
@@ -212,7 +219,7 @@ update msg model =
                         Ok content ->
                             ( { model
                                 | editing = Just { editing | input = Ok content }
-                                , database = Database.update editing.id (Node.setContent content) model.database
+                                , database = Database.update now editing.id (Node.setContent content) model.database
                               }
                             , NoEffect
                             )
@@ -253,7 +260,7 @@ update msg model =
 
                         ( newNode, inserted ) =
                             model.database
-                                |> Database.update row.id (Node.setContent leftContent)
+                                |> Database.update now row.id (Node.setContent leftContent)
                                 |> Database.insert now (Node.node rightContent)
 
                         database =
@@ -362,6 +369,11 @@ update msg model =
                     ( model, NoEffect )
 
         UserHitBackspaceAtBeginningOfNode ->
+            ( model
+            , GetTimeAnd UserHitBackspaceAtBeginningOfNodeAt
+            )
+
+        UserHitBackspaceAtBeginningOfNodeAt now ->
             let
                 maybeRow =
                     Maybe.andThen (\{ id } -> Database.get id model.database) model.editing
@@ -382,7 +394,7 @@ update msg model =
                     ( { model
                         | database =
                             model.database
-                                |> Database.update target.id (Node.setContent updatedContent)
+                                |> Database.update now target.id (Node.setContent updatedContent)
                                 |> Database.delete row.id
                         , editing =
                             Just

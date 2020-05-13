@@ -119,15 +119,26 @@ insert created node (Database database) =
     )
 
 
-update : ID -> (Node -> Node) -> Database -> Database
-update id updater ((Database database) as db) =
+update : Time.Posix -> ID -> (Node -> Node) -> Database -> Database
+update updated id updater ((Database database) as db) =
     case get id db of
         Just row ->
-            Database
-                { database
-                    | nodes = Dict.insert id { row | node = updater row.node } database.nodes
-                    , toPersist = Set.insert id database.toPersist
-                }
+            let
+                newNode =
+                    updater row.node
+            in
+            if newNode == row.node then
+                db
+
+            else
+                Database
+                    { database
+                        | nodes =
+                            Dict.insert id
+                                { row | node = updater row.node, updated = updated }
+                                database.nodes
+                        , toPersist = Set.insert id database.toPersist
+                    }
 
         Nothing ->
             db

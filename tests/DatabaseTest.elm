@@ -331,14 +331,14 @@ databaseTest =
                             insert_ (Node.title Content.empty) emptyFixture
                     in
                     database
-                        |> update id (Node.setContent (plainContent "Hey!"))
+                        |> update_ id (Node.setContent (plainContent "Hey!"))
                         |> get id
                         |> Maybe.map (Node.content << .node)
                         |> Expect.equal (Just (plainContent "Hey!"))
             , test "trying to update a non-existent node doesn't change anything" <|
                 \_ ->
                     emptyFixture
-                        |> update (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
+                        |> update_ (ID.fromInt 1000) (Node.setContent (plainContent "Hey!"))
                         |> Expect.equal emptyFixture
             , test "doing a no-op update doesn't change anything" <|
                 \_ ->
@@ -347,7 +347,7 @@ databaseTest =
                             insert_ (Node.title Content.empty) emptyFixture
                     in
                     database
-                        |> update id identity
+                        |> update_ id identity
                         |> Expect.equal database
             , test "updating a node marks it to be persisted" <|
                 \_ ->
@@ -357,7 +357,7 @@ databaseTest =
                                 |> Tuple.mapSecond toPersist
                     in
                     database
-                        |> update row.id (Node.setContent (plainContent "Hey!"))
+                        |> update_ row.id (Node.setContent (plainContent "Hey!"))
                         |> toPersist
                         |> Tuple.first
                         |> List.map .id
@@ -458,3 +458,7 @@ plainContent string =
 
 insert_ =
     insert (Time.millisToPosix 0)
+
+
+update_ =
+    update (Time.millisToPosix 1)
