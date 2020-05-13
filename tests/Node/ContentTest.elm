@@ -70,7 +70,7 @@ contentTest =
                 \_ ->
                     fromString "[markdown links](https://www.google.com)"
                         |> Result.map toList
-                        |> Expect.equal (Ok [ link { text = "markdown links", href = "https://www.google.com" } ])
+                        |> Expect.equal (Ok [ link { children = [ text "markdown links" ], href = "https://www.google.com" } ])
             ]
         , describe "splitAt"
             [ test "splits text correctly" <|
@@ -91,11 +91,11 @@ contentTest =
                             )
             , test "splits links correctly" <|
                 \_ ->
-                    fromList [ link { text = "baseball", href = "https://bytes.zone" } ]
+                    fromList [ link { children = [ text "baseball" ], href = "https://bytes.zone" } ]
                         |> splitAt 4
                         |> Expect.equal
-                            ( fromList [ link { text = "base", href = "https://bytes.zone" } ]
-                            , fromList [ link { text = "ball", href = "https://bytes.zone" } ]
+                            ( fromList [ link { children = [ text "base" ], href = "https://bytes.zone" } ]
+                            , fromList [ link { children = [ text "ball" ], href = "https://bytes.zone" } ]
                             )
             , fuzz2 (Fuzz.intRange -1 0) contentFuzzer "no change for a split at or below 0" <|
                 \splitPoint content ->
@@ -137,7 +137,10 @@ contentFuzzer =
     Fuzz.oneOf
         [ Fuzz.map text simpleStringFuzzer
         , Fuzz.map (\text_ -> noteLink [ text text_ ]) simpleStringFuzzer
-        , Fuzz.map2 (\text_ href -> link { text = text_, href = href }) simpleStringFuzzer simpleStringFuzzer
+        , Fuzz.map2
+            (\text_ href -> link { children = [ text text_ ], href = href })
+            simpleStringFuzzer
+            simpleStringFuzzer
         ]
         |> nonEmptyShortList
         |> Fuzz.map fromList

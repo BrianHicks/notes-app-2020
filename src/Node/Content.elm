@@ -165,7 +165,7 @@ type Node
     = Text String
     | NoteLink (List Node)
     | Link
-        { text : String -- TODO: List Node
+        { children : List Node
         , href : String
         }
 
@@ -180,7 +180,7 @@ noteLink children =
     NoteLink children
 
 
-link : { text : String, href : String } -> Node
+link : { children : List Node, href : String } -> Node
 link =
     Link
 
@@ -195,7 +195,7 @@ nodeToString node =
             "[[" ++ String.concat (List.map nodeToString children) ++ "]]"
 
         Link guts ->
-            "[" ++ guts.text ++ "](" ++ guts.href ++ ")"
+            "[" ++ String.concat (List.map nodeToString guts.children) ++ "](" ++ guts.href ++ ")"
 
 
 nodeToHtml : Node -> Html msg
@@ -232,7 +232,7 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[" ]
-                , decoration Colors.greenDark [ Html.text guts.text ]
+                , decoration Colors.greenDark (List.map nodeToPlainHtml guts.children)
                 , decoration Colors.greyLight [ Html.text "](" ]
                 , Html.span
                     [ Attrs.css
@@ -259,7 +259,11 @@ nodeToPlainHtml node =
                 ]
 
         Link guts ->
-            Html.span [] [ Html.text "[", Html.text guts.text, Html.text "](★)" ]
+            Html.span []
+                [ Html.text "["
+                , Html.span [] (List.map nodeToPlainHtml guts.children)
+                , Html.text "](★)"
+                ]
 
 
 nodeLength : Node -> Int
@@ -271,8 +275,8 @@ nodeLength node =
         NoteLink children ->
             List.sum (List.map nodeLength children)
 
-        Link link_ ->
-            String.length link_.text
+        Link guts ->
+            List.sum (List.map nodeLength guts.children)
 
 
 splitNodeAt : Int -> Node -> ( Node, Node )
@@ -292,9 +296,13 @@ splitNodeAt splitPoint node =
             , NoteLink right
             )
 
-        Link link_ ->
-            ( Link { link_ | text = String.left splitPoint link_.text }
-            , Link { link_ | text = String.dropLeft splitPoint link_.text }
+        Link guts ->
+            let
+                ( left, right ) =
+                    splitListAt splitPoint guts.children
+            in
+            ( Link { guts | children = left }
+            , Link { guts | children = right }
             )
 
 
@@ -310,8 +318,8 @@ nodeIsEmpty node =
         NoteLink children ->
             List.all nodeIsEmpty children
 
-        Link link_ ->
-            String.isEmpty link_.text
+        Link guts ->
+            List.isEmpty guts.children || List.all nodeIsEmpty guts.children
 
 
 
@@ -420,9 +428,9 @@ linkHrefClose =
 
 linkParser : Parser Node
 linkParser =
-    Parser.succeed (\text_ href -> Link { text = text_, href = href })
+    Parser.succeed (\children href -> Link { children = children, href = href })
         |. Parser.symbol linkStart
-        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= ']') ExpectingLinkText)
+        |= Parser.lazy (\_ -> parser)
         |. Parser.symbol linkTextClose
         |. Parser.symbol linkHrefOpen
         |= Parser.getChompedString (chompAtLeastOne (\c -> c /= ')') ExpectingLinkHref)
@@ -542,7 +550,7 @@ encodeNode node =
         Link guts ->
             Encode.object
                 [ ( "kind", Encode.string "link" )
-                , ( "text", Encode.string guts.text )
+                , ( "children", Encode.list encodeNode guts.children )
                 , ( "href", Encode.string guts.href )
                 ]
 
@@ -563,21 +571,34 @@ decodeNode =
                 "noteLink" ->
                     Decode.oneOf
                         [ Decode.map NoteLink (Decode.field "children" (Decode.list decodeNode))
-                        , Decode.field "text" Decode.string
-                            |> Decode.andThen
+                        , Decode.andThen
+                            (\text_ ->
+                                case fromString text_ of
+                                    Ok (Content children) ->
+                                        Decode.succeed (NoteLink children)
+
+                                    Err err ->
+                                        Decode.fail (String.join "\n" err)
+                            )
+                            (Decode.field "text" Decode.string)
+                        ]
+
+                "link" ->
+                    Decode.map2 (\children href -> { children = children, href = href })
+                        (Decode.oneOf
+                            [ Decode.field "children" (Decode.list decodeNode)
+                            , Decode.andThen
                                 (\text_ ->
                                     case fromString text_ of
                                         Ok (Content children) ->
-                                            Decode.succeed (NoteLink children)
+                                            Decode.succeed children
 
                                         Err err ->
                                             Decode.fail (String.join "\n" err)
                                 )
-                        ]
-
-                "link" ->
-                    Decode.map2 (\text_ href -> { text = text_, href = href })
-                        (Decode.field "text" Decode.string)
+                                (Decode.field "text" Decode.string)
+                            ]
+                        )
                         (Decode.field "href" Decode.string)
                         |> Decode.map Link
 

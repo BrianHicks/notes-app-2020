@@ -92,7 +92,7 @@ programTest =
                 start
                     |> clickButton "New Note"
                     |> fillIn "editor" "Content" "test ["
-                    |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the 'link' part of a [link](url)" ])
+                    |> expectNote (Query.find [ Selector.tag "li" ] >> Query.has [ Selector.text "While parsing a link, I was expecting the closing ']' of a [link](url)" ])
         , test "after editing a note, hitting enter creates a new child note" <|
             \_ ->
                 start
