@@ -112,6 +112,7 @@ type Effect
     | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
+    | GetTimeAnd (Posix -> Msg)
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -498,6 +499,9 @@ perform model effect =
                 (\_ -> FocusedOnEditor)
                 (Dom.focus "editor")
 
+        GetTimeAnd next ->
+            Task.perform next Time.now
+
 
 port put : Value -> Cmd msg
 
@@ -565,7 +569,7 @@ viewApplication model =
                 Route.NodeById id ->
                     viewRow id model
 
-                Route.NodeByTitle name ->
+                Route.NodeByTitle _ ->
                     Html.text "You shouldn't ever see this page!"
             ]
         ]

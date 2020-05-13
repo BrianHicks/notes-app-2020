@@ -64,6 +64,10 @@ testPerform effect =
         FocusOnEditor ->
             SCmd.none
 
+        GetTimeAnd _ ->
+            -- TODO: https://github.com/avh4/elm-program-test/issues/105
+            SCmd.none
+
 
 programTest : Test
 programTest =
