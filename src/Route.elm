@@ -1,11 +1,11 @@
-module Route exposing (..)
+module Route exposing (Route(..), parse, toString)
 
 import Content exposing (Content)
 import Database
 import Database.ID as ID exposing (ID)
 import Url exposing (Url)
 import Url.Builder as Builder
-import Url.Parser as Parser exposing (..)
+import Url.Parser as Parser exposing ((</>), Parser, s, top)
 
 
 type Route
@@ -36,19 +36,20 @@ parse url =
     Maybe.withDefault NotFound (Parser.parse parser url)
 
 
+parser : Parser (Route -> a) a
 parser =
-    oneOf
-        [ map Root top
-        , map NodeById (s "node" </> id)
-        , map NodeByTitle (s "node" </> content)
+    Parser.oneOf
+        [ Parser.map Root top
+        , Parser.map NodeById (s "node" </> id)
+        , Parser.map NodeByTitle (s "node" </> content)
         ]
 
 
 id : Parser (ID -> a) a
 id =
-    custom "ID" (ID.fromString >> Result.toMaybe)
+    Parser.custom "ID" (ID.fromString >> Result.toMaybe)
 
 
 content : Parser (Content -> a) a
 content =
-    custom "CONTENT" (Url.percentDecode >> Maybe.andThen (Content.fromString >> Result.toMaybe))
+    Parser.custom "CONTENT" (Url.percentDecode >> Maybe.andThen (Content.fromString >> Result.toMaybe))

@@ -3,9 +3,9 @@ module DatabaseTest exposing (..)
 import Array
 import Content exposing (Content)
 import Database exposing (..)
-import Database.ID as ID
+import Database.ID as ID exposing (ID)
 import Expect
-import Node
+import Node exposing (Node)
 import Random
 import Test exposing (..)
 import Time
@@ -456,9 +456,11 @@ plainContent string =
     Content.fromList [ Content.text string ]
 
 
+insert_ : Node -> Database -> ( Row, Database )
 insert_ =
     insert (Time.millisToPosix 0)
 
 
+update_ : ID -> (Node -> Node) -> Database -> Database
 update_ =
     update (Time.millisToPosix 1)

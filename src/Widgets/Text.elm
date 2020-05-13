@@ -1,4 +1,4 @@
-module Widgets.Text exposing (..)
+module Widgets.Text exposing (h1, text)
 
 import Css exposing (Style)
 import Widgets.Colors as Colors

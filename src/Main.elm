@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module Main exposing (Effect(..), Model, Msg(..), init, main, update, view)
 
 import Accessibility.Styled as Html exposing (Attribute, Html)
 import Accessibility.Styled.Style exposing (invisible)
