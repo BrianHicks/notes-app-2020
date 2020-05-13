@@ -101,6 +101,7 @@ type Msg
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
+    | UserWantsToOpenNoteWithTitle Content
 
 
 type Effect
@@ -422,6 +423,11 @@ update msg model =
             , NoEffect
             )
 
+        UserWantsToOpenNoteWithTitle content ->
+            ( model
+            , NoEffect
+            )
+
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
 perform model effect =
@@ -572,7 +578,10 @@ viewNav attrs activeId rows =
 
 viewNavLink : Maybe ID -> Database.Row -> Html Msg
 viewNavLink activeId { id, node } =
-    Content.toHtml (UserSelectedNoteInList id)
+    Content.toHtml
+        { activate = UserSelectedNoteInList id
+        , navigate = UserWantsToOpenNoteWithTitle
+        }
         [ Attrs.css
             [ Css.padding (Css.px 10)
             , Css.width (Css.pct 100)
@@ -704,7 +713,10 @@ viewRow id model =
 
 viewNode : ID -> Node -> Html Msg
 viewNode id node =
-    Content.toHtml (UserWantsToEditNode id)
+    Content.toHtml
+        { activate = UserWantsToEditNode id
+        , navigate = UserWantsToOpenNoteWithTitle
+        }
         [ Attrs.css
             [ if Node.isNote node then
                 Text.h1

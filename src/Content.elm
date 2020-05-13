@@ -21,8 +21,6 @@ import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
-import Url
-import Url.Builder
 import Widgets.Colors as Colors
 
 
@@ -71,11 +69,17 @@ toList (Content guts) =
     guts
 
 
-toHtml : msg -> List (Attribute Never) -> Content -> Html msg
-toHtml onClick attrs ((Content guts) as outer) =
+toHtml :
+    { activate : msg
+    , navigate : Content -> msg
+    }
+    -> List (Attribute Never)
+    -> Content
+    -> Html msg
+toHtml { activate, navigate } attrs ((Content guts) as outer) =
     Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
         [ Html.button
-            [ Events.onClick onClick
+            [ Events.onClick activate
             , Attrs.css
                 [ Css.width (Css.pct 100)
                 , Css.height (Css.pct 100)
@@ -94,7 +98,7 @@ toHtml onClick attrs ((Content guts) as outer) =
                 ]
             ]
             [ Html.text (toString outer) ]
-        , Html.div [] (List.map snippetToHtml guts)
+        , Html.div [] (List.map (snippetToHtml navigate) guts)
         ]
 
 
@@ -200,8 +204,8 @@ snippetToString snippet =
             "[" ++ String.concat (List.map snippetToString guts.children) ++ "](" ++ guts.href ++ ")"
 
 
-snippetToHtml : Snippet -> Html msg
-snippetToHtml snippet =
+snippetToHtml : (Content -> msg) -> Snippet -> Html msg
+snippetToHtml navigate snippet =
     let
         decoration color =
             Html.span [ Attrs.css [ Css.color (Colors.toCss color) ] ]
@@ -211,17 +215,13 @@ snippetToHtml snippet =
             Html.text text_
 
         NoteLink children ->
-            Html.a
+            Html.button
                 [ Attrs.css
                     [ Css.zIndex (Css.int 1)
                     , Css.position Css.relative
                     , Css.textDecoration Css.none
                     ]
-
-                -- TODO: duplication implementation! But I can't import
-                -- Route right now without causing a cycle. Fix that and
-                -- come back to this (and remove the Url imports above too.)
-                , Attrs.href (Url.Builder.absolute [ "node", Url.percentEncode (toString (Content children)) ] [])
+                , Events.onClick (navigate (Content children))
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
                 , decoration Colors.greenDark (List.map snippetToPlainHtml children)
