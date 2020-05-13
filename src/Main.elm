@@ -26,6 +26,7 @@ import Widgets.Button as Button
 import Widgets.Colors as Colors
 import Widgets.Icons as Icons
 import Widgets.Text as Text
+import Widgets.TimeDifference as TimeDifference
 
 
 type alias Model key =
@@ -562,6 +563,7 @@ viewApplication model =
                 _ ->
                     Nothing
             )
+            model.currentTime
             (Database.filter Node.isTitle model.database)
         , Html.div [ css [ Css.property "grid-area" "note" ] ]
             [ case model.route of
@@ -603,8 +605,8 @@ viewHeader attrs =
         ]
 
 
-viewNav : List (Attribute Never) -> Maybe ID -> List Database.Row -> Html Msg
-viewNav attrs activeId rows =
+viewNav : List (Attribute Never) -> Maybe ID -> Posix -> List Database.Row -> Html Msg
+viewNav attrs activeId now rows =
     Html.nav
         (Attrs.css
             [ Css.height (Css.pct 100)
@@ -615,57 +617,61 @@ viewNav attrs activeId rows =
             :: attrs
         )
         [ rows
-            |> List.map (\row -> Html.li [] [ viewNavLink activeId row ])
+            |> List.sortBy (\row -> -(Time.posixToMillis row.updated))
+            |> List.map (\row -> Html.li [] [ viewNavLink activeId now row ])
             |> Html.ul []
         ]
 
 
-viewNavLink : Maybe ID -> Database.Row -> Html Msg
-viewNavLink activeId { id, node } =
-    Content.toHtml
-        { activate = UserSelectedNoteInList id
-        , navigate = UserWantsToOpenNoteWithTitle
-        , navigateUrl = Route.toString << Route.NodeByTitle
-        }
-        [ Attrs.css
-            [ Css.padding (Css.px 10)
-            , Css.width (Css.pct 100)
+viewNavLink : Maybe ID -> Posix -> Database.Row -> Html Msg
+viewNavLink activeId now { id, node, updated } =
+    Html.div []
+        [ Content.toHtml
+            { activate = UserSelectedNoteInList id
+            , navigate = UserWantsToOpenNoteWithTitle
+            , navigateUrl = Route.toString << Route.NodeByTitle
+            }
+            [ Attrs.css
+                [ Css.padding (Css.px 10)
+                , Css.width (Css.pct 100)
 
-            -- it's always text!
-            , Text.text
-            , Css.Global.descendants
-                [ Css.Global.everything
-                    [ Css.textOverflow Css.ellipsis
-                    , Css.overflow Css.hidden
-                    , Css.whiteSpace Css.noWrap
+                -- it's always text!
+                , Text.text
+                , Css.Global.descendants
+                    [ Css.Global.everything
+                        [ Css.textOverflow Css.ellipsis
+                        , Css.overflow Css.hidden
+                        , Css.whiteSpace Css.noWrap
+                        ]
                     ]
+
+                -- left align, but center vertically
+                , Css.displayFlex
+                , Css.flexDirection Css.row
+                , Css.justifyContent Css.left
+                , Css.alignItems Css.center
+                , Css.overflow Css.hidden
+
+                -- surround by borders
+                , Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+                , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
+                , Css.property "transition" "all 0.25s"
+
+                -- highlight the active node
+                , -- TODO: make an isActive helper that checks if a child is active too
+                  if activeId == Just id then
+                    Css.batch
+                        [ Css.borderLeftColor (Colors.toCss Colors.greenLight)
+                        , Css.backgroundColor (Colors.toCss Colors.whiteLight)
+                        ]
+
+                  else
+                    Css.batch []
                 ]
-
-            -- left align, but center vertically
-            , Css.displayFlex
-            , Css.flexDirection Css.row
-            , Css.justifyContent Css.left
-            , Css.alignItems Css.center
-            , Css.overflow Css.hidden
-
-            -- surround by borders
-            , Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
-            , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
-            , Css.property "transition" "all 0.25s"
-
-            -- highlight the active node
-            , -- TODO: make an isActive helper that checks if a child is active too
-              if activeId == Just id then
-                Css.batch
-                    [ Css.borderLeftColor (Colors.toCss Colors.greenLight)
-                    , Css.backgroundColor (Colors.toCss Colors.whiteLight)
-                    ]
-
-              else
-                Css.batch []
             ]
+            (Node.content node)
+        , TimeDifference.timeDifference updated now
         ]
-        (Node.content node)
 
 
 viewRow : ID -> Model key -> Html Msg
