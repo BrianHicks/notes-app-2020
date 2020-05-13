@@ -42,17 +42,17 @@ routeTest =
                         }
                         |> Expect.equal NotFound
             , test "works with basic text" <|
-                \_ -> expectRoundTripWorks (NoteByName (fromList [ text "basic" ]))
+                \_ -> expectRoundTripWorks (NodeByTitle (fromList [ text "basic" ]))
             , test "works with spaces" <|
-                \_ -> expectRoundTripWorks (NoteByName (fromList [ text "one two" ]))
+                \_ -> expectRoundTripWorks (NodeByTitle (fromList [ text "one two" ]))
             , test "works with slashes" <|
-                \_ -> expectRoundTripWorks (NoteByName (fromList [ text "one/two" ]))
+                \_ -> expectRoundTripWorks (NodeByTitle (fromList [ text "one/two" ]))
             , test "works with note link characters" <|
-                \_ -> expectRoundTripWorks (NoteByName (fromList [ noteLink [ text "link" ] ]))
+                \_ -> expectRoundTripWorks (NodeByTitle (fromList [ noteLink [ text "link" ] ]))
             , test "works with link characters" <|
                 \_ ->
                     expectRoundTripWorks
-                        (NoteByName
+                        (NodeByTitle
                             (fromList
                                 [ link
                                     { children = [ text "link" ]

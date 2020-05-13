@@ -434,7 +434,7 @@ update msg model =
 applyRoutingRules : Url -> Model key -> ( Model key, Effect )
 applyRoutingRules url model =
     case Route.parse url of
-        Route.NoteByName content ->
+        Route.NodeByTitle content ->
             let
                 ( id, database ) =
                     findOrCreateNoteWithTitle content model.database
@@ -565,7 +565,7 @@ viewApplication model =
                 Route.NodeById id ->
                     viewRow id model
 
-                Route.NoteByName name ->
+                Route.NodeByTitle name ->
                     Html.text "You shouldn't ever see this page!"
             ]
         ]
@@ -616,7 +616,7 @@ viewNavLink activeId { id, node } =
     Content.toHtml
         { activate = UserSelectedNoteInList id
         , navigate = UserWantsToOpenNoteWithTitle
-        , navigateUrl = Route.toString << Route.NoteByName
+        , navigateUrl = Route.toString << Route.NodeByTitle
         }
         [ Attrs.css
             [ Css.padding (Css.px 10)
@@ -752,7 +752,7 @@ viewNode id node =
     Content.toHtml
         { activate = UserWantsToEditNode id
         , navigate = UserWantsToOpenNoteWithTitle
-        , navigateUrl = Route.toString << Route.NoteByName
+        , navigateUrl = Route.toString << Route.NodeByTitle
         }
         [ Attrs.css
             [ if Node.isTitle node then

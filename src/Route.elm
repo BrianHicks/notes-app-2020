@@ -12,7 +12,7 @@ type Route
     = NotFound
     | Root
     | NodeById ID
-    | NoteByName Content
+    | NodeByTitle Content
 
 
 toString : Route -> String
@@ -27,8 +27,8 @@ toString route =
         NodeById id_ ->
             Builder.absolute [ "node", ID.toString id_ ] []
 
-        NoteByName name ->
-            Builder.absolute [ "node", Url.percentEncode (Content.toString name) ] []
+        NodeByTitle title ->
+            Builder.absolute [ "node", Url.percentEncode (Content.toString title) ] []
 
 
 parse : Url -> Route
@@ -40,7 +40,7 @@ parser =
     oneOf
         [ map Root top
         , map NodeById (s "node" </> id)
-        , map NoteByName (s "node" </> content)
+        , map NodeByTitle (s "node" </> content)
         ]
 
 
