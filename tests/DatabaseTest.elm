@@ -21,28 +21,28 @@ databaseTest =
             [ test "inserts a node" <|
                 \_ ->
                     emptyFixture
-                        |> insert (Node.note Content.empty)
+                        |> insert (Node.title Content.empty)
                         |> Tuple.second
                         |> isEmpty
                         |> Expect.equal False
             , test "assigns an ID" <|
                 \_ ->
                     emptyFixture
-                        |> insert (Node.note Content.empty)
+                        |> insert (Node.title Content.empty)
                         |> Tuple.first
                         |> .id
                         |> Expect.equal (ID.fromInt 0)
             , test "starts without children" <|
                 \_ ->
                     emptyFixture
-                        |> insert (Node.note Content.empty)
+                        |> insert (Node.title Content.empty)
                         |> Tuple.first
                         |> .children
                         |> Expect.equal []
             , test "starts without a parent" <|
                 \_ ->
                     emptyFixture
-                        |> insert (Node.note Content.empty)
+                        |> insert (Node.title Content.empty)
                         |> Tuple.first
                         |> .parent
                         |> Expect.equal Nothing
@@ -50,7 +50,7 @@ databaseTest =
                 \_ ->
                     let
                         ( row, database ) =
-                            insert (Node.note Content.empty) emptyFixture
+                            insert (Node.title Content.empty) emptyFixture
                     in
                     database
                         |> toPersist
@@ -66,7 +66,7 @@ databaseTest =
                             Content.fromList [ Content.text "Hey" ]
 
                         ( { id }, database ) =
-                            insert (Node.note content) emptyFixture
+                            insert (Node.title content) emptyFixture
                     in
                     database
                         |> get id
@@ -81,7 +81,7 @@ databaseTest =
                     let
                         ( parent, ( child, database ) ) =
                             emptyFixture
-                                |> insert (Node.note (plainContent "parent"))
+                                |> insert (Node.title (plainContent "parent"))
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
                     in
                     database
@@ -94,7 +94,7 @@ databaseTest =
                     let
                         ( parent, ( child, ( _, database ) ) ) =
                             emptyFixture
-                                |> insert (Node.note (plainContent "parent"))
+                                |> insert (Node.title (plainContent "parent"))
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
                                 |> Tuple.mapSecond (Tuple.mapSecond toPersist)
                     in
@@ -109,7 +109,7 @@ databaseTest =
                     let
                         ( parent, ( child, database ) ) =
                             emptyFixture
-                                |> insert (Node.note (plainContent "parent"))
+                                |> insert (Node.title (plainContent "parent"))
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "child")))
                     in
                     database
@@ -121,7 +121,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveInto id id
@@ -133,8 +133,8 @@ databaseTest =
                     let
                         ( siblingA, ( siblingB, dbTemp ) ) =
                             emptyFixture
-                                |> insert (Node.note (plainContent "sibling A"))
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "sibling B")))
+                                |> insert (Node.title (plainContent "sibling A"))
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "sibling B")))
 
                         ( child, database ) =
                             insert (Node.node (plainContent "child")) dbTemp
@@ -149,7 +149,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveInto id (ID.fromInt 0x1BAD1DEA)
@@ -158,7 +158,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveInto (ID.fromInt 0x1BAD1DEA) id
@@ -169,7 +169,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveAfter id id
@@ -178,7 +178,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveAfter (ID.fromInt 1000) id
@@ -187,7 +187,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> moveAfter id (ID.fromInt 1000)
@@ -196,10 +196,10 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, ( third, database ) ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
-                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "third")))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
+                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "third")))))
                     in
                     database
                         |> moveInto parent.id third.id
@@ -213,9 +213,9 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, database ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
                     in
                     database
                         |> moveInto parent.id first.id
@@ -233,7 +233,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "note")) emptyFixture
+                            insert (Node.title (plainContent "note")) emptyFixture
                     in
                     database
                         |> previousSibling id
@@ -242,9 +242,9 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, database ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
                     in
                     database
                         |> moveInto parent.id second.id
@@ -256,9 +256,9 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, database ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
                     in
                     database
                         |> moveInto parent.id second.id
@@ -272,9 +272,9 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, database ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
                     in
                     database
                         |> moveInto parent.id second.id
@@ -286,10 +286,10 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, ( child, database ) ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
-                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "child")))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
+                                |> Tuple.mapSecond (Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "child")))))
                     in
                     database
                         |> moveInto parent.id second.id
@@ -302,7 +302,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
+                            insert (Node.title (plainContent "parent")) emptyFixture
                     in
                     database
                         |> nextNode id
@@ -311,9 +311,9 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( first, ( second, database ) ) ) =
-                            insert (Node.note (plainContent "parent")) emptyFixture
-                                |> Tuple.mapSecond (insert (Node.note (plainContent "first")))
-                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.note (plainContent "second"))))
+                            insert (Node.title (plainContent "parent")) emptyFixture
+                                |> Tuple.mapSecond (insert (Node.title (plainContent "first")))
+                                |> Tuple.mapSecond (Tuple.mapSecond (insert (Node.title (plainContent "second"))))
                     in
                     database
                         |> moveInto parent.id second.id
@@ -327,7 +327,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note Content.empty) emptyFixture
+                            insert (Node.title Content.empty) emptyFixture
                     in
                     database
                         |> update id (Node.setContent (plainContent "Hey!"))
@@ -343,7 +343,7 @@ databaseTest =
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note Content.empty) emptyFixture
+                            insert (Node.title Content.empty) emptyFixture
                     in
                     database
                         |> update id identity
@@ -352,7 +352,7 @@ databaseTest =
                 \_ ->
                     let
                         ( row, ( _, database ) ) =
-                            insert (Node.note Content.empty) emptyFixture
+                            insert (Node.title Content.empty) emptyFixture
                                 |> Tuple.mapSecond toPersist
                     in
                     database
@@ -367,7 +367,7 @@ databaseTest =
                 \_ ->
                     let
                         ( id, database ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                     in
                     database
                         |> filter (always False)
@@ -377,20 +377,20 @@ databaseTest =
                     let
                         ( id, ( _, database ) ) =
                             emptyFixture
-                                |> insert (Node.note (plainContent "yes"))
+                                |> insert (Node.title (plainContent "yes"))
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "no")))
                     in
                     database
-                        |> filter Node.isNote
+                        |> filter Node.isTitle
                         |> List.map .node
-                        |> Expect.equal [ Node.note (plainContent "yes") ]
+                        |> Expect.equal [ Node.title (plainContent "yes") ]
             ]
         , describe "deleting nodes"
             [ test "should make them non-gettable" <|
                 \_ ->
                     let
                         ( { id }, database ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                     in
                     database
                         |> delete id
@@ -400,7 +400,7 @@ databaseTest =
                 \_ ->
                     let
                         ( parent, ( child, database ) ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                                 |> Tuple.mapSecond (insert (Node.node (plainContent "bye!")))
                     in
                     database
@@ -413,7 +413,7 @@ databaseTest =
                 \_ ->
                     let
                         ( id, database ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                     in
                     database
                         |> delete (ID.fromInt 1000)
@@ -424,7 +424,7 @@ databaseTest =
                 \_ ->
                     let
                         ( node, database ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                     in
                     toPersist database
                         |> Tuple.first
@@ -433,7 +433,7 @@ databaseTest =
                 \_ ->
                     let
                         ( node, database ) =
-                            insert (Node.note (plainContent "hey")) emptyFixture
+                            insert (Node.title (plainContent "hey")) emptyFixture
                     in
                     database
                         |> toPersist

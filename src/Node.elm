@@ -1,6 +1,6 @@
 module Node exposing
     ( Node, content, setContent, isEmpty
-    , note, isNote
+    , title, isTitle
     , node
     , encode, decoder
     )
@@ -9,7 +9,7 @@ module Node exposing
 
 @docs Node, content, setContent, isEmpty
 
-@docs note, isNote
+@docs title, isTitle
 
 @docs node
 
@@ -29,10 +29,10 @@ type Node
         }
 
 
-note : Content -> Node
-note content_ =
+title : Content -> Node
+title content_ =
     Node
-        { metadata = Just Note
+        { metadata = Just Title
         , content = content_
         }
 
@@ -61,12 +61,12 @@ setContent content_ (Node guts) =
 
 
 type Metadata
-    = Note
+    = Title
 
 
-isNote : Node -> Bool
-isNote (Node guts) =
-    guts.metadata == Just Note
+isTitle : Node -> Bool
+isTitle (Node guts) =
+    guts.metadata == Just Title
 
 
 encode : Node -> Encode.Value
@@ -87,8 +87,8 @@ encode (Node guts) =
 encodeMetadata : Metadata -> Encode.Value
 encodeMetadata meta =
     case meta of
-        Note ->
-            Encode.string "note"
+        Title ->
+            Encode.string "title"
 
 
 decoder : Decoder Node
@@ -106,8 +106,12 @@ metadataDecoder =
     Decode.andThen
         (\kind ->
             case kind of
+                -- Title used to be called Note
                 "note" ->
-                    Decode.succeed Note
+                    Decode.succeed Title
+
+                "title" ->
+                    Decode.succeed Title
 
                 _ ->
                     Decode.fail ("I don't know about " ++ kind ++ " metadata.")

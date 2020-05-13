@@ -159,7 +159,7 @@ update msg model =
         UserClickedNewNote ->
             let
                 ( row, database ) =
-                    Database.insert (Node.note Content.empty) model.database
+                    Database.insert (Node.title Content.empty) model.database
             in
             ( { model
                 | database = database
@@ -228,7 +228,7 @@ update msg model =
                                 |> Database.insert (Node.node rightContent)
 
                         database =
-                            if Node.isNote row.node then
+                            if Node.isTitle row.node then
                                 Database.moveInto row.id newNode.id inserted
 
                             else
@@ -316,7 +316,7 @@ update msg model =
                         |> Maybe.andThen (\id -> Database.get id model.database)
                         |> Maybe.andThen
                             (\parent ->
-                                if Node.isNote parent.node then
+                                if Node.isTitle parent.node then
                                     Nothing
 
                                 else
@@ -518,7 +518,7 @@ viewApplication model =
                 _ ->
                     Nothing
             )
-            (Database.filter Node.isNote model.database)
+            (Database.filter Node.isTitle model.database)
         , Html.div [ css [ Css.property "grid-area" "note" ] ]
             [ case model.route of
                 Route.NotFound ->
@@ -632,7 +632,7 @@ viewRow id model =
         Just row ->
             let
                 tag =
-                    if Node.isNote row.node then
+                    if Node.isTitle row.node then
                         Html.section
                             [ Attrs.css
                                 [ Css.maxWidth (Css.em 40)
@@ -652,7 +652,7 @@ viewRow id model =
                             Html.form []
                                 [ Html.textarea
                                     [ Attrs.css
-                                        [ if Node.isNote row.node then
+                                        [ if Node.isTitle row.node then
                                             Text.h1
 
                                           else
@@ -718,7 +718,7 @@ viewNode id node =
         , navigate = UserWantsToOpenNoteWithTitle
         }
         [ Attrs.css
-            [ if Node.isNote node then
+            [ if Node.isTitle node then
                 Text.h1
 
               else

@@ -9,16 +9,16 @@ import Test exposing (..)
 nodeTest : Test
 nodeTest =
     describe "node"
-        [ describe "note builder"
-            [ test "creates a note with the given content" <|
+        [ describe "title builder"
+            [ test "creates a title with the given content" <|
                 \_ ->
-                    note (plainContent "Hey there!")
+                    title (plainContent "Hey there!")
                         |> content
                         |> Expect.equal (plainContent "Hey there!")
-            , test "is a note" <|
+            , test "is a title" <|
                 \_ ->
-                    note (plainContent "Hey there!")
-                        |> isNote
+                    title (plainContent "Hey there!")
+                        |> isTitle
                         |> Expect.equal True
             ]
         , describe "node builder"
@@ -27,16 +27,16 @@ nodeTest =
                     node (plainContent "Hey there!")
                         |> content
                         |> Expect.equal (plainContent "Hey there!")
-            , test "is not a note" <|
+            , test "is not a title" <|
                 \_ ->
                     node (plainContent "Hey there!")
-                        |> isNote
+                        |> isTitle
                         |> Expect.equal False
             ]
         , describe "setting content"
             [ test "setContent sets the content" <|
                 \_ ->
-                    note (plainContent "Hey there!")
+                    title (plainContent "Hey there!")
                         |> setContent (plainContent "Bye!")
                         |> content
                         |> Expect.equal (plainContent "Bye!")

@@ -33,6 +33,7 @@ style style_ =
                 , Css.padding Css.zero
                 , Css.backgroundColor Css.transparent
                 , Css.border Css.zero
+                , Css.fontSize (Css.em 1)
                 ]
 
 
