@@ -170,7 +170,7 @@ update msg model =
                         }
               }
             , Batch
-                [ PushUrl (Route.Node row.id)
+                [ PushUrl (Route.NodeById row.id)
                 , FocusOnEditor
                 ]
             )
@@ -247,7 +247,7 @@ update msg model =
 
         UserSelectedNoteInList id ->
             ( model
-            , PushUrl (Route.Node id)
+            , PushUrl (Route.NodeById id)
             )
 
         UserWantsToEditNode id ->
@@ -501,7 +501,7 @@ viewApplication model =
         [ viewHeader [ css [ Css.property "grid-area" "header" ] ]
         , viewNav [ css [ Css.property "grid-area" "list" ] ]
             (case model.route of
-                Route.Node id ->
+                Route.NodeById id ->
                     Just id
 
                 _ ->
@@ -516,7 +516,7 @@ viewApplication model =
                 Route.Root ->
                     Html.text "Select or create a note!"
 
-                Route.Node id ->
+                Route.NodeById id ->
                     viewRow id model
             ]
         ]

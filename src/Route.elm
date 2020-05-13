@@ -10,7 +10,7 @@ import Url.Parser as Parser exposing (..)
 type Route
     = NotFound
     | Root
-    | Node ID
+    | NodeById ID
 
 
 toString : Route -> String
@@ -22,7 +22,7 @@ toString route =
         NotFound ->
             Builder.absolute [ "404" ] []
 
-        Node id_ ->
+        NodeById id_ ->
             Builder.absolute [ "node", ID.toString id_ ] []
 
 
@@ -34,7 +34,7 @@ parse url =
 parser =
     oneOf
         [ map Root top
-        , map Node (s "node" </> id)
+        , map NodeById (s "node" </> id)
         ]
 
 
