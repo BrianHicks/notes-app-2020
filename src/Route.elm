@@ -2,6 +2,7 @@ module Route exposing (..)
 
 import Database
 import Database.ID as ID exposing (ID)
+import Node.Content as Content exposing (Content)
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser as Parser exposing (..)
@@ -11,6 +12,7 @@ type Route
     = NotFound
     | Root
     | NodeById ID
+    | NoteByName Content
 
 
 toString : Route -> String
@@ -25,6 +27,9 @@ toString route =
         NodeById id_ ->
             Builder.absolute [ "node", ID.toString id_ ] []
 
+        NoteByName name ->
+            Builder.absolute [ "node", Url.percentEncode (Content.toString name) ] []
+
 
 parse : Url -> Route
 parse url =
@@ -35,8 +40,13 @@ parser =
     oneOf
         [ map Root top
         , map NodeById (s "node" </> id)
+        , map NoteByName (s "node" </> content)
         ]
 
 
 id =
-    custom "ID" (Result.toMaybe << ID.fromString)
+    custom "ID" (ID.fromString >> Result.toMaybe)
+
+
+content =
+    custom "CONTENT" (Url.percentDecode >> Maybe.andThen (Content.fromString >> Result.toMaybe))

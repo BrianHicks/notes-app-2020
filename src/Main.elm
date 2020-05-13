@@ -518,6 +518,9 @@ viewApplication model =
 
                 Route.NodeById id ->
                     viewRow id model
+
+                Route.NoteByName name ->
+                    Html.text "TODO"
             ]
         ]
 
