@@ -1,12 +1,12 @@
 module Content exposing
-    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append, sorter
+    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
     , Snippet, text, noteLink, link
     , encode, decoder
     )
 
 {-|
 
-@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append, sorter
+@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
 
 @docs Snippet, text, noteLink, link
 
@@ -23,7 +23,6 @@ import Html.Styled.Events.Extra exposing (onClickPreventDefaultForLinkWithHref)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
-import Sort exposing (Sorter)
 import Widgets.Colors as Colors
 
 
@@ -70,11 +69,6 @@ toString (Content children) =
 toList : Content -> List Snippet
 toList (Content guts) =
     guts
-
-
-sorter : Sorter Content
-sorter =
-    Sort.by toString Sort.alphabetical
 
 
 toHtml :

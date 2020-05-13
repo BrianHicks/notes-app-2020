@@ -21,11 +21,9 @@ import Json.Decode.Pipeline as Pipeline
 import Json.Encode as Encode
 import Node exposing (Node)
 import Random
-import Sort exposing (Sorter)
 import Sort.Dict as Dict exposing (Dict)
 import Sort.Set as Set exposing (Set)
 import Time
-import UUID exposing (UUID)
 
 
 type Database

@@ -2,8 +2,8 @@ module Widgets.Icons exposing (chick)
 
 import Color exposing (Color)
 import Html.Styled exposing (Html)
-import Svg.Styled as Svg exposing (Svg)
-import Svg.Styled.Attributes exposing (d, fill, height, style, transform, version, viewBox, width, x, y)
+import Svg.Styled as Svg
+import Svg.Styled.Attributes exposing (d, fill, height, transform, viewBox, width)
 
 
 {-| chick by Symbolon from the Noun Project
