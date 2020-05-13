@@ -64,10 +64,6 @@ testPerform effect =
         FocusOnEditor ->
             SCmd.none
 
-        GetTimeAnd next ->
-            -- TODO: https://github.com/avh4/elm-program-test/issues/105
-            STask.perform next (STask.succeed (Time.millisToPosix 0))
-
 
 programTest : Test
 programTest =

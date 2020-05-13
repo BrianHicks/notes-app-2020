@@ -121,7 +121,6 @@ type Effect
     | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
-    | GetTimeAnd (Posix -> Msg)
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -507,9 +506,6 @@ perform model effect =
             Task.attempt
                 (\_ -> FocusedOnEditor)
                 (Dom.focus "editor")
-
-        GetTimeAnd next ->
-            Task.perform next Time.now
 
 
 port put : Value -> Cmd msg
