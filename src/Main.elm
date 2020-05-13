@@ -5,6 +5,7 @@ import Accessibility.Styled.Style exposing (invisible)
 import Browser
 import Browser.Dom as Dom
 import Browser.Navigation as Navigation
+import Content exposing (Content)
 import Css
 import Css.Global
 import Css.Reset
@@ -16,7 +17,6 @@ import Html.Styled.Keyed as Keyed
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
-import Node.Content as Content exposing (Content)
 import Process
 import Random
 import Route exposing (Route)

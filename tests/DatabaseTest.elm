@@ -1,11 +1,11 @@
 module DatabaseTest exposing (..)
 
 import Array
+import Content exposing (Content)
 import Database exposing (..)
 import Database.ID as ID
 import Expect
 import Node
-import Node.Content as Content exposing (Content)
 import Random
 import Test exposing (..)
 

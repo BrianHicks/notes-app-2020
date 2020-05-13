@@ -17,9 +17,9 @@ module Node exposing
 
 -}
 
+import Content exposing (Content)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
-import Node.Content as Content exposing (Content)
 
 
 type Node

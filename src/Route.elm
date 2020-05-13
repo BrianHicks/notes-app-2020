@@ -1,8 +1,8 @@
 module Route exposing (..)
 
+import Content exposing (Content)
 import Database
 import Database.ID as ID exposing (ID)
-import Node.Content as Content exposing (Content)
 import Url exposing (Url)
 import Url.Builder as Builder
 import Url.Parser as Parser exposing (..)

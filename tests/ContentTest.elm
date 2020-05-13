@@ -1,10 +1,10 @@
-module Node.ContentTest exposing (..)
+module ContentTest exposing (..)
 
+import Content exposing (..)
 import Expect
 import Fuzz exposing (Fuzzer)
 import Html.Attributes as Attrs
 import Html.Styled as Html
-import Node.Content exposing (..)
 import Route
 import Test exposing (..)
 import Test.Html.Event as Event

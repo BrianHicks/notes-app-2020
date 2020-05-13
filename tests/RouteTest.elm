@@ -1,8 +1,8 @@
 module RouteTest exposing (..)
 
+import Content exposing (fromList, link, noteLink, text)
 import Database.ID as ID
 import Expect exposing (Expectation)
-import Node.Content as Content exposing (fromList, link, noteLink, text)
 import Route exposing (..)
 import Test exposing (..)
 import Url

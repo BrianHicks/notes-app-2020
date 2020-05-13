@@ -1,4 +1,4 @@
-module Node.Content exposing
+module Content exposing
     ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
     , Node, text, noteLink, link
     , encode, decoder

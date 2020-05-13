@@ -1,8 +1,8 @@
 module NodeTest exposing (..)
 
+import Content exposing (Content)
 import Expect
 import Node exposing (..)
-import Node.Content as Content exposing (Content)
 import Test exposing (..)
 
 
