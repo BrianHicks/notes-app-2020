@@ -44,9 +44,11 @@ parser =
         ]
 
 
+id : Parser (ID -> a) a
 id =
     custom "ID" (ID.fromString >> Result.toMaybe)
 
 
+content : Parser (Content -> a) a
 content =
     custom "CONTENT" (Url.percentDecode >> Maybe.andThen (Content.fromString >> Result.toMaybe))
