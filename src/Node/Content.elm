@@ -208,7 +208,7 @@ nodeToHtml node =
         Text text_ ->
             Html.text text_
 
-        NoteLink name ->
+        NoteLink nodes ->
             Html.a
                 [ Attrs.css
                     [ Css.zIndex (Css.int 1)
@@ -216,7 +216,7 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
-                , decoration Colors.greenDark [ Html.text "TODO" ]
+                , decoration Colors.greenDark (List.map nodeToPlainHtml nodes)
                 , decoration Colors.greyLight [ Html.text "]]" ]
                 ]
 
@@ -243,6 +243,23 @@ nodeToHtml node =
                     [ Html.text "★" ]
                 , decoration Colors.greyLight [ Html.text ")" ]
                 ]
+
+
+nodeToPlainHtml : Node -> Html msg
+nodeToPlainHtml node =
+    case node of
+        Text text_ ->
+            Html.text text_
+
+        NoteLink nodes ->
+            Html.span []
+                [ Html.text "[["
+                , Html.span [] (List.map nodeToPlainHtml nodes)
+                , Html.text "]]"
+                ]
+
+        Link guts ->
+            Html.span [] [ Html.text "[", Html.text guts.text, Html.text "](★)" ]
 
 
 nodeLength : Node -> Int
