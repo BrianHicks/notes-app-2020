@@ -202,8 +202,11 @@ contentTest =
             , test "note links inside note links are not clickable" <|
                 \_ ->
                     let
+                        inner =
+                            text "Hello"
+
                         child =
-                            noteLink [ text "Hello" ]
+                            noteLink [ inner ]
                     in
                     fromList [ noteLink [ child ] ]
                         |> toHtml () []
@@ -211,7 +214,22 @@ contentTest =
                         |> Query.fromHtml
                         |> Query.hasNot
                             [ Selector.tag "a"
-                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ child ]))))
+                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ inner ]))))
+                            ]
+            , test "note links are clickable" <|
+                \_ ->
+                    let
+                        title =
+                            text "A Test Note!"
+                    in
+                    fromList [ noteLink [ title ] ]
+                        |> toHtml () []
+                        |> Html.toUnstyled
+                        |> Query.fromHtml
+                        |> Query.has
+                            [ Selector.tag "a"
+                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ title ]))))
+                            , Selector.containing [ Selector.text (toString (fromList [ title ])) ]
                             ]
             ]
         ]

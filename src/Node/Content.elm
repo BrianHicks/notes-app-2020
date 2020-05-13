@@ -21,6 +21,8 @@ import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
+import Url
+import Url.Builder
 import Widgets.Colors as Colors
 
 
@@ -214,6 +216,11 @@ nodeToHtml node =
                     [ Css.zIndex (Css.int 1)
                     , Css.position Css.relative
                     ]
+
+                -- TODO: duplication of ideas! But I can't import Route right
+                -- now without causing a cycle. Fix that and come back to this
+                -- (and remove the Url imports above at that time.)
+                , Attrs.href (Url.Builder.absolute [ "node", Url.percentEncode (toString (Content children)) ] [])
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
                 , decoration Colors.greenDark (List.map nodeToPlainHtml children)
