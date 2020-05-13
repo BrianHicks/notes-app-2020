@@ -67,6 +67,7 @@ This is my implementation of a note-taking app, organized around the following p
 - [ ] sidebar improvements
    - [ ] display and sort by last modified time
    - [ ] show first couple rows of content
+- [ ] package to be deployed by Nix
 - [ ] the module layout reflects some old design ideas (`Node.Content`, `Node` being separate from `Database.Row`)
 - [ ] too many things are named `Node`. There's `Node`, `Node.Content.Node`, and I think a few others
 - [ ] there aren't any inline formats. I'd like *italic*, **bold**, and `inline code` at a minimum. Possibly `:highlights:` or `~strikethrough~` too?
