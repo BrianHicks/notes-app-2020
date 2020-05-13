@@ -94,29 +94,23 @@ flagsDecoder =
 type Msg
     = ClickedLink Browser.UrlRequest
     | UrlChanged Url
-    | UrlChangedAt Url Posix
     | GotCurrentTime Posix
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
     | FocusedOnEditor
     | UserClickedNewNote
-    | UserClickedNewNoteAt Posix
     | UserEditedNode String
-    | UserEditedNodeAt String Posix
     | UserFinishedEditing
     | UserHitEnterOnNode
-    | UserHitEnterOnNodeAt Posix
     | UserSelectedNoteInList ID
     | UserWantsToEditNode ID
     | UserWantsToIndentNode
     | UserWantsToDedentNode
     | UserHitBackspaceAtBeginningOfNode
-    | UserHitBackspaceAtBeginningOfNodeAt Posix
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
     | UserWantsToOpenNoteWithTitle Content
-    | UserWantsToOpenNoteWithTitleAt Content Posix
 
 
 type Effect
@@ -140,14 +134,11 @@ update msg model =
             ( model, LoadUrl url )
 
         UrlChanged url ->
-            ( model, GetTimeAnd (UrlChangedAt url) )
-
-        UrlChangedAt url now ->
             case Route.parse url of
                 Route.NodeByTitle content ->
                     let
                         ( id, database ) =
-                            findOrCreateNoteWithTitle now content model.database
+                            findOrCreateNoteWithTitle model.currentTime content model.database
                     in
                     ( { model | database = database }
                     , ReplaceUrl (Route.NodeById id)
@@ -192,14 +183,9 @@ update msg model =
             ( model, NoEffect )
 
         UserClickedNewNote ->
-            ( model
-            , GetTimeAnd UserClickedNewNoteAt
-            )
-
-        UserClickedNewNoteAt now ->
             let
                 ( row, database ) =
-                    Database.insert now (Node.title Content.empty) model.database
+                    Database.insert model.currentTime (Node.title Content.empty) model.database
             in
             ( { model
                 | database = database
@@ -217,11 +203,6 @@ update msg model =
             )
 
         UserEditedNode input ->
-            ( model
-            , GetTimeAnd (UserEditedNodeAt input)
-            )
-
-        UserEditedNodeAt input now ->
             case model.editing of
                 Nothing ->
                     ( model
@@ -233,7 +214,7 @@ update msg model =
                         Ok content ->
                             ( { model
                                 | editing = Just { editing | input = Ok content }
-                                , database = Database.update now editing.id (Node.setContent content) model.database
+                                , database = Database.update model.currentTime editing.id (Node.setContent content) model.database
                               }
                             , NoEffect
                             )
@@ -256,11 +237,6 @@ update msg model =
                     )
 
         UserHitEnterOnNode ->
-            ( model
-            , GetTimeAnd UserHitEnterOnNodeAt
-            )
-
-        UserHitEnterOnNodeAt now ->
             case
                 Maybe.map2 Tuple.pair
                     model.editing
@@ -274,8 +250,8 @@ update msg model =
 
                         ( newNode, inserted ) =
                             model.database
-                                |> Database.update now row.id (Node.setContent leftContent)
-                                |> Database.insert now (Node.node rightContent)
+                                |> Database.update model.currentTime row.id (Node.setContent leftContent)
+                                |> Database.insert model.currentTime (Node.node rightContent)
 
                         database =
                             if Node.isTitle row.node then
@@ -383,11 +359,6 @@ update msg model =
                     ( model, NoEffect )
 
         UserHitBackspaceAtBeginningOfNode ->
-            ( model
-            , GetTimeAnd UserHitBackspaceAtBeginningOfNodeAt
-            )
-
-        UserHitBackspaceAtBeginningOfNodeAt now ->
             let
                 maybeRow =
                     Maybe.andThen (\{ id } -> Database.get id model.database) model.editing
@@ -408,7 +379,7 @@ update msg model =
                     ( { model
                         | database =
                             model.database
-                                |> Database.update now target.id (Node.setContent updatedContent)
+                                |> Database.update model.currentTime target.id (Node.setContent updatedContent)
                                 |> Database.delete row.id
                         , editing =
                             Just
@@ -479,14 +450,9 @@ update msg model =
             )
 
         UserWantsToOpenNoteWithTitle content ->
-            ( model
-            , GetTimeAnd (UserWantsToOpenNoteWithTitleAt content)
-            )
-
-        UserWantsToOpenNoteWithTitleAt content now ->
             let
                 ( id, database ) =
-                    findOrCreateNoteWithTitle now content model.database
+                    findOrCreateNoteWithTitle model.currentTime content model.database
             in
             ( { model | database = database }
             , PushUrl (Route.NodeById id)
