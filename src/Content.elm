@@ -42,8 +42,8 @@ empty =
 
 
 fromList : List Snippet -> Content
-fromList nodes =
-    nodes
+fromList children =
+    children
         |> List.foldl
             (\next prev ->
                 case ( next, prev ) of
@@ -55,14 +55,14 @@ fromList nodes =
             )
             []
         |> List.reverse
-        |> List.filter (not << nodeIsEmpty)
+        |> List.filter (not << snippetIsEmpty)
         |> Content
 
 
 toString : Content -> String
-toString (Content nodes) =
-    nodes
-        |> List.map nodeToString
+toString (Content children) =
+    children
+        |> List.map snippetToString
         |> String.concat
 
 
@@ -94,7 +94,7 @@ toHtml onClick attrs ((Content guts) as outer) =
                 ]
             ]
             [ Html.text (toString outer) ]
-        , Html.div [] (List.map nodeToHtml guts)
+        , Html.div [] (List.map snippetToHtml guts)
         ]
 
 
@@ -104,50 +104,50 @@ isEmpty (Content guts) =
 
 
 splitAt : Int -> Content -> ( Content, Content )
-splitAt splitPoint (Content nodes) =
+splitAt splitPoint (Content snippets) =
     let
         ( left, right ) =
-            splitListAt splitPoint nodes
+            splitListAt splitPoint snippets
     in
     ( Content left, Content right )
 
 
 splitListAt : Int -> List Snippet -> ( List Snippet, List Snippet )
-splitListAt splitPoint nodes =
-    splitListAtHelp splitPoint [] nodes
+splitListAt splitPoint snippets =
+    splitListAtHelp splitPoint [] snippets
 
 
 splitListAtHelp : Int -> List Snippet -> List Snippet -> ( List Snippet, List Snippet )
-splitListAtHelp splitPoint soFar nodes =
+splitListAtHelp splitPoint soFar snippets =
     if splitPoint <= 0 then
         ( List.reverse soFar
-        , nodes
+        , snippets
         )
 
     else
-        case nodes of
+        case snippets of
             [] ->
                 ( List.reverse soFar
-                , nodes
+                , snippets
                 )
 
-            node :: rest ->
+            snippet :: rest ->
                 let
                     currentLength =
-                        nodeLength node
+                        snippetLength snippet
                 in
                 if splitPoint > currentLength then
-                    splitListAtHelp (splitPoint - currentLength) (node :: soFar) rest
+                    splitListAtHelp (splitPoint - currentLength) (snippet :: soFar) rest
 
                 else if splitPoint == currentLength then
-                    ( List.reverse (node :: soFar)
+                    ( List.reverse (snippet :: soFar)
                     , rest
                     )
 
                 else
                     let
                         ( left, right ) =
-                            splitSnippetAt splitPoint node
+                            splitSnippetAt splitPoint snippet
                     in
                     ( List.reverse (left :: soFar)
                     , right :: rest
@@ -155,8 +155,8 @@ splitListAtHelp splitPoint soFar nodes =
 
 
 append : Content -> Content -> Content
-append (Content nodesA) (Content nodesB) =
-    fromList (nodesA ++ nodesB)
+append (Content childrenA) (Content childrenB) =
+    fromList (childrenA ++ childrenB)
 
 
 
@@ -187,26 +187,26 @@ link =
     Link
 
 
-nodeToString : Snippet -> String
-nodeToString node =
-    case node of
+snippetToString : Snippet -> String
+snippetToString snippet =
+    case snippet of
         Text text_ ->
             text_
 
         NoteLink children ->
-            "[[" ++ String.concat (List.map nodeToString children) ++ "]]"
+            "[[" ++ String.concat (List.map snippetToString children) ++ "]]"
 
         Link guts ->
-            "[" ++ String.concat (List.map nodeToString guts.children) ++ "](" ++ guts.href ++ ")"
+            "[" ++ String.concat (List.map snippetToString guts.children) ++ "](" ++ guts.href ++ ")"
 
 
-nodeToHtml : Snippet -> Html msg
-nodeToHtml node =
+snippetToHtml : Snippet -> Html msg
+snippetToHtml snippet =
     let
         decoration color =
             Html.span [ Attrs.css [ Css.color (Colors.toCss color) ] ]
     in
-    case node of
+    case snippet of
         Text text_ ->
             Html.text text_
 
@@ -224,7 +224,7 @@ nodeToHtml node =
                 , Attrs.href (Url.Builder.absolute [ "node", Url.percentEncode (toString (Content children)) ] [])
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
-                , decoration Colors.greenDark (List.map nodeToPlainHtml children)
+                , decoration Colors.greenDark (List.map snippetToPlainHtml children)
                 , decoration Colors.greyLight [ Html.text "]]" ]
                 ]
 
@@ -240,7 +240,7 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[" ]
-                , decoration Colors.greenDark (List.map nodeToPlainHtml guts.children)
+                , decoration Colors.greenDark (List.map snippetToPlainHtml guts.children)
                 , decoration Colors.greyLight [ Html.text "](" ]
                 , Html.span
                     [ Attrs.css
@@ -253,43 +253,43 @@ nodeToHtml node =
                 ]
 
 
-nodeToPlainHtml : Snippet -> Html msg
-nodeToPlainHtml node =
-    case node of
+snippetToPlainHtml : Snippet -> Html msg
+snippetToPlainHtml snippet =
+    case snippet of
         Text text_ ->
             Html.text text_
 
         NoteLink children ->
             Html.span []
                 [ Html.text "[["
-                , Html.span [] (List.map nodeToPlainHtml children)
+                , Html.span [] (List.map snippetToPlainHtml children)
                 , Html.text "]]"
                 ]
 
         Link guts ->
             Html.span []
                 [ Html.text "["
-                , Html.span [] (List.map nodeToPlainHtml guts.children)
+                , Html.span [] (List.map snippetToPlainHtml guts.children)
                 , Html.text "](★)"
                 ]
 
 
-nodeLength : Snippet -> Int
-nodeLength node =
-    case node of
+snippetLength : Snippet -> Int
+snippetLength snippet =
+    case snippet of
         Text text_ ->
             String.length text_
 
         NoteLink children ->
-            List.sum (List.map nodeLength children)
+            List.sum (List.map snippetLength children)
 
         Link guts ->
-            List.sum (List.map nodeLength guts.children)
+            List.sum (List.map snippetLength guts.children)
 
 
 splitSnippetAt : Int -> Snippet -> ( Snippet, Snippet )
-splitSnippetAt splitPoint node =
-    case node of
+splitSnippetAt splitPoint snippet =
+    case snippet of
         Text text_ ->
             ( Text (String.left splitPoint text_)
             , Text (String.dropLeft splitPoint text_)
@@ -314,9 +314,9 @@ splitSnippetAt splitPoint node =
             )
 
 
-nodeIsEmpty : Snippet -> Bool
-nodeIsEmpty node =
-    case node of
+snippetIsEmpty : Snippet -> Bool
+snippetIsEmpty snippet =
+    case snippet of
         Text text_ ->
             String.isEmpty text_
 
@@ -324,10 +324,10 @@ nodeIsEmpty node =
             True
 
         NoteLink children ->
-            List.all nodeIsEmpty children
+            List.all snippetIsEmpty children
 
         Link guts ->
-            List.isEmpty guts.children || List.all nodeIsEmpty guts.children
+            List.isEmpty guts.children || List.all snippetIsEmpty guts.children
 
 
 
@@ -360,15 +360,15 @@ type Problem
 
 parser : Parser (List Snippet)
 parser =
-    Parser.loop [] nodesParser
+    Parser.loop [] snippetsParser
 
 
-nodesParser : List Snippet -> Parser (Parser.Step (List Snippet) (List Snippet))
-nodesParser soFar =
+snippetsParser : List Snippet -> Parser (Parser.Step (List Snippet) (List Snippet))
+snippetsParser soFar =
     Parser.oneOf
-        [ Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
-        , Parser.map (\node -> Parser.Loop (node :: soFar)) linkParser
-        , Parser.map (\node -> Parser.Loop (node :: soFar)) textParser
+        [ Parser.map (\snippet -> Parser.Loop (snippet :: soFar)) noteLinkParser
+        , Parser.map (\snippet -> Parser.Loop (snippet :: soFar)) linkParser
+        , Parser.map (\snippet -> Parser.Loop (snippet :: soFar)) textParser
         , Parser.lazy (\_ -> Parser.succeed (Parser.Done (List.reverse soFar)))
         ]
 
@@ -519,13 +519,13 @@ chompAtLeastOne cond problem =
 
 
 encode : Content -> Encode.Value
-encode (Content nodes) =
-    Encode.list encodeSnippet nodes
+encode (Content children) =
+    Encode.list encodeSnippet children
 
 
 encodeSnippet : Snippet -> Encode.Value
-encodeSnippet node =
-    case node of
+encodeSnippet snippet =
+    case snippet of
         Text text_ ->
             Encode.object
                 [ ( "kind", Encode.string "text" )
