@@ -155,62 +155,7 @@ contentTest =
                             , Selector.attribute (Attrs.href "https://bytes.zone")
                             , Selector.containing [ Selector.text "bytes.zone" ]
                             ]
-            , test "links inside links are not clickable" <|
-                \_ ->
-                    fromList
-                        [ link
-                            { children = [ link { children = [ text "Hey" ], href = "https://bad.example.com" } ]
-                            , href = "https://good.example.com"
-                            }
-                        ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
-                        |> Html.toUnstyled
-                        |> Query.fromHtml
-                        |> Query.hasNot
-                            [ Selector.tag "a"
-                            , Selector.attribute (Attrs.href "https://bad.example.com")
-                            ]
-            , test "note links inside links are not clickable" <|
-                \_ ->
-                    let
-                        child =
-                            noteLink [ text "Hello" ]
-                    in
-                    fromList
-                        [ link
-                            { children = [ child ]
-                            , href = "https://good.example.com"
-                            }
-                        ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
-                        |> Html.toUnstyled
-                        |> Query.fromHtml
-                        |> Query.hasNot [ Selector.tag "button" ]
-            , test "links inside note links are not clickable" <|
-                \_ ->
-                    fromList [ noteLink [ link { children = [ text "Hello" ], href = "https://bad.example.com" } ] ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
-                        |> Html.toUnstyled
-                        |> Query.fromHtml
-                        |> Query.hasNot
-                            [ Selector.tag "a"
-                            , Selector.attribute (Attrs.href "https://bad.example.com")
-                            ]
-            , test "note links inside note links are not clickable" <|
-                \_ ->
-                    let
-                        inner =
-                            text "Hello"
-
-                        child =
-                            noteLink [ inner ]
-                    in
-                    fromList [ noteLink [ child ] ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
-                        |> Html.toUnstyled
-                        |> Query.fromHtml
-                        |> Query.hasNot [ Selector.tag "button" ]
-            , test "note links are clickable" <|
+            , test "renders clickable note links" <|
                 \_ ->
                     let
                         title =
@@ -221,8 +166,7 @@ contentTest =
                         |> Html.toUnstyled
                         |> Query.fromHtml
                         |> Query.has
-                            [ Selector.tag "a"
-                            , Selector.attribute (Attrs.href (Route.toString (Route.NoteByName (fromList [ title ]))))
+                            [ Selector.tag "button"
                             , Selector.containing [ Selector.text (toString (fromList [ title ])) ]
                             ]
             ]
