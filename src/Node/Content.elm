@@ -215,6 +215,7 @@ nodeToHtml node =
                 [ Attrs.css
                     [ Css.zIndex (Css.int 1)
                     , Css.position Css.relative
+                    , Css.textDecoration Css.none
                     ]
 
                 -- TODO: duplication of ideas! But I can't import Route right
