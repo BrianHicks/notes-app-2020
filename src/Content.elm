@@ -218,9 +218,9 @@ snippetToHtml snippet =
                     , Css.textDecoration Css.none
                     ]
 
-                -- TODO: duplication of ideas! But I can't import Route right
-                -- now without causing a cycle. Fix that and come back to this
-                -- (and remove the Url imports above at that time.)
+                -- TODO: duplication implementation! But I can't import
+                -- Route right now without causing a cycle. Fix that and
+                -- come back to this (and remove the Url imports above too.)
                 , Attrs.href (Url.Builder.absolute [ "node", Url.percentEncode (toString (Content children)) ] [])
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
