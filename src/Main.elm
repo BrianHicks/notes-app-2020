@@ -63,17 +63,17 @@ init flags url key =
                 Err err ->
                     Debug.todo (Debug.toString err)
     in
-    ( { database = Database.load seed rows
-      , url = url
-      , key = key
-      , route = Route.parse url
+    applyRoutingRules
+        url
+        { database = Database.load seed rows
+        , url = url
+        , key = key
+        , route = Route.Root
 
-      -- view state
-      , editing = Nothing
-      , selection = Nothing
-      }
-    , NoEffect
-    )
+        -- view state
+        , editing = Nothing
+        , selection = Nothing
+        }
 
 
 flagsDecoder : Decoder { seed : Random.Seed, rows : List Database.Row }
@@ -124,9 +124,7 @@ update msg model =
             ( model, LoadUrl url )
 
         UrlChanged url ->
-            ( { model | route = Route.parse url }
-            , NoEffect
-            )
+            applyRoutingRules url model
 
         PouchDBPutSuccessfully value ->
             let
@@ -424,9 +422,46 @@ update msg model =
             )
 
         UserWantsToOpenNoteWithTitle content ->
-            ( model
+            let
+                ( id, database ) =
+                    findOrCreateNoteWithTitle content model.database
+            in
+            ( { model | database = database }
+            , PushUrl (Route.NodeById id)
+            )
+
+
+applyRoutingRules : Url -> Model key -> ( Model key, Effect )
+applyRoutingRules url model =
+    case Route.parse url of
+        Route.NoteByName content ->
+            let
+                ( id, database ) =
+                    findOrCreateNoteWithTitle content model.database
+            in
+            ( { model | database = database }
+            , ReplaceUrl (Route.NodeById id)
+            )
+
+        route ->
+            ( { model | route = route }
             , NoEffect
             )
+
+
+{-| TODO: should this go in Database?
+-}
+findOrCreateNoteWithTitle : Content -> Database -> ( ID, Database )
+findOrCreateNoteWithTitle content database =
+    case Database.filter (\node -> Node.content node == content) database of
+        title :: _ ->
+            ( title.id
+            , database
+            )
+
+        [] ->
+            Database.insert (Node.title content) database
+                |> Tuple.mapFirst .id
 
 
 perform : Model Navigation.Key -> Effect -> Cmd Msg
@@ -531,7 +566,7 @@ viewApplication model =
                     viewRow id model
 
                 Route.NoteByName name ->
-                    Html.text "TODO"
+                    Html.text "You shouldn't ever see this page!"
             ]
         ]
 
@@ -581,6 +616,7 @@ viewNavLink activeId { id, node } =
     Content.toHtml
         { activate = UserSelectedNoteInList id
         , navigate = UserWantsToOpenNoteWithTitle
+        , navigateUrl = Route.toString << Route.NoteByName
         }
         [ Attrs.css
             [ Css.padding (Css.px 10)
@@ -716,6 +752,7 @@ viewNode id node =
     Content.toHtml
         { activate = UserWantsToEditNode id
         , navigate = UserWantsToOpenNoteWithTitle
+        , navigateUrl = Route.toString << Route.NoteByName
         }
         [ Attrs.css
             [ if Node.isTitle node then

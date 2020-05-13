@@ -135,7 +135,7 @@ contentTest =
             [ test "clicking the result activates the content" <|
                 \_ ->
                     fromList [ text "Hello" ]
-                        |> toHtml { activate = "Clicked", navigate = \_ -> "Navigate" } []
+                        |> toHtml { activate = "Clicked", navigate = \_ -> "Navigate", navigateUrl = \_ -> "" } []
                         |> Html.toUnstyled
                         |> Query.fromHtml
                         |> Query.find
@@ -147,7 +147,7 @@ contentTest =
             , test "renders clickable links" <|
                 \_ ->
                     fromList [ link { children = [ text "bytes.zone" ], href = "https://bytes.zone" } ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
+                        |> toHtml { activate = (), navigate = \_ -> (), navigateUrl = \_ -> "" } []
                         |> Html.toUnstyled
                         |> Query.fromHtml
                         |> Query.has
@@ -162,7 +162,7 @@ contentTest =
                             text "A Test Note!"
                     in
                     fromList [ noteLink [ title ] ]
-                        |> toHtml { activate = (), navigate = \_ -> () } []
+                        |> toHtml { activate = (), navigate = \_ -> (), navigateUrl = \_ -> "" } []
                         |> Html.toUnstyled
                         |> Query.fromHtml
                         |> Query.has

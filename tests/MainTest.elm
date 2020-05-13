@@ -4,7 +4,7 @@ import Database
 import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, done, expectBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, clickLink, done, expectBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -261,6 +261,12 @@ programTest =
                         , Selector.text "Aunt"
                         , Selector.text "Child"
                         ]
+        , test "clicking a note link creates a node with that name if it didn't exist before" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Go to [[another note]]" ]
+                    |> clickLink "another note" "/node/another%20note"
+                    |> expectNote (Query.has [ Selector.text "another note" ])
         ]
 
 

@@ -16,13 +16,14 @@ module Content exposing
 
 import Accessibility.Styled as Html exposing (Attribute, Html)
 import Css
+import Html.Styled as InaccessibleHtml
 import Html.Styled.Attributes as Attrs
 import Html.Styled.Events as Events
+import Html.Styled.Events.Extra exposing (onClickPreventDefaultForLinkWithHref)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
 import Sort exposing (Sorter)
-import Widgets.Button as Button
 import Widgets.Colors as Colors
 
 
@@ -79,11 +80,12 @@ sorter =
 toHtml :
     { activate : msg
     , navigate : Content -> msg
+    , navigateUrl : Content -> String
     }
     -> List (Attribute Never)
     -> Content
     -> Html msg
-toHtml { activate, navigate } attrs ((Content guts) as outer) =
+toHtml { activate, navigate, navigateUrl } attrs ((Content guts) as outer) =
     Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
         [ Html.button
             [ Events.onClick activate
@@ -105,7 +107,15 @@ toHtml { activate, navigate } attrs ((Content guts) as outer) =
                 ]
             ]
             [ Html.text (toString outer) ]
-        , Html.div [] (List.map (snippetToHtml navigate) guts)
+        , Html.div []
+            (List.map
+                (snippetToHtml
+                    { navigate = navigate
+                    , navigateUrl = navigateUrl
+                    }
+                )
+                guts
+            )
         ]
 
 
@@ -211,8 +221,13 @@ snippetToString snippet =
             "[" ++ String.concat (List.map snippetToString guts.children) ++ "](" ++ guts.href ++ ")"
 
 
-snippetToHtml : (Content -> msg) -> Snippet -> Html msg
-snippetToHtml navigate snippet =
+snippetToHtml :
+    { navigate : Content -> msg
+    , navigateUrl : Content -> String
+    }
+    -> Snippet
+    -> Html msg
+snippetToHtml { navigate, navigateUrl } snippet =
     let
         decoration color =
             Html.span [ Attrs.css [ Css.color (Colors.toCss color) ] ]
@@ -222,15 +237,15 @@ snippetToHtml navigate snippet =
             Html.text text_
 
         NoteLink children ->
-            Button.button
-                (navigate (Content children))
-                [ Button.transparent
-                , Button.css
+            InaccessibleHtml.a
+                [ Attrs.css
                     [ Css.zIndex (Css.int 1)
                     , Css.position Css.relative
                     , Css.textDecoration Css.none
                     , Css.cursor Css.pointer
                     ]
+                , Attrs.href (navigateUrl (Content children))
+                , onClickPreventDefaultForLinkWithHref (navigate (Content children))
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
                 , decoration Colors.greenDark (List.map snippetToPlainHtml children)
