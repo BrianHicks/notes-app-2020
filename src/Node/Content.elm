@@ -337,16 +337,13 @@ type Context
 
 
 type Problem
-    = ExpectingNewline
-    | -- text
+    = -- text
       ExpectingText
       -- note link
     | ExpectingStartOfNoteLink
-    | ExpectingNoteLinkText
     | ExpectingEndOfNoteLink
       -- link
     | ExpectingStartOfLink
-    | ExpectingLinkText
     | ExpectingEndOfLinkText
     | ExpectingStartOfLinkHref
     | ExpectingLinkHref
@@ -470,9 +467,6 @@ deadEndToString { row, col, problem, contextStack } =
 
         expecting =
             case problem of
-                ExpectingNewline ->
-                    "a new line"
-
                 -- text
                 ExpectingText ->
                     "some text"
@@ -481,18 +475,12 @@ deadEndToString { row, col, problem, contextStack } =
                 ExpectingStartOfNoteLink ->
                     "the opening brackets of a [[note link]]"
 
-                ExpectingNoteLinkText ->
-                    "the text inside a [[note link]]"
-
                 ExpectingEndOfNoteLink ->
                     "the closing brackets of a [[note link]]"
 
                 -- link
                 ExpectingStartOfLink ->
                     "the opening '[' of a [link](url)"
-
-                ExpectingLinkText ->
-                    "the 'link' part of a [link](url)"
 
                 ExpectingEndOfLinkText ->
                     "the closing ']' of a [link](url)"
@@ -511,11 +499,6 @@ deadEndToString { row, col, problem, contextStack } =
 
 
 -- parser utilities
-
-
-newline : Token Problem
-newline =
-    Token "\n" ExpectingNewline
 
 
 chompAtLeastOne : (Char -> Bool) -> Problem -> Parser ()
