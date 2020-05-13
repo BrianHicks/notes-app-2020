@@ -64,6 +64,13 @@ This is my implementation of a note-taking app, organized around the following p
 - [x] persistence
 - [x] nice design
 - [ ] navigation by link
+- [ ] sidebar improvements
+   - [ ] display and sort by last modified time
+   - [ ] show first couple rows of content
+- [ ] the module layout reflects some old design ideas (`Node.Content`, `Node` being separate from `Database.Row`)
+- [ ] too many things are named `Node`. There's `Node`, `Node.Content.Node`, and I think a few others
+- [ ] there aren't any inline formats. I'd like *italic*, **bold**, and `inline code` at a minimum. Possibly `:highlights:` or `~strikethrough~` too?
+- [ ] I'd like a few more block formats too... `>` for blockquotes in particular
 - [ ] tree editing
    - [ ] moving edit focus around
        - [ ] hitting alt-up and alt-down should go to the previous/next sibling
@@ -74,6 +81,8 @@ This is my implementation of a note-taking app, organized around the following p
      - [ ] alt-shift-up and alt-shift-down to move nodes
      - [ ] preserve cursor position when joining nodes with backspace (put it at the join point)
      - [ ] delete selected text when splitting with enter (but if it's collapsed, no change)
+     - [ ] alt-enter or shift-enter or something should insert a linebreak in the current node
+     - [ ] cmd-enter should close the node in addition to Escape
 - [ ] search
   - [ ] finding nodes and navigating to their notes
   - [ ] backlinks
