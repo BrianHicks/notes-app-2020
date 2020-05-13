@@ -1,5 +1,6 @@
 module RouteTest exposing (..)
 
+import Database.ID as ID
 import Expect exposing (Expectation)
 import Node.Content as Content exposing (fromList, link, noteLink, text)
 import Route exposing (..)
@@ -10,7 +11,25 @@ import Url
 routeTest : Test
 routeTest =
     describe "Route"
-        [ describe "nodes by name"
+        [ test "can navigate to the root route" <|
+            \_ -> expectRoundTripWorks Root
+        , test "handles bad routes gracefully" <|
+            \_ ->
+                parse
+                    { protocol = Url.Https
+                    , host = "localhost"
+                    , port_ = Nothing
+                    , path = "/blah"
+                    , query = Nothing
+                    , fragment = Nothing
+                    }
+                    |> Expect.equal NotFound
+        , describe "nodes by ID"
+            [ test "works only with UUIDs" <|
+                \_ ->
+                    expectRoundTripWorks (NodeById (ID.fromInt 0))
+            ]
+        , describe "notes by name"
             [ test "does not work with no content" <|
                 \_ ->
                     parse
