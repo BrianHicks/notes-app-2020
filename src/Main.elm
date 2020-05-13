@@ -198,11 +198,16 @@ update msg model =
                             )
 
         UserFinishedEditing ->
-            -- TODO: this will discard content if it's in the errored
-            -- state. Fix?
-            ( { model | editing = Nothing }
-            , NoEffect
-            )
+            case Maybe.map .input model.editing of
+                Just (Ok _) ->
+                    ( { model | editing = Nothing }
+                    , NoEffect
+                    )
+
+                _ ->
+                    ( model
+                    , NoEffect
+                    )
 
         UserHitEnterOnNode ->
             case
