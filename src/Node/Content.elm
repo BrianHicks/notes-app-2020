@@ -102,17 +102,22 @@ isEmpty (Content guts) =
 
 
 splitAt : Int -> Content -> ( Content, Content )
-splitAt howMuch (Content nodes) =
+splitAt splitPoint (Content nodes) =
     let
         ( left, right ) =
-            splitAtHelp howMuch [] nodes
+            splitListAt splitPoint nodes
     in
     ( Content left, Content right )
 
 
-splitAtHelp : Int -> List Node -> List Node -> ( List Node, List Node )
-splitAtHelp howMuch soFar nodes =
-    if howMuch <= 0 then
+splitListAt : Int -> List Node -> ( List Node, List Node )
+splitListAt splitPoint nodes =
+    splitListAtHelp splitPoint [] nodes
+
+
+splitListAtHelp : Int -> List Node -> List Node -> ( List Node, List Node )
+splitListAtHelp splitPoint soFar nodes =
+    if splitPoint <= 0 then
         ( List.reverse soFar
         , nodes
         )
@@ -129,10 +134,10 @@ splitAtHelp howMuch soFar nodes =
                     currentLength =
                         nodeLength node
                 in
-                if howMuch > currentLength then
-                    splitAtHelp (howMuch - currentLength) (node :: soFar) rest
+                if splitPoint > currentLength then
+                    splitListAtHelp (splitPoint - currentLength) (node :: soFar) rest
 
-                else if howMuch == currentLength then
+                else if splitPoint == currentLength then
                     ( List.reverse (node :: soFar)
                     , rest
                     )
@@ -140,7 +145,7 @@ splitAtHelp howMuch soFar nodes =
                 else
                     let
                         ( left, right ) =
-                            splitNodeAt howMuch node
+                            splitNodeAt splitPoint node
                     in
                     ( List.reverse (left :: soFar)
                     , right :: rest
@@ -158,7 +163,7 @@ append (Content nodesA) (Content nodesB) =
 
 type Node
     = Text String
-    | NoteLink String -- TODO: List Node
+    | NoteLink (List Node)
     | Link
         { text : String -- TODO: List Node
         , href : String
@@ -170,9 +175,9 @@ text =
     Text
 
 
-noteLink : String -> Node
-noteLink =
-    NoteLink
+noteLink : List Node -> Node
+noteLink nodes =
+    NoteLink nodes
 
 
 link : { text : String, href : String } -> Node
@@ -186,8 +191,8 @@ nodeToString node =
         Text text_ ->
             text_
 
-        NoteLink name ->
-            "[[" ++ name ++ "]]"
+        NoteLink nodes ->
+            "[[" ++ String.concat (List.map nodeToString nodes) ++ "]]"
 
         Link guts ->
             "[" ++ guts.text ++ "](" ++ guts.href ++ ")"
@@ -211,7 +216,7 @@ nodeToHtml node =
                     ]
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
-                , decoration Colors.greenDark [ Html.text name ]
+                , decoration Colors.greenDark [ Html.text "TODO" ]
                 , decoration Colors.greyLight [ Html.text "]]" ]
                 ]
 
@@ -246,29 +251,33 @@ nodeLength node =
         Text text_ ->
             String.length text_
 
-        NoteLink text_ ->
-            String.length text_
+        NoteLink nodes ->
+            List.sum (List.map nodeLength nodes)
 
         Link link_ ->
             String.length link_.text
 
 
 splitNodeAt : Int -> Node -> ( Node, Node )
-splitNodeAt howMuch node =
+splitNodeAt splitPoint node =
     case node of
         Text text_ ->
-            ( Text (String.left howMuch text_)
-            , Text (String.dropLeft howMuch text_)
+            ( Text (String.left splitPoint text_)
+            , Text (String.dropLeft splitPoint text_)
             )
 
-        NoteLink text_ ->
-            ( NoteLink (String.left howMuch text_)
-            , NoteLink (String.dropLeft howMuch text_)
+        NoteLink contents ->
+            let
+                ( left, right ) =
+                    splitListAt splitPoint contents
+            in
+            ( NoteLink left
+            , NoteLink right
             )
 
         Link link_ ->
-            ( Link { link_ | text = String.left howMuch link_.text }
-            , Link { link_ | text = String.dropLeft howMuch link_.text }
+            ( Link { link_ | text = String.left splitPoint link_.text }
+            , Link { link_ | text = String.dropLeft splitPoint link_.text }
             )
 
 
@@ -278,8 +287,11 @@ nodeIsEmpty node =
         Text text_ ->
             String.isEmpty text_
 
-        NoteLink text_ ->
-            String.isEmpty text_
+        NoteLink [] ->
+            True
+
+        NoteLink nodes ->
+            List.all nodeIsEmpty nodes
 
         Link link_ ->
             String.isEmpty link_.text
@@ -300,9 +312,7 @@ type Context
 
 
 type Problem
-    = ExpectingEndOfContent
-    | ExpectingNewline
-    | ExpectingNoNewline
+    = ExpectingNewline
     | -- text
       ExpectingText
       -- note link
@@ -326,11 +336,10 @@ parser =
 nodesParser : List Node -> Parser (Parser.Step (List Node) (List Node))
 nodesParser soFar =
     Parser.oneOf
-        [ Parser.succeed (\_ -> Parser.Done (List.reverse soFar))
-            |= Parser.end ExpectingEndOfContent
-        , Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
+        [ Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
         , Parser.map (\node -> Parser.Loop (node :: soFar)) linkParser
         , Parser.map (\node -> Parser.Loop (node :: soFar)) textParser
+        , Parser.lazy (\_ -> Parser.succeed (Parser.Done (List.reverse soFar)))
         ]
 
 
@@ -341,7 +350,7 @@ nodesParser soFar =
 textParser : Parser Node
 textParser =
     Parser.succeed Text
-        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[') ExpectingText)
+        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[' && c /= ']') ExpectingText)
         |> Parser.inContext ParsingText
 
 
@@ -361,44 +370,11 @@ noteLinkEnd =
 
 noteLinkParser : Parser Node
 noteLinkParser =
-    noteLinkContentsParser
-        |> Parser.andThen
-            (\parsed ->
-                case parsed of
-                    Ok contents ->
-                        Parser.succeed (NoteLink contents)
-
-                    Err err ->
-                        Parser.problem err
-            )
+    Parser.succeed NoteLink
+        |. Parser.token noteLinkStart
+        |= Parser.lazy (\_ -> parser)
+        |. Parser.token noteLinkEnd
         |> Parser.inContext ParsingNoteLink
-
-
-noteLinkContentsParser : Parser (Result Problem String)
-noteLinkContentsParser =
-    Parser.succeed identity
-        |. Parser.symbol noteLinkStart
-        |= Parser.loop []
-            (\soFar ->
-                Parser.oneOf
-                    [ Parser.succeed
-                        (\sub ->
-                            case sub of
-                                Ok subContents ->
-                                    Parser.Loop (("[[" ++ subContents ++ "]]") :: soFar)
-
-                                Err err ->
-                                    Parser.Done sub
-                        )
-                        |= Parser.lazy (\_ -> noteLinkContentsParser)
-                    , Parser.succeed (\_ -> Parser.Done (Ok (String.concat (List.reverse soFar))))
-                        |= Parser.symbol noteLinkEnd
-                    , Parser.succeed (\_ -> Parser.Done (Err ExpectingNoNewline))
-                        |= Parser.symbol newline
-                    , Parser.succeed (\text_ -> Parser.Loop (text_ :: soFar))
-                        |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[' && c /= ']' && c /= '\n') ExpectingNoteLinkText)
-                    ]
-            )
 
 
 
@@ -465,18 +441,12 @@ deadEndToString { row, col, problem, contextStack } =
                     ""
 
                 contextItems ->
-                    "While parsing " ++ String.join " in a " contextItems ++ ", "
+                    "While parsing " ++ String.join " in " contextItems ++ ", "
 
         expecting =
             case problem of
-                ExpectingEndOfContent ->
-                    "the end of the content string"
-
                 ExpectingNewline ->
                     "a new line"
-
-                ExpectingNoNewline ->
-                    "no new line"
 
                 -- text
                 ExpectingText ->
@@ -546,10 +516,10 @@ encodeNode node =
                 , ( "text", Encode.string text_ )
                 ]
 
-        NoteLink text_ ->
+        NoteLink nodes ->
             Encode.object
                 [ ( "kind", Encode.string "noteLink" )
-                , ( "text", Encode.string text_ )
+                , ( "children", Encode.list encodeNode nodes )
                 ]
 
         Link guts ->
@@ -574,7 +544,19 @@ decodeNode =
                     Decode.map Text (Decode.field "text" Decode.string)
 
                 "noteLink" ->
-                    Decode.map NoteLink (Decode.field "text" Decode.string)
+                    Decode.oneOf
+                        [ Decode.map NoteLink (Decode.field "children" (Decode.list decodeNode))
+                        , Decode.field "text" Decode.string
+                            |> Decode.andThen
+                                (\text_ ->
+                                    case fromString text_ of
+                                        Ok (Content children) ->
+                                            Decode.succeed (NoteLink children)
+
+                                        Err err ->
+                                            Decode.fail (String.join "\n" err)
+                                )
+                        ]
 
                 "link" ->
                     Decode.map2 (\text_ href -> { text = text_, href = href })

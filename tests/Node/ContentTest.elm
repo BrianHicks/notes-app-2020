@@ -43,25 +43,27 @@ contentTest =
         , describe "note links"
             [ test "look like [[bracketed text]]" <|
                 \_ ->
-                    fromList [ noteLink "Note Title" ]
+                    fromList [ noteLink [ text "Note Title" ] ]
                         |> toString
                         |> Expect.equal "[[Note Title]]"
             , test "is retrievable from a string" <|
                 \_ ->
                     fromString "[[Note Title]]"
                         |> Result.map toList
-                        |> Expect.equal (Ok [ noteLink "Note Title" ])
+                        |> Expect.equal (Ok [ noteLink [ text "Note Title" ] ])
             , test "can be nested" <|
                 \_ ->
                     fromString "[[before [[nesting]] after]]"
                         |> Result.map toList
-                        |> Expect.equal (Ok [ noteLink "before [[nesting]] after" ])
-            , describe "have reasonable error messages"
-                [ test "cannot contain newlines" <|
-                    \_ ->
-                        fromString "[[\n]]"
-                            |> Expect.equal (Err [ "While parsing a [[note link]], I was expecting no new line" ])
-                ]
+                        |> Expect.equal
+                            (Ok
+                                [ noteLink
+                                    [ text "before "
+                                    , noteLink [ text "nesting" ]
+                                    , text " after"
+                                    ]
+                                ]
+                            )
             ]
         , describe "external links"
             [ test "look like [markdown links](https://www.google.com)" <|
@@ -81,11 +83,11 @@ contentTest =
                             )
             , test "splits note links correctly" <|
                 \_ ->
-                    fromList [ noteLink "baseball" ]
+                    fromList [ noteLink [ text "baseball" ] ]
                         |> splitAt 4
                         |> Expect.equal
-                            ( fromList [ noteLink "base" ]
-                            , fromList [ noteLink "ball" ]
+                            ( fromList [ noteLink [ text "base" ] ]
+                            , fromList [ noteLink [ text "ball" ] ]
                             )
             , test "splits links correctly" <|
                 \_ ->
@@ -102,11 +104,11 @@ contentTest =
                         |> Expect.equal ( fromList [], content )
             , test "splits correctly at boundaries" <|
                 \_ ->
-                    fromList [ noteLink "a", noteLink "b" ]
+                    fromList [ noteLink [ text "a" ], noteLink [ text "b" ] ]
                         |> splitAt 1
                         |> Expect.equal
-                            ( fromList [ noteLink "a" ]
-                            , fromList [ noteLink "b" ]
+                            ( fromList [ noteLink [ text "a" ] ]
+                            , fromList [ noteLink [ text "b" ] ]
                             )
             , fuzz2 (Fuzz.intRange 1 10) (Fuzz.intRange 1 10) "splitting plain text behaves the same as the String module" <|
                 \splitPoint contentLength ->
@@ -134,7 +136,7 @@ contentFuzzer : Fuzzer Content
 contentFuzzer =
     Fuzz.oneOf
         [ Fuzz.map text simpleStringFuzzer
-        , Fuzz.map noteLink simpleStringFuzzer
+        , Fuzz.map (\text_ -> noteLink [ text text_ ]) simpleStringFuzzer
         , Fuzz.map2 (\text_ href -> link { text = text_, href = href }) simpleStringFuzzer simpleStringFuzzer
         ]
         |> nonEmptyShortList
