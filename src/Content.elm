@@ -1,12 +1,12 @@
 module Content exposing
-    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
+    ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append, sorter
     , Snippet, text, noteLink, link
     , encode, decoder
     )
 
 {-|
 
-@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
+@docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append, sorter
 
 @docs Snippet, text, noteLink, link
 
@@ -21,6 +21,8 @@ import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Parser.Advanced as Parser exposing ((|.), (|=), Token(..))
+import Sort exposing (Sorter)
+import Widgets.Button as Button
 import Widgets.Colors as Colors
 
 
@@ -67,6 +69,11 @@ toString (Content children) =
 toList : Content -> List Snippet
 toList (Content guts) =
     guts
+
+
+sorter : Sorter Content
+sorter =
+    Sort.by toString Sort.alphabetical
 
 
 toHtml :
@@ -215,13 +222,15 @@ snippetToHtml navigate snippet =
             Html.text text_
 
         NoteLink children ->
-            Html.button
-                [ Attrs.css
+            Button.button
+                (navigate (Content children))
+                [ Button.transparent
+                , Button.css
                     [ Css.zIndex (Css.int 1)
                     , Css.position Css.relative
                     , Css.textDecoration Css.none
+                    , Css.cursor Css.pointer
                     ]
-                , Events.onClick (navigate (Content children))
                 ]
                 [ decoration Colors.greyLight [ Html.text "[[" ]
                 , decoration Colors.greenDark (List.map snippetToPlainHtml children)
