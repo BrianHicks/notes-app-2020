@@ -1,6 +1,6 @@
 module Content exposing
     ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
-    , Node, text, noteLink, link
+    , Snippet, text, noteLink, link
     , encode, decoder
     )
 
@@ -8,7 +8,7 @@ module Content exposing
 
 @docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
 
-@docs Node, text, noteLink, link
+@docs Snippet, text, noteLink, link
 
 @docs encode, decoder
 
@@ -27,7 +27,7 @@ import Widgets.Colors as Colors
 
 
 type Content
-    = Content (List Node)
+    = Content (List Snippet)
 
 
 fromString : String -> Result (List String) Content
@@ -41,7 +41,7 @@ empty =
     Content []
 
 
-fromList : List Node -> Content
+fromList : List Snippet -> Content
 fromList nodes =
     nodes
         |> List.foldl
@@ -66,7 +66,7 @@ toString (Content nodes) =
         |> String.concat
 
 
-toList : Content -> List Node
+toList : Content -> List Snippet
 toList (Content guts) =
     guts
 
@@ -112,12 +112,12 @@ splitAt splitPoint (Content nodes) =
     ( Content left, Content right )
 
 
-splitListAt : Int -> List Node -> ( List Node, List Node )
+splitListAt : Int -> List Snippet -> ( List Snippet, List Snippet )
 splitListAt splitPoint nodes =
     splitListAtHelp splitPoint [] nodes
 
 
-splitListAtHelp : Int -> List Node -> List Node -> ( List Node, List Node )
+splitListAtHelp : Int -> List Snippet -> List Snippet -> ( List Snippet, List Snippet )
 splitListAtHelp splitPoint soFar nodes =
     if splitPoint <= 0 then
         ( List.reverse soFar
@@ -147,7 +147,7 @@ splitListAtHelp splitPoint soFar nodes =
                 else
                     let
                         ( left, right ) =
-                            splitNodeAt splitPoint node
+                            splitSnippetAt splitPoint node
                     in
                     ( List.reverse (left :: soFar)
                     , right :: rest
@@ -163,31 +163,31 @@ append (Content nodesA) (Content nodesB) =
 -- NODES
 
 
-type Node
+type Snippet
     = Text String
-    | NoteLink (List Node)
+    | NoteLink (List Snippet)
     | Link
-        { children : List Node
+        { children : List Snippet
         , href : String
         }
 
 
-text : String -> Node
+text : String -> Snippet
 text =
     Text
 
 
-noteLink : List Node -> Node
+noteLink : List Snippet -> Snippet
 noteLink children =
     NoteLink children
 
 
-link : { children : List Node, href : String } -> Node
+link : { children : List Snippet, href : String } -> Snippet
 link =
     Link
 
 
-nodeToString : Node -> String
+nodeToString : Snippet -> String
 nodeToString node =
     case node of
         Text text_ ->
@@ -200,7 +200,7 @@ nodeToString node =
             "[" ++ String.concat (List.map nodeToString guts.children) ++ "](" ++ guts.href ++ ")"
 
 
-nodeToHtml : Node -> Html msg
+nodeToHtml : Snippet -> Html msg
 nodeToHtml node =
     let
         decoration color =
@@ -253,7 +253,7 @@ nodeToHtml node =
                 ]
 
 
-nodeToPlainHtml : Node -> Html msg
+nodeToPlainHtml : Snippet -> Html msg
 nodeToPlainHtml node =
     case node of
         Text text_ ->
@@ -274,7 +274,7 @@ nodeToPlainHtml node =
                 ]
 
 
-nodeLength : Node -> Int
+nodeLength : Snippet -> Int
 nodeLength node =
     case node of
         Text text_ ->
@@ -287,8 +287,8 @@ nodeLength node =
             List.sum (List.map nodeLength guts.children)
 
 
-splitNodeAt : Int -> Node -> ( Node, Node )
-splitNodeAt splitPoint node =
+splitSnippetAt : Int -> Snippet -> ( Snippet, Snippet )
+splitSnippetAt splitPoint node =
     case node of
         Text text_ ->
             ( Text (String.left splitPoint text_)
@@ -314,7 +314,7 @@ splitNodeAt splitPoint node =
             )
 
 
-nodeIsEmpty : Node -> Bool
+nodeIsEmpty : Snippet -> Bool
 nodeIsEmpty node =
     case node of
         Text text_ ->
@@ -358,12 +358,12 @@ type Problem
     | ExpectingEndOfLinkHref
 
 
-parser : Parser (List Node)
+parser : Parser (List Snippet)
 parser =
     Parser.loop [] nodesParser
 
 
-nodesParser : List Node -> Parser (Parser.Step (List Node) (List Node))
+nodesParser : List Snippet -> Parser (Parser.Step (List Snippet) (List Snippet))
 nodesParser soFar =
     Parser.oneOf
         [ Parser.map (\node -> Parser.Loop (node :: soFar)) noteLinkParser
@@ -377,7 +377,7 @@ nodesParser soFar =
 -- text
 
 
-textParser : Parser Node
+textParser : Parser Snippet
 textParser =
     Parser.succeed Text
         |= Parser.getChompedString (chompAtLeastOne (\c -> c /= '[' && c /= ']') ExpectingText)
@@ -398,7 +398,7 @@ noteLinkEnd =
     Token "]]" ExpectingEndOfNoteLink
 
 
-noteLinkParser : Parser Node
+noteLinkParser : Parser Snippet
 noteLinkParser =
     Parser.succeed NoteLink
         |. Parser.token noteLinkStart
@@ -431,7 +431,7 @@ linkHrefClose =
     Token ")" ExpectingEndOfLinkHref
 
 
-linkParser : Parser Node
+linkParser : Parser Snippet
 linkParser =
     Parser.succeed (\children href -> Link { children = children, href = href })
         |. Parser.symbol linkStart
@@ -520,11 +520,11 @@ chompAtLeastOne cond problem =
 
 encode : Content -> Encode.Value
 encode (Content nodes) =
-    Encode.list encodeNode nodes
+    Encode.list encodeSnippet nodes
 
 
-encodeNode : Node -> Encode.Value
-encodeNode node =
+encodeSnippet : Snippet -> Encode.Value
+encodeSnippet node =
     case node of
         Text text_ ->
             Encode.object
@@ -535,24 +535,24 @@ encodeNode node =
         NoteLink children ->
             Encode.object
                 [ ( "kind", Encode.string "noteLink" )
-                , ( "children", Encode.list encodeNode children )
+                , ( "children", Encode.list encodeSnippet children )
                 ]
 
         Link guts ->
             Encode.object
                 [ ( "kind", Encode.string "link" )
-                , ( "children", Encode.list encodeNode guts.children )
+                , ( "children", Encode.list encodeSnippet guts.children )
                 , ( "href", Encode.string guts.href )
                 ]
 
 
 decoder : Decoder Content
 decoder =
-    Decode.map Content (Decode.list decodeNode)
+    Decode.map Content (Decode.list decodeSnippet)
 
 
-decodeNode : Decoder Node
-decodeNode =
+decodeSnippet : Decoder Snippet
+decodeSnippet =
     Decode.andThen
         (\kind ->
             case kind of
@@ -561,7 +561,7 @@ decodeNode =
 
                 "noteLink" ->
                     Decode.oneOf
-                        [ Decode.map NoteLink (Decode.field "children" (Decode.list decodeNode))
+                        [ Decode.map NoteLink (Decode.field "children" (Decode.list decodeSnippet))
                         , Decode.andThen
                             (\text_ ->
                                 case fromString text_ of
@@ -577,7 +577,7 @@ decodeNode =
                 "link" ->
                     Decode.map2 (\children href -> { children = children, href = href })
                         (Decode.oneOf
-                            [ Decode.field "children" (Decode.list decodeNode)
+                            [ Decode.field "children" (Decode.list decodeSnippet)
                             , Decode.andThen
                                 (\text_ ->
                                     case fromString text_ of
