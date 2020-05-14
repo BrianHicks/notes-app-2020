@@ -1,6 +1,3 @@
-import { PouchDB } from "pouchdb";
-import { Elm } from "./Main.elm";
-
 // custom element
 class NodeInput extends HTMLTextAreaElement {
   connectedCallback() {
