@@ -1,3 +1,6 @@
+import { PouchDB } from "pouchdb";
+import { Elm } from "./Main.elm";
+
 // custom element
 class NodeInput extends HTMLTextAreaElement {
   connectedCallback() {
@@ -28,10 +31,6 @@ class NodeInput extends HTMLTextAreaElement {
 }
 
 customElements.define("node-input", NodeInput, { extends: "textarea" });
-
-// storage
-import PouchDB from "pouchdb";
-import { Elm } from "./Main.elm";
 
 var db = new PouchDB("notes");
 // TODO: set up syncing

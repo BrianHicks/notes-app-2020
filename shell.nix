@@ -22,5 +22,10 @@ stdenv.mkDerivation {
 
     # building
     ninja
+    nodePackages.uglify-js
+
+    # development
+    devd
+    modd
   ] ++ lib.optionals stdenv.isDarwin darwinDeps;
 }
