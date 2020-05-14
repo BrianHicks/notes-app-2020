@@ -72,7 +72,7 @@ toList (Content guts) =
 
 
 toHtml :
-    { activate : msg
+    { activate : Maybe msg
     , navigate : Content -> msg
     , navigateUrl : Content -> String
     }
@@ -81,26 +81,31 @@ toHtml :
     -> Html msg
 toHtml { activate, navigate, navigateUrl } attrs ((Content guts) as outer) =
     Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
-        [ Html.button
-            [ Events.onClick activate
-            , Attrs.css
-                [ Css.width (Css.pct 100)
-                , Css.height (Css.pct 100)
-                , Css.position Css.absolute
-                , Css.margin Css.zero
-                , Css.padding Css.zero
-                , Css.border Css.zero
-                , Css.opacity Css.zero
-                , Css.top (Css.px 0)
-                , Css.left (Css.px 0)
+        [ case activate of
+            Just msg ->
+                Html.button
+                    [ Events.onClick msg
+                    , Attrs.css
+                        [ Css.width (Css.pct 100)
+                        , Css.height (Css.pct 100)
+                        , Css.position Css.absolute
+                        , Css.margin Css.zero
+                        , Css.padding Css.zero
+                        , Css.border Css.zero
+                        , Css.opacity Css.zero
+                        , Css.top (Css.px 0)
+                        , Css.left (Css.px 0)
 
-                -- interactive elements under this just need to set
-                -- `position: relative` and a `z-index` higher than 0 to
-                -- pop above and be clickable!
-                , Css.zIndex (Css.int 0)
-                ]
-            ]
-            [ Html.text (toString outer) ]
+                        -- interactive elements under this just need to set
+                        -- `position: relative` and a `z-index` higher than 0 to
+                        -- pop above and be clickable!
+                        , Css.zIndex (Css.int 0)
+                        ]
+                    ]
+                    [ Html.text (toString outer) ]
+
+            Nothing ->
+                Html.text ""
         , Html.div []
             (List.map
                 (snippetToHtml
