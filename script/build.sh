@@ -9,7 +9,7 @@ elmFlags=--debug
 rule elm
   command = elm make \$elmFlags --output=\$out \$in
 
-build index.js: elm src/Main.elm | elm.json $(echo "$ELM_FILES" | tr '\n' ' ')
+build dist/elm.js: elm src/Main.elm | elm.json $(echo "$ELM_FILES" | tr '\n' ' ')
 EOF
 
 ninja "$@"
