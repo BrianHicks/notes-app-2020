@@ -638,13 +638,6 @@ viewNavLink activeId now { id, node, updated } =
 
                 -- it's always text!
                 , Text.text
-                , Css.Global.descendants
-                    [ Css.Global.everything
-                        [ Css.textOverflow Css.ellipsis
-                        , Css.overflow Css.hidden
-                        , Css.whiteSpace Css.noWrap
-                        ]
-                    ]
 
                 -- content layout
                 , Css.property "display" "grid"
@@ -681,6 +674,11 @@ viewNavLink activeId now { id, node, updated } =
                 [ css
                     [ Css.property "grid-area" "title"
                     , Css.textAlign Css.left
+                    , Css.height (Css.calc Text.textLineHeight Css.plus Text.textLineHeight)
+                    , Css.property "display" "-webkit-box"
+                    , Css.property "-webkit-line-clamp" "2"
+                    , Css.property "-webkit-box-orient" "vertical"
+                    , Css.overflow Css.hidden
                     ]
                 ]
                 (Node.content node)
