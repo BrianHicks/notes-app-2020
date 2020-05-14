@@ -29,6 +29,9 @@ class NodeInput extends HTMLTextAreaElement {
 
 customElements.define("node-input", NodeInput, { extends: "textarea" });
 
+// Go!
+import * as Elm from "./elm.js";
+
 var db = new PouchDB("notes");
 // TODO: set up syncing
 

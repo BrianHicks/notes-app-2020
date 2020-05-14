@@ -7,7 +7,7 @@ cat <<EOF
 elmFlags=--debug
 
 rule elm
-  command = elm make \$elmFlags --output=\$out \$in
+  command = ./script/elm-make-module.sh \$in \$out \$elmFlags
 
 rule minify
   command = uglifyjs \$in > \$out
