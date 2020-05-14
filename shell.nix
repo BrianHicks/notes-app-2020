@@ -13,8 +13,14 @@ stdenv.mkDerivation {
     niv.niv
     git
 
+    # elm
+    elmPackages.elm
+    elmPackages.elm-format
+    elmPackages.elm-test
+    # elmPackages.elm-json
+    # elmPackages.elm-review
+
     # building
-    nodejs-12_x
-    nodePackages.npm
+    ninja
   ] ++ lib.optionals stdenv.isDarwin darwinDeps;
 }

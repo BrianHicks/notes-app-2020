@@ -1,6 +1,8 @@
 /.cache
+/.ninja*
 /data
 /dist
+/index.js
 /log.txt
 /node_modules
 elm-stuff

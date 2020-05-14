@@ -1,0 +1,6 @@
+elmFlags=--debug
+
+rule elm
+  command = elm make $elmFlags --output=$out $in
+
+build index.js: elm src/Main.elm | elm.json src/Database/ID.elm src/Main.elm src/Selection.elm src/Database.elm src/Search.elm src/Html/Styled/Events/Extra.elm src/Content.elm src/Node.elm src/Route.elm src/Widgets/Colors.elm src/Widgets/Icons.elm src/Widgets/TimeDifference.elm src/Widgets/Text.elm src/Widgets/Button.elm 
