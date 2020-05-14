@@ -80,10 +80,23 @@ toHtml :
     -> Content
     -> Html msg
 toHtml { activate, navigate, navigateUrl } attrs ((Content guts) as outer) =
-    Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
-        [ case activate of
-            Just msg ->
-                Html.button
+    let
+        content =
+            List.map
+                (snippetToHtml
+                    { navigate = navigate
+                    , navigateUrl = navigateUrl
+                    }
+                )
+                guts
+    in
+    case activate of
+        Nothing ->
+            Html.div attrs content
+
+        Just msg ->
+            Html.div (Attrs.css [ Css.position Css.relative ] :: attrs)
+                [ Html.button
                     [ Events.onClick msg
                     , Attrs.css
                         [ Css.width (Css.pct 100)
@@ -103,19 +116,16 @@ toHtml { activate, navigate, navigateUrl } attrs ((Content guts) as outer) =
                         ]
                     ]
                     [ Html.text (toString outer) ]
-
-            Nothing ->
-                Html.text ""
-        , Html.div []
-            (List.map
-                (snippetToHtml
-                    { navigate = navigate
-                    , navigateUrl = navigateUrl
-                    }
-                )
-                guts
-            )
-        ]
+                , Html.div []
+                    (List.map
+                        (snippetToHtml
+                            { navigate = navigate
+                            , navigateUrl = navigateUrl
+                            }
+                        )
+                        guts
+                    )
+                ]
 
 
 isEmpty : Content -> Bool

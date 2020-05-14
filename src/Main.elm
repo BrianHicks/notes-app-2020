@@ -625,12 +625,13 @@ viewNav attrs activeId now rows =
 
 viewNavLink : Maybe ID -> Posix -> Database.Row -> Html Msg
 viewNavLink activeId now { id, node, updated } =
-    Html.div []
-        [ Content.toHtml
-            { activate = UserSelectedNoteInList id
-            , navigate = UserWantsToOpenNoteWithTitle
-            , navigateUrl = Route.toString << Route.NodeByTitle
-            }
+    Button.button
+        (UserSelectedNoteInList id)
+        [ Button.transparent
+        , Button.css [ Css.width (Css.pct 100) ]
+        ]
+        [ -- Safari doesn't let you make a button a grid container. Boo.
+          Html.div
             [ Attrs.css
                 [ Css.padding (Css.px 10)
                 , Css.width (Css.pct 100)
@@ -645,12 +646,12 @@ viewNavLink activeId now { id, node, updated } =
                         ]
                     ]
 
-                -- left align, but center vertically
-                , Css.displayFlex
-                , Css.flexDirection Css.row
-                , Css.justifyContent Css.left
-                , Css.alignItems Css.center
-                , Css.overflow Css.hidden
+                -- content layout
+                , Css.property "display" "grid"
+                , Css.property "grid-template-columns" "20% 80%"
+                , Css.property "grid-template-rows" "auto"
+                , Css.property "grid-template-areas" "\"date title\""
+                , Css.property "grid-column-gap" "10px"
 
                 -- surround by borders
                 , Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
@@ -669,8 +670,17 @@ viewNavLink activeId now { id, node, updated } =
                     Css.batch []
                 ]
             ]
-            (Node.content node)
-        , TimeDifference.timeDifference updated now
+            [ Html.div
+                [ css [ Css.property "grid-area" "date" ] ]
+                [ TimeDifference.compact updated now ]
+            , Content.toHtml
+                { activate = Nothing
+                , navigate = UserWantsToOpenNoteWithTitle
+                , navigateUrl = Route.toString << Route.NodeByTitle
+                }
+                [ css [ Css.property "grid-area" "title" ] ]
+                (Node.content node)
+            ]
         ]
 
 
@@ -765,7 +775,7 @@ viewRow id model =
 viewNode : ID -> Node -> Html Msg
 viewNode id node =
     Content.toHtml
-        { activate = UserWantsToEditNode id
+        { activate = Just (UserWantsToEditNode id)
         , navigate = UserWantsToOpenNoteWithTitle
         , navigateUrl = Route.toString << Route.NodeByTitle
         }
