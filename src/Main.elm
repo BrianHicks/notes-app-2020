@@ -648,7 +648,7 @@ viewNavLink activeId now { id, node, updated } =
 
                 -- content layout
                 , Css.property "display" "grid"
-                , Css.property "grid-template-columns" "20% 80%"
+                , Css.property "grid-template-columns" "15% 1fr"
                 , Css.property "grid-template-rows" "auto"
                 , Css.property "grid-template-areas" "\"date title\""
                 , Css.property "grid-column-gap" "10px"
@@ -678,7 +678,11 @@ viewNavLink activeId now { id, node, updated } =
                 , navigate = UserWantsToOpenNoteWithTitle
                 , navigateUrl = Route.toString << Route.NodeByTitle
                 }
-                [ css [ Css.property "grid-area" "title" ] ]
+                [ css
+                    [ Css.property "grid-area" "title"
+                    , Css.textAlign Css.left
+                    ]
+                ]
                 (Node.content node)
             ]
         ]
