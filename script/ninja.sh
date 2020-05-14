@@ -3,7 +3,7 @@ set -eou pipefail
 
 ELM_FILES="$(find src -name '*.elm')"
 
-cat > build.ninja <<EOF
+cat <<EOF
 elmFlags=--debug
 
 rule elm
@@ -22,5 +22,3 @@ build dist/script/elm.js: elm src/Main.elm | elm.json $(echo "$ELM_FILES" | tr '
 build dist/script/index.js: copy src/index.js
 build dist/script/pouchdb.js: minify vendor/pouchdb-7.1.1.js
 EOF
-
-ninja "$@"
