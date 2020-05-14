@@ -11,7 +11,7 @@ stdenv.mkDerivation {
   buildInputs = [ elmPackages.elm ninja nodePackages.uglify-js ];
   buildPhase = ''
     ./script/ninja.sh > build.ninja
-    env ELM_HOME=.elm ninja
+    env ELM_HOME=.elm ELM_FLAGS= ninja
   '';
 
   installPhase = "cp -r dist/ $out/";

@@ -4,14 +4,14 @@ set -euo pipefail
 
 IN="${1:-}"
 OUT="${2:-}"
-FLAGS="${@:3}"
+ELM_FLAGS="${ELM_FLAGS:-}"
 
 if test -z "$IN" || test -z "$OUT"; then
     echo "usage: ${0:-} src/Main.elm dist/elm.js --optimize"
     exit 1
 fi
 
-elm make "$FLAGS" --output="$OUT" "$IN"
+elm make $ELM_FLAGS --output="$OUT" "$IN"
 
 # change the cmpiled elm file to not immediately call the compiled function
 sed -i 's/(function(scope/function init(scope/g' "$OUT"

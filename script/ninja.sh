@@ -4,10 +4,8 @@ set -eou pipefail
 ELM_FILES="$(find src -name '*.elm')"
 
 cat <<EOF
-elmFlags=--debug
-
 rule elm
-  command = ./script/elm-make-module.sh \$in \$out \$elmFlags
+  command = ./script/elm-make-module.sh \$in \$out
 
 rule es6ify
   command = ./script/es6ify.sh \$in \$export > \$out
