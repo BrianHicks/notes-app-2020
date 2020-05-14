@@ -1,5 +1,6 @@
 /.cache
 /.ninja*
+/build.ninja
 /data
 /dist
 /index.js
