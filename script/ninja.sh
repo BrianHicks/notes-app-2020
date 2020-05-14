@@ -9,6 +9,9 @@ elmFlags=--debug
 rule elm
   command = ./script/elm-make-module.sh \$in \$out \$elmFlags
 
+rule es6ify
+  command = ./script/es6ify.sh \$in \$export > \$out
+
 rule copy
   command = cp \$in \$out
 
@@ -17,5 +20,6 @@ build dist/script/custom-elements-builtin-bootstrap.js: copy src/custom-elements
 build dist/script/custom-elements-builtin.js: copy vendor/custom-elements-builtin.js
 build dist/script/elm.js: elm src/Main.elm | elm.json $(echo "$ELM_FILES" | tr '\n' ' ')
 build dist/script/index.js: copy src/index.js
-build dist/script/pouchdb.js: copy vendor/pouchdb-7.1.1.js
+build dist/script/pouchdb.js: es6ify vendor/pouchdb-7.1.1.js
+  export = PouchDB
 EOF

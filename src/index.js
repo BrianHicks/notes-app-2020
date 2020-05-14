@@ -31,6 +31,7 @@ customElements.define("node-input", NodeInput, { extends: "textarea" });
 
 // Go!
 import * as Elm from "./elm.js";
+import { PouchDB } from "./pouchdb.js";
 
 var db = new PouchDB("notes");
 // TODO: set up syncing
