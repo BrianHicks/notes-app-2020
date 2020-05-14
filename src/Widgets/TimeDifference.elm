@@ -1,66 +1,52 @@
-module Widgets.TimeDifference exposing (timeDifference)
+module Widgets.TimeDifference exposing (compact)
 
 import Accessibility.Styled as Html exposing (Html)
+import Css
+import Html.Styled.Attributes as Attrs
 import Time
 import Time.Extra exposing (Interval(..), diff)
+import Widgets.Colors as Colors
+import Widgets.Text as Text
 
 
-timeDifference : Time.Posix -> Time.Posix -> Html msg
-timeDifference before after =
-    case diff Year Time.utc before after of
-        0 ->
-            case diff Month Time.utc before after of
-                0 ->
-                    case diff Week Time.utc before after of
-                        0 ->
-                            case diff Day Time.utc before after of
-                                0 ->
-                                    case diff Hour Time.utc before after of
-                                        0 ->
-                                            case diff Minute Time.utc before after of
-                                                0 ->
-                                                    case diff Second Time.utc before after of
-                                                        0 ->
-                                                            Html.text "just now"
+compact : Time.Posix -> Time.Posix -> Html msg
+compact before after =
+    Html.span
+        [ Attrs.css
+            [ Text.text
+            , Css.color (Colors.toCss Colors.greyDark)
+            , Css.fontSize (Css.em 0.8)
+            ]
+        ]
+        [ case diff Year Time.utc before after of
+            0 ->
+                case diff Month Time.utc before after of
+                    0 ->
+                        case diff Week Time.utc before after of
+                            0 ->
+                                case diff Day Time.utc before after of
+                                    0 ->
+                                        case diff Hour Time.utc before after of
+                                            0 ->
+                                                case diff Minute Time.utc before after of
+                                                    0 ->
+                                                        Html.text "< 1m"
 
-                                                        1 ->
-                                                            Html.text "just now"
+                                                    minutes ->
+                                                        Html.text (String.fromInt minutes ++ "m")
 
-                                                        otherwise ->
-                                                            Html.text (String.fromInt otherwise ++ " seconds")
+                                            hours ->
+                                                Html.text (String.fromInt hours ++ "h")
 
-                                                1 ->
-                                                    Html.text "a minute"
+                                    days ->
+                                        Html.text (String.fromInt days ++ "d")
 
-                                                otherwise ->
-                                                    Html.text (String.fromInt otherwise ++ " minutes")
+                            weeks ->
+                                Html.text (String.fromInt weeks ++ "W")
 
-                                        1 ->
-                                            Html.text "an hour"
+                    months ->
+                        Html.text (String.fromInt months ++ "M")
 
-                                        otherwise ->
-                                            Html.text (String.fromInt otherwise ++ " hours")
-
-                                1 ->
-                                    Html.text "a day"
-
-                                otherwise ->
-                                    Html.text (String.fromInt otherwise ++ " days")
-
-                        1 ->
-                            Html.text "a week"
-
-                        otherwise ->
-                            Html.text (String.fromInt otherwise ++ " weeks")
-
-                1 ->
-                    Html.text "a month"
-
-                otherwise ->
-                    Html.text (String.fromInt otherwise ++ " months")
-
-        1 ->
-            Html.text "a year"
-
-        otherwise ->
-            Html.text (String.fromInt otherwise ++ " years")
+            years ->
+                Html.text (String.fromInt years ++ "Y")
+        ]
