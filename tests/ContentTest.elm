@@ -170,6 +170,50 @@ contentTest =
                             , Selector.containing [ Selector.text (toString (fromList [ title ])) ]
                             ]
             ]
+        , describe "hasNoteLink"
+            [ test "returns true if a note link with the given text is present" <|
+                \_ ->
+                    let
+                        title =
+                            text "A Test Note!"
+                    in
+                    fromList [ noteLink [ title ] ]
+                        |> hasNoteLink (fromList [ title ])
+                        |> Expect.equal True
+            , test "returns false if a note link with the given text isn't present" <|
+                \_ ->
+                    fromList [ text "Nothing to see here." ]
+                        |> hasNoteLink (fromList [ text "A Test Note!" ])
+                        |> Expect.equal False
+            ]
+        , describe "replaceNoteLinks"
+            [ test "has no effect if the source link is not in the content" <|
+                \_ ->
+                    let
+                        original =
+                            fromList [ text "If you're looking for me I'll be here in the trees." ]
+                    in
+                    original
+                        |> replaceNoteLinks (fromList [ text "One" ]) (fromList [ text "Two" ])
+                        |> Expect.equal original
+            , test "replaces any note links that are present in the content" <|
+                \_ ->
+                    fromList
+                        [ text "Hello, "
+                        , noteLink [ text "World" ]
+                        , text "!"
+                        ]
+                        |> replaceNoteLinks
+                            (fromList [ text "World" ])
+                            (fromList [ text "Universe" ])
+                        |> Expect.equal
+                            (fromList
+                                [ text "Hello, "
+                                , noteLink [ text "Universe" ]
+                                , text "!"
+                                ]
+                            )
+            ]
         ]
 
 

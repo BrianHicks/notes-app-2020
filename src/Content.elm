@@ -1,5 +1,6 @@
 module Content exposing
     ( Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
+    , hasNoteLink, replaceNoteLinks
     , Snippet, text, noteLink, link
     , encode, decoder
     )
@@ -7,6 +8,8 @@ module Content exposing
 {-|
 
 @docs Content, empty, fromList, fromString, toList, toString, toHtml, isEmpty, splitAt, append
+
+@docs hasNoteLink, replaceNoteLinks
 
 @docs Snippet, text, noteLink, link
 
@@ -187,6 +190,25 @@ splitListAtHelp splitPoint soFar snippets =
 append : Content -> Content -> Content
 append (Content childrenA) (Content childrenB) =
     fromList (childrenA ++ childrenB)
+
+
+hasNoteLink : Content -> Content -> Bool
+hasNoteLink (Content linkSnippets) (Content containerSnippets) =
+    List.member (noteLink linkSnippets) containerSnippets
+
+
+replaceNoteLinks : Content -> Content -> Content -> Content
+replaceNoteLinks (Content oldSnippets) (Content newSnippets) (Content containerSnippets) =
+    containerSnippets
+        |> List.map
+            (\snippet ->
+                if snippet == noteLink oldSnippets then
+                    noteLink newSnippets
+
+                else
+                    snippet
+            )
+        |> Content
 
 
 
