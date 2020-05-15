@@ -4,7 +4,7 @@ import Database
 import Expect exposing (Expectation)
 import Json.Encode as Encode
 import Main exposing (..)
-import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, clickLink, done, expectBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
+import ProgramTest exposing (ProgramTest, SimulatedEffect, advanceTime, clickButton, clickLink, done, ensureBrowserUrl, expectView, expectViewHas, expectViewHasNot, fillIn, simulateDomEvent, within)
 import Route
 import SimulatedEffect.Cmd as SCmd
 import SimulatedEffect.Navigation as Navigation
@@ -29,7 +29,7 @@ start =
         , update = update
         , view = view
         }
-        |> ProgramTest.withBaseUrl "https://localhost/"
+        |> ProgramTest.withBaseUrl "https://notes.bytes.zone/"
         |> ProgramTest.withSimulatedEffects testPerform
         |> ProgramTest.start
             (Encode.object
@@ -285,6 +285,18 @@ programTest =
                         (Query.find [ Selector.tag "aside" ]
                             >> Query.has [ Selector.text "also discussed in" ]
                         )
+        , test "you can click the status at the bottom to go to the sync settings screen" <|
+            \_ ->
+                start
+                    |> clickLink "Sync" "/settings/sync"
+                    |> ensureBrowserUrl (Expect.equal "https://notes.bytes.zone/settings/sync")
+                    |> clickButton "Sync with a new CouchDB Server"
+                    |> fillIn "" "Host" "https://couch.bytes.zone"
+                    |> fillIn "" "Database" "notes"
+                    |> fillIn "" "Username" "brian"
+                    |> fillIn "" "Password" "password"
+                    |> clickButton "Start Syncing"
+                    |> done
         ]
 
 

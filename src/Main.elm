@@ -11,8 +11,10 @@ import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
+import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
+import Html.Styled.Events.Extra exposing (onClickPreventDefaultForLinkWithHref)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
@@ -39,6 +41,7 @@ type alias Model key =
     -- view state
     , editing : Maybe Editing
     , selection : Maybe Selection
+    , draftSync : Maybe DraftSync
     }
 
 
@@ -47,6 +50,22 @@ type alias Editing =
     , input : Result ( String, List String ) Content
     , selection : { start : Int, end : Int }
     }
+
+
+type alias DraftSync =
+    { host : String
+    , database : String
+    , username : String
+    , password : String
+    }
+
+
+draftSyncValid : DraftSync -> Bool
+draftSyncValid { host, database, username, password } =
+    (host /= "")
+        && (database /= "")
+        && (username /= "")
+        && (password /= "")
 
 
 init : Value -> Url -> key -> ( Model key, Effect )
@@ -71,6 +90,7 @@ init flags url key =
         -- view state
         , editing = Nothing
         , selection = Nothing
+        , draftSync = Nothing
         }
 
 
@@ -106,7 +126,16 @@ type Msg
     | UserWantsToMoveNodeUp
     | UserWantsToMoveNodeDown
     | UserChangedSelection { start : Int, end : Int }
+    | UserWantsToCreateNewSync
+      -- workarounds for elm-program-test issues
     | UserWantsToOpenNoteWithTitle Content
+    | UserWantsToNavigate Route
+      -- draft sync form
+    | UserTypedInDraftSyncDatabaseField String
+    | UserTypedInDraftSyncHostField String
+    | UserTypedInDraftSyncPasswordField String
+    | UserTypedInDraftSyncUsernameField String
+    | UserSubmittedDraftSyncForm
 
 
 type Effect
@@ -143,6 +172,11 @@ update msg model =
                     ( { model | route = route }
                     , NoEffect
                     )
+
+        UserWantsToNavigate route ->
+            ( model
+            , PushUrl route
+            )
 
         GotCurrentTime now ->
             ( { model | currentTime = now }
@@ -453,6 +487,46 @@ update msg model =
             , PushUrl (Route.NodeById id)
             )
 
+        UserWantsToCreateNewSync ->
+            ( { model | draftSync = Just (DraftSync "" "" "" "") }
+            , NoEffect
+            )
+
+        UserTypedInDraftSyncDatabaseField database ->
+            ( { model | draftSync = Maybe.map (\draftSync -> { draftSync | database = database }) model.draftSync }
+            , NoEffect
+            )
+
+        UserTypedInDraftSyncHostField host ->
+            ( { model | draftSync = Maybe.map (\draftSync -> { draftSync | host = host }) model.draftSync }
+            , NoEffect
+            )
+
+        UserTypedInDraftSyncPasswordField password ->
+            ( { model | draftSync = Maybe.map (\draftSync -> { draftSync | password = password }) model.draftSync }
+            , NoEffect
+            )
+
+        UserTypedInDraftSyncUsernameField username ->
+            ( { model | draftSync = Maybe.map (\draftSync -> { draftSync | username = username }) model.draftSync }
+            , NoEffect
+            )
+
+        UserSubmittedDraftSyncForm ->
+            case model.draftSync of
+                Just draftSync ->
+                    if draftSyncValid draftSync then
+                        -- TODO: do something with this data and start a sync
+                        ( { model | draftSync = Nothing }
+                        , NoEffect
+                        )
+
+                    else
+                        ( model, NoEffect )
+
+                Nothing ->
+                    ( model, NoEffect )
+
 
 {-| TODO: should this go in Database?
 -}
@@ -547,8 +621,8 @@ viewApplication model =
         [ css
             [ Css.property "display" "grid"
             , Css.property "grid-template-columns" "350px 1fr"
-            , Css.property "grid-template-rows" "auto 1fr"
-            , Css.property "grid-template-areas" "\"header .\" \"list note\" "
+            , Css.property "grid-template-rows" "auto 1fr auto"
+            , Css.property "grid-template-areas" "\"header .\" \"list note\" \"sync note\""
             , Css.property "grid-column-gap" "10px"
             , Css.height (Css.vh 100)
             , Css.width (Css.pct 100)
@@ -565,6 +639,7 @@ viewApplication model =
             )
             model.currentTime
             (Database.filter Node.isTitle model.database)
+        , viewSync [ css [ Css.property "grid-area" "sync" ] ]
         , Html.div [ css [ Css.property "grid-area" "note" ] ]
             [ case model.route of
                 Route.NotFound ->
@@ -580,7 +655,7 @@ viewApplication model =
                     Html.text "You shouldn't ever see this page!"
 
                 Route.SyncSettings ->
-                    Html.text "Test!"
+                    viewSyncSettingsPage model
             ]
         ]
 
@@ -594,7 +669,7 @@ viewHeader attrs =
             ]
             :: attrs
         )
-        [ Button.button UserClickedNewNote
+        [ Button.button (Button.OnClick UserClickedNewNote)
             [ Button.transparent
             , Button.css
                 [ Css.padding (Css.px 12)
@@ -629,10 +704,68 @@ viewNav attrs activeId now rows =
         ]
 
 
+viewSync : List (Attribute Never) -> Html Msg
+viewSync attrs =
+    Html.div attrs
+        [ Inaccessible.a
+            [ Attrs.href (Route.toString Route.SyncSettings)
+            , onClickPreventDefaultForLinkWithHref (UserWantsToNavigate Route.SyncSettings)
+            ]
+            [ Html.text "Sync" ]
+        ]
+
+
+viewSyncSettingsPage : Model key -> Html Msg
+viewSyncSettingsPage model =
+    -- TODO: pull this out to a widget and remove the duplication
+    Html.section
+        [ Attrs.css
+            [ Css.maxWidth (Css.em 40)
+            , Css.padding2 Css.zero (Css.px 27)
+            , Css.margin2 Css.zero Css.auto
+            ]
+        ]
+        [ Html.h1 [ Attrs.css [ Text.h1 ] ] [ Html.text "Sync Settings" ]
+        , case model.draftSync of
+            Just draftSync ->
+                -- TODO: extract this all to a widget
+                let
+                    field onInput label value =
+                        Html.labelBefore
+                            [ Attrs.css [ Text.text ] ]
+                            (Html.text label)
+                            (Html.inputText label
+                                [ Attrs.value value
+                                , Events.onInput onInput
+                                ]
+                            )
+                in
+                -- using onSubmit as a hook here since hitting enter needs to work
+                Inaccessible.form [ Events.onSubmit UserSubmittedDraftSyncForm ]
+                    [ field UserTypedInDraftSyncHostField "Host" draftSync.host
+                    , field UserTypedInDraftSyncDatabaseField "Database" draftSync.database
+                    , field UserTypedInDraftSyncUsernameField "Username" draftSync.username
+                    , field UserTypedInDraftSyncPasswordField "Password" draftSync.password
+                    , Button.button
+                        Button.Submit
+                        [ Button.enabled
+                            -- TODO: move validity elsewhere due to aformentioned enter button
+                            (draftSyncValid draftSync)
+                        ]
+                        [ Html.text "Start Syncing" ]
+                    ]
+
+            Nothing ->
+                Button.button (Button.OnClick UserWantsToCreateNewSync)
+                    []
+                    [ Html.text "Sync with a new CouchDB Server" ]
+        ]
+
+
 viewNavLink : Maybe ID -> Posix -> Database.Row -> Html Msg
 viewNavLink activeId now { id, node, updated } =
     Button.button
-        (UserSelectedNoteInList id)
+        (Button.OnClick (UserSelectedNoteInList id))
         [ Button.transparent
         , Button.css [ Css.width (Css.pct 100) ]
         ]
@@ -705,6 +838,7 @@ viewRow id model =
             let
                 tag =
                     if Node.isTitle row.node then
+                        -- TODO: pull this out to a widget and remove the duplication
                         Html.section
                             [ Attrs.css
                                 [ Css.maxWidth (Css.em 40)
