@@ -277,6 +277,15 @@ programTest =
                     |> hitShortcutKey [] Escape
                     |> clickSidebarLink "Note"
                     |> expectNote (Query.has [ Selector.text "an awesome note" ])
+        , test "you can see the incoming links to a note from the note's page" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "also discussed in [[another note]]" ]
+                    |> addNoteAndChildren "another note" [ "note body" ]
+                    |> expectNote
+                        (Query.find [ Selector.tag "aside" ]
+                            >> Query.has [ Selector.text "also discussed in" ]
+                        )
         ]
 
 

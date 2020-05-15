@@ -1,12 +1,12 @@
 module Database exposing
-    ( Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+    ( Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
     , moveInto, moveBefore, moveAfter
     , decoder, encode, toPersist
     )
 
 {-|
 
-@docs Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode
+@docs Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
 
 @docs moveInto, moveBefore, moveAfter
 
@@ -171,6 +171,18 @@ updateNoteLinks updated old new database =
                         dbProgress
                 )
                 database
+
+
+backlinksTo : ID -> Database -> List Row
+backlinksTo id database =
+    case get id database of
+        Just row ->
+            filter
+                (\node -> Content.hasNoteLink (Node.content row.node) (Node.content node))
+                database
+
+        Nothing ->
+            []
 
 
 updateRevision : ID -> String -> Database -> Database
