@@ -443,7 +443,7 @@ databaseTest =
                     toPersist database
                         |> Tuple.first
                         |> Expect.equal [ node ]
-            , test "toPersist should clear the list oof things to be persisted" <|
+            , test "toPersist should clear the list of things to be persisted" <|
                 \_ ->
                     let
                         ( node, database ) =
