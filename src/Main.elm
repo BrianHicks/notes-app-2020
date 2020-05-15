@@ -593,7 +593,10 @@ viewHeader attrs =
         )
         [ Button.button UserClickedNewNote
             [ Button.transparent
-            , Button.css [ Css.padding (Css.px 10) ]
+            , Button.css
+                [ Css.padding (Css.px 12)
+                , Css.cursor Css.pointer
+                ]
             ]
             [ Icons.chick
                 { height = 30
@@ -633,7 +636,7 @@ viewNavLink activeId now { id, node, updated } =
         [ -- Safari doesn't let you make a button a grid container. Boo.
           Html.div
             [ Attrs.css
-                [ Css.padding (Css.px 10)
+                [ Css.padding (Css.px 12)
                 , Css.width (Css.pct 100)
 
                 -- it's always text!
@@ -648,8 +651,11 @@ viewNavLink activeId now { id, node, updated } =
 
                 -- surround by borders
                 , Css.borderBottom3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
-                , Css.borderLeft3 (Css.px 5) Css.solid Css.transparent
+                , Css.borderLeft3 (Css.px 8) Css.solid Css.transparent
                 , Css.property "transition" "all 0.25s"
+
+                -- you can click on this!
+                , Css.cursor Css.pointer
 
                 -- highlight the active node
                 , -- TODO: make an isActive helper that checks if a child is active too
@@ -699,7 +705,7 @@ viewRow id model =
                         Html.section
                             [ Attrs.css
                                 [ Css.maxWidth (Css.em 40)
-                                , Css.padding2 Css.zero (Css.px 25)
+                                , Css.padding2 Css.zero (Css.px 27)
                                 , Css.margin2 Css.zero Css.auto
                                 ]
                             ]
@@ -768,7 +774,7 @@ viewRow id model =
                         -- TODO: extract this list to a widget or something
                         |> Html.ul
                             [ Attrs.css
-                                [ Css.paddingLeft (Css.px 30)
+                                [ Css.paddingLeft (Css.px 27)
                                 , Css.listStylePosition Css.outside
                                 , Css.listStyleType Css.disc
                                 ]
@@ -780,8 +786,8 @@ viewRow id model =
                     backlinks ->
                         Html.aside
                             [ Attrs.css
-                                [ Css.padding (Css.px 15)
-                                , Css.marginTop (Css.px 15)
+                                [ Css.padding (Css.px 18)
+                                , Css.marginTop (Css.px 40.5)
                                 , Css.backgroundColor (Colors.toCss Colors.whiteLight)
                                 ]
                             ]
@@ -792,7 +798,7 @@ viewRow id model =
                             -- TODO: extract this list to a widget or something
                             , Html.ul
                                 [ Attrs.css
-                                    [ Css.paddingLeft (Css.px 30)
+                                    [ Css.paddingLeft (Css.px 27)
                                     , Css.listStylePosition Css.outside
                                     , Css.listStyleType Css.disc
                                     ]
