@@ -14,6 +14,7 @@ module Database exposing
 
 -}
 
+import Content
 import Database.ID as ID exposing (ID)
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
@@ -120,12 +121,12 @@ insert created node (Database database) =
 update : Time.Posix -> ID -> (Node -> Node) -> Database -> Database
 update updated id updater ((Database database) as db) =
     case get id db of
-        Just row ->
+        Just oldRow ->
             let
                 newNode =
-                    updater row.node
+                    updater oldRow.node
             in
-            if newNode == row.node then
+            if newNode == oldRow.node then
                 db
 
             else
@@ -133,13 +134,43 @@ update updated id updater ((Database database) as db) =
                     { database
                         | nodes =
                             Dict.insert id
-                                { row | node = updater row.node, updated = updated }
+                                { oldRow | node = updater oldRow.node, updated = updated }
                                 database.nodes
                         , toPersist = Set.insert id database.toPersist
                     }
+                    |> updateNoteLinks updated oldRow.node newNode
 
         Nothing ->
             db
+
+
+updateNoteLinks : Time.Posix -> Node -> Node -> Database -> Database
+updateNoteLinks updated old new database =
+    if not (Node.isTitle old) then
+        database
+
+    else
+        database
+            -- optimization idea, if/when it becomes necessary: updating a node
+            -- could keep a separate index of note links. Then updating them
+            -- can avoid a full scan of the database.
+            |> filter
+                (\node -> Content.hasNoteLink (Node.content old) (Node.content node))
+            |> List.foldl
+                (\rowToUpdate dbProgress ->
+                    update updated
+                        rowToUpdate.id
+                        (\node ->
+                            Node.setContent
+                                (Content.replaceNoteLinks (Node.content old)
+                                    (Node.content new)
+                                    (Node.content node)
+                                )
+                                node
+                        )
+                        dbProgress
+                )
+                database
 
 
 updateRevision : ID -> String -> Database -> Database

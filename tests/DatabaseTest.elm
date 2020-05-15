@@ -362,6 +362,19 @@ databaseTest =
                         |> Tuple.first
                         |> List.map .id
                         |> Expect.equal [ row.id ]
+            , test "updating a title updates any links to that note as well" <|
+                \_ ->
+                    let
+                        ( title, ( linker, database ) ) =
+                            emptyFixture
+                                |> insert_ (Node.title (plainContent "the original title"))
+                                |> Tuple.mapSecond (insert_ (Node.node (noteLink "the original title")))
+                    in
+                    database
+                        |> update_ title.id (Node.setContent (plainContent "the new title"))
+                        |> get linker.id
+                        |> Maybe.map (Node.content << .node)
+                        |> Expect.equal (Just (noteLink "the new title"))
             ]
         , describe "filter nodes"
             [ test "if my filter never matches, the list will be empty" <|
@@ -454,6 +467,11 @@ emptyFixture =
 plainContent : String -> Content
 plainContent string =
     Content.fromList [ Content.text string ]
+
+
+noteLink : String -> Content
+noteLink string =
+    Content.fromList [ Content.noteLink [ Content.text string ] ]
 
 
 insert_ : Node -> Database -> ( Row, Database )
