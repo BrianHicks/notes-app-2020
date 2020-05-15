@@ -471,8 +471,26 @@ insertBeforeHelp target toInsert items soFar =
 
 decoder : Decoder Row
 decoder =
-    Decode.succeed Row
-        |> Pipeline.required "_id" ID.decoder
+    Decode.andThen
+        (\id ->
+            case ID.namespace id of
+                -- compatibility with older PouchDB data from before rows
+                -- were namespaced.
+                Nothing ->
+                    rowDecoder id
+
+                Just "node" ->
+                    rowDecoder id
+
+                Just other ->
+                    Decode.fail ("I don't know how to handle documents in the " ++ other ++ " namespace.")
+        )
+        (Decode.field "_id" ID.decoder)
+
+
+rowDecoder : ID -> Decoder Row
+rowDecoder id =
+    Decode.succeed (Row id)
         |> Pipeline.required "node" Node.decoder
         |> Pipeline.required "parent" (Decode.nullable ID.decoder)
         |> Pipeline.required "children" (Decode.list ID.decoder)
