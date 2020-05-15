@@ -267,6 +267,16 @@ programTest =
                     |> addNoteAndChildren "Note" [ "Go to [[another note]]" ]
                     |> clickLink "another note" "/node/another%20note"
                     |> expectNote (Query.has [ Selector.text "another note" ])
+        , test "linking to a note and then changing the title should change the link" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "Go to [[another note]]" ]
+                    |> clickLink "another note" "/node/another%20note"
+                    |> edit "another note"
+                    |> fillIn "editor" "Content" "an awesome note"
+                    |> hitShortcutKey [] Escape
+                    |> clickSidebarLink "Note"
+                    |> expectNote (Query.has [ Selector.text "an awesome note" ])
         ]
 
 
@@ -317,6 +327,30 @@ expectSiblingsIn parent assertions =
 blur : NotesTest -> NotesTest
 blur =
     simulateDomEvent (Query.find [ input ]) ( "blur", Encode.object [] )
+
+
+edit : String -> NotesTest -> NotesTest
+edit name =
+    simulateDomEvent
+        (Query.find [ Selector.tag "section" ]
+            >> Query.find
+                [ Selector.tag "button"
+                , Selector.containing [ Selector.text name ]
+                ]
+        )
+        ( "click", Encode.object [] )
+
+
+clickSidebarLink : String -> NotesTest -> NotesTest
+clickSidebarLink name =
+    simulateDomEvent
+        (Query.find [ Selector.tag "nav" ]
+            >> Query.find
+                [ Selector.tag "button"
+                , Selector.containing [ Selector.text name ]
+                ]
+        )
+        ( "click", Encode.object [] )
 
 
 type Key
