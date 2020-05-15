@@ -1,7 +1,7 @@
 module Database exposing
     ( Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
     , moveInto, moveBefore, moveAfter
-    , decoder, encode, toPersist
+    , Document, decoder, encode, toPersist
     )
 
 {-|
@@ -10,7 +10,7 @@ module Database exposing
 
 @docs moveInto, moveBefore, moveAfter
 
-@docs decoder, encode, toPersist
+@docs Document, decoder, encode, toPersist
 
 -}
 
@@ -58,20 +58,14 @@ empty seed =
         }
 
 
-load : Random.Seed -> List Row -> Database
+load : Random.Seed -> List Document -> Database
 load seed rows =
-    let
-        (Database database) =
-            empty seed
-    in
-    Database
-        { database
-            | nodes =
-                List.foldl
-                    (\row -> Dict.insert row.id row)
-                    database.nodes
-                    rows
-        }
+    List.foldl
+        (\(DocumentRow row) (Database db) ->
+            Database { db | nodes = Dict.insert row.id row db.nodes }
+        )
+        (empty seed)
+        rows
 
 
 isEmpty : Database -> Bool
@@ -469,7 +463,11 @@ insertBeforeHelp target toInsert items soFar =
 -- Storage
 
 
-decoder : Decoder Row
+type Document
+    = DocumentRow Row
+
+
+decoder : Decoder Document
 decoder =
     Decode.andThen
         (\id ->
@@ -477,10 +475,10 @@ decoder =
                 -- compatibility with older PouchDB data from before rows
                 -- were namespaced.
                 Nothing ->
-                    rowDecoder id
+                    Decode.map DocumentRow (rowDecoder id)
 
                 Just "node" ->
-                    rowDecoder id
+                    Decode.map DocumentRow (rowDecoder id)
 
                 Just other ->
                     Decode.fail ("I don't know how to handle documents in the " ++ other ++ " namespace.")

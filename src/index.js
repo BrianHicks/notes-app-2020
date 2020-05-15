@@ -41,7 +41,7 @@ db.allDocs({ include_docs: true }, function(err, allDocs) {
   var app = Elm.Main.init({
     flags: {
       now: new Date().getTime(),
-      rows: allDocs.rows
+      documents: allDocs.rows
     }
   });
 

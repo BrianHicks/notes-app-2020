@@ -34,7 +34,7 @@ start =
         |> ProgramTest.start
             (Encode.object
                 [ ( "now", Encode.int 0 )
-                , ( "rows", Encode.list identity [] )
+                , ( "documents", Encode.list identity [] )
                 ]
             )
 

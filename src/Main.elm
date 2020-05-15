@@ -52,7 +52,7 @@ type alias Editing =
 init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
     let
-        { seed, rows, now } =
+        { seed, documents, now } =
             case Decode.decodeValue flagsDecoder flags of
                 Ok stuff ->
                     stuff
@@ -62,7 +62,7 @@ init flags url key =
     in
     update
         (UrlChanged url)
-        { database = Database.load seed rows
+        { database = Database.load seed documents
         , url = url
         , key = key
         , route = Route.Root
@@ -74,17 +74,17 @@ init flags url key =
         }
 
 
-flagsDecoder : Decoder { now : Posix, seed : Random.Seed, rows : List Database.Row }
+flagsDecoder : Decoder { now : Posix, seed : Random.Seed, documents : List Database.Document }
 flagsDecoder =
     Decode.map2
-        (\millis rows ->
+        (\millis documents ->
             { now = Time.millisToPosix millis
             , seed = Random.initialSeed millis
-            , rows = rows
+            , documents = documents
             }
         )
         (Decode.field "now" Decode.int)
-        (Decode.field "rows" (Decode.list (Decode.field "doc" Database.decoder)))
+        (Decode.field "documents" (Decode.list (Decode.field "doc" Database.decoder)))
 
 
 type Msg
