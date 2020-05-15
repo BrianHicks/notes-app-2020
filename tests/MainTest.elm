@@ -68,8 +68,7 @@ testPerform effect =
 programTest : Test
 programTest =
     describe "notes"
-        [ test "pass" (\_ -> Expect.pass)
-        , test "it should be possible to add a note and see it in the sidebar after adding" <|
+        [ test "it should be possible to add a note and see it in the sidebar after adding" <|
             \_ ->
                 start
                     |> clickButton "New Note"
