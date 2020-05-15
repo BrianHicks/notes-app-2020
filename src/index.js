@@ -5,7 +5,6 @@ class NodeInput extends HTMLTextAreaElement {
 
     this.style.height = this.scrollHeight + "px";
     this.addEventListener("input", function() {
-      console.log(this);
       this.style.height = this.scrollHeight + "px";
     });
 
