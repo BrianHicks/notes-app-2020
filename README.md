@@ -87,7 +87,6 @@ This is my implementation of a note-taking app, organized around the following p
 - [ ] search
   - [ ] finding nodes and navigating to their notes
   - [ ] backlinks
-- [ ] order notes according to most recently updated
 - [ ] come up with a consistent design for keybindings (e.g. alt moves edit, alt+shift moves node)
 - [ ] offline support (webworker, caching?)
 - [ ] exporting to
