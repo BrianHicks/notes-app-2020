@@ -578,6 +578,9 @@ viewApplication model =
 
                 Route.NodeByTitle _ ->
                     Html.text "You shouldn't ever see this page!"
+
+                Route.SyncSettings ->
+                    Html.text "Test!"
             ]
         ]
 

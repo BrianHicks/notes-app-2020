@@ -13,6 +13,8 @@ routeTest =
     describe "Route"
         [ test "can navigate to the root route" <|
             \_ -> expectRoundTripWorks Root
+        , test "can navigate to the sync settings" <|
+            \_ -> expectRoundTripWorks SyncSettings
         , test "handles bad routes gracefully" <|
             \_ ->
                 parse

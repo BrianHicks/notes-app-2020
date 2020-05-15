@@ -12,6 +12,7 @@ type Route
     | Root
     | NodeById ID
     | NodeByTitle Content
+    | SyncSettings
 
 
 toString : Route -> String
@@ -29,6 +30,9 @@ toString route =
         NodeByTitle title ->
             Builder.absolute [ "node", Url.percentEncode (Content.toString title) ] []
 
+        SyncSettings ->
+            Builder.absolute [ "settings", "sync" ] []
+
 
 parse : Url -> Route
 parse url =
@@ -41,6 +45,7 @@ parser =
         [ Parser.map Root top
         , Parser.map NodeById (s "node" </> id)
         , Parser.map NodeByTitle (s "node" </> content)
+        , Parser.map SyncSettings (s "settings" </> s "sync")
         ]
 
 
