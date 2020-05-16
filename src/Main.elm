@@ -11,6 +11,7 @@ import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
+import Database.Sync as Sync exposing (Sync)
 import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
@@ -41,7 +42,7 @@ type alias Model key =
     -- view state
     , editing : Maybe Editing
     , selection : Maybe Selection
-    , draftSync : Maybe DraftSync
+    , draftSync : Maybe Sync
     }
 
 
@@ -50,22 +51,6 @@ type alias Editing =
     , input : Result ( String, List String ) Content
     , selection : { start : Int, end : Int }
     }
-
-
-type alias DraftSync =
-    { host : String
-    , database : String
-    , username : String
-    , password : String
-    }
-
-
-draftSyncValid : DraftSync -> Bool
-draftSyncValid { host, database, username, password } =
-    (host /= "")
-        && (database /= "")
-        && (username /= "")
-        && (password /= "")
 
 
 init : Value -> Url -> key -> ( Model key, Effect )
@@ -135,7 +120,7 @@ type Msg
     | UserTypedInDraftSyncHostField String
     | UserTypedInDraftSyncPasswordField String
     | UserTypedInDraftSyncUsernameField String
-    | UserSubmittedDraftSyncForm
+    | UserSubmittedSyncForm
 
 
 type Effect
@@ -488,7 +473,7 @@ update msg model =
             )
 
         UserWantsToCreateNewSync ->
-            ( { model | draftSync = Just (DraftSync "" "" "" "") }
+            ( { model | draftSync = Just (Sync "" "" "" "") }
             , NoEffect
             )
 
@@ -512,10 +497,10 @@ update msg model =
             , NoEffect
             )
 
-        UserSubmittedDraftSyncForm ->
+        UserSubmittedSyncForm ->
             case model.draftSync of
                 Just draftSync ->
-                    if draftSyncValid draftSync then
+                    if Sync.isValid draftSync then
                         -- TODO: do something with this data and start a sync
                         ( { model | draftSync = Nothing }
                         , NoEffect
@@ -741,17 +726,14 @@ viewSyncSettingsPage model =
                             )
                 in
                 -- using onSubmit as a hook here since hitting enter needs to work
-                Inaccessible.form [ Events.onSubmit UserSubmittedDraftSyncForm ]
+                Inaccessible.form [ Events.onSubmit UserSubmittedSyncForm ]
                     [ field UserTypedInDraftSyncHostField "Host" draftSync.host
                     , field UserTypedInDraftSyncDatabaseField "Database" draftSync.database
                     , field UserTypedInDraftSyncUsernameField "Username" draftSync.username
                     , field UserTypedInDraftSyncPasswordField "Password" draftSync.password
                     , Button.button
                         Button.Submit
-                        [ Button.enabled
-                            -- TODO: move validity elsewhere due to aformentioned enter button
-                            (draftSyncValid draftSync)
-                        ]
+                        [ Button.enabled (Sync.isValid draftSync) ]
                         [ Html.text "Start Syncing" ]
                     ]
 
