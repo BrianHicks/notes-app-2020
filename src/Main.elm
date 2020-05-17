@@ -63,20 +63,23 @@ init flags url key =
 
                 Err err ->
                     Debug.todo (Debug.toString err)
-    in
-    update
-        (UrlChanged url)
-        { database = Database.load seed documents
-        , url = url
-        , key = key
-        , route = Route.Root
-        , currentTime = now
 
-        -- view state
-        , editing = Nothing
-        , selection = Nothing
-        , draftSync = Nothing
-        }
+        ( model, routingEffects ) =
+            update
+                (UrlChanged url)
+                { database = Database.load seed documents
+                , url = url
+                , key = key
+                , route = Route.Root
+                , currentTime = now
+
+                -- view state
+                , editing = Nothing
+                , selection = Nothing
+                , draftSync = Nothing
+                }
+    in
+    ( model, routingEffects )
 
 
 flagsDecoder : Decoder { now : Posix, seed : Random.Seed, documents : List Database.Document }
