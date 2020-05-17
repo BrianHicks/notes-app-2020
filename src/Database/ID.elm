@@ -1,4 +1,4 @@
-module Database.ID exposing (ID, decoder, encode, fromInt, fromString, generator, namespace, sorter, toString)
+module Database.ID exposing (ID, decoder, encode, fromInt, fromString, generator, sorter, toString)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
@@ -8,54 +8,34 @@ import UUID exposing (UUID)
 
 
 type ID
-    = ID (Maybe String) UUID
-
-
-namespace : ID -> Maybe String
-namespace (ID namespace_ _) =
-    namespace_
+    = ID UUID
 
 
 fromInt : Int -> ID
 fromInt seed =
     Random.initialSeed seed
-        |> Random.step (Random.map (ID Nothing) UUID.generator)
+        |> Random.step (Random.map ID UUID.generator)
         |> Tuple.first
 
 
 fromString : String -> Result UUID.Error ID
 fromString string =
-    case String.split "/" string of
-        [ namespace_, maybeID ] ->
-            Result.map (ID (Just namespace_)) (UUID.fromString maybeID)
-
-        _ ->
-            Result.map (ID Nothing) (UUID.fromString string)
+    Result.map ID (UUID.fromString string)
 
 
 toString : ID -> String
-toString (ID maybeNamespace id) =
-    case maybeNamespace of
-        Nothing ->
-            UUID.toString id
-
-        Just namespace_ ->
-            namespace_ ++ "/" ++ UUID.toString id
+toString (ID id) =
+    UUID.toString id
 
 
 sorter : Sorter ID
 sorter =
-    Sort.alphabetical
-        |> Sort.by (\(ID namespace_ _) -> Maybe.withDefault "" namespace_)
-        |> Sort.tiebreaker
-            (Sort.alphabetical
-                |> Sort.by (\(ID namespace_ id) -> UUID.toString id)
-            )
+    Sort.by (\(ID id) -> UUID.toString id) Sort.alphabetical
 
 
 generator : Generator ID
 generator =
-    Random.map (ID Nothing) UUID.generator
+    Random.map ID UUID.generator
 
 
 encode : ID -> Encode.Value

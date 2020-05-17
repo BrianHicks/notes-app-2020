@@ -16,6 +16,7 @@ module Database exposing
 
 import Content
 import Database.ID as ID exposing (ID)
+import Database.Sync as Sync exposing (Sync)
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
@@ -32,6 +33,7 @@ type Database
         { nodes : Dict ID Row
         , seed : Random.Seed
         , toPersist : Set ID
+        , syncs : Set Sync
         }
 
 
@@ -55,6 +57,7 @@ empty seed =
         { nodes = Dict.empty ID.sorter
         , seed = seed
         , toPersist = Set.empty ID.sorter
+        , syncs = Set.empty Sync.sorter
         }
 
 
@@ -108,6 +111,7 @@ insert created node (Database database) =
         { nodes = Dict.insert id row database.nodes
         , seed = seed
         , toPersist = Set.insert id database.toPersist
+        , syncs = Set.empty Sync.sorter
         }
     )
 
@@ -470,25 +474,26 @@ type Document
 decoder : Decoder Document
 decoder =
     Decode.andThen
-        (\id ->
-            case ID.namespace id of
+        (\collection ->
+            case collection of
                 -- compatibility with older PouchDB data from before rows
                 -- were namespaced.
                 Nothing ->
-                    Decode.map DocumentRow (rowDecoder id)
+                    Decode.map DocumentRow rowDecoder
 
-                Just "node" ->
-                    Decode.map DocumentRow (rowDecoder id)
+                Just "nodes" ->
+                    Decode.map DocumentRow rowDecoder
 
                 Just other ->
-                    Decode.fail ("I don't know how to handle documents in the " ++ other ++ " namespace.")
+                    Decode.fail ("I don't know how to handle documents in the " ++ other ++ " collection.")
         )
-        (Decode.field "_id" ID.decoder)
+        (Decode.field "collection" (Decode.maybe Decode.string))
 
 
-rowDecoder : ID -> Decoder Row
-rowDecoder id =
-    Decode.succeed (Row id)
+rowDecoder : Decoder Row
+rowDecoder =
+    Decode.succeed Row
+        |> Pipeline.required "_id" ID.decoder
         |> Pipeline.required "node" Node.decoder
         |> Pipeline.required "parent" (Decode.nullable ID.decoder)
         |> Pipeline.required "children" (Decode.list ID.decoder)
@@ -528,6 +533,7 @@ encode row =
         , ( "children", Encode.list ID.encode row.children )
         , ( "created", Iso8601.encode row.created )
         , ( "updated", Iso8601.encode row.updated )
+        , ( "collection", Encode.string "nodes" )
         ]
 
 
