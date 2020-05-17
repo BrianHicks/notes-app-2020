@@ -16,7 +16,7 @@ module Database exposing
 
 import Content
 import Database.ID as ID exposing (ID)
-import Database.Sync as Sync exposing (Sync)
+import Database.Settings as Settings exposing (Settings)
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
@@ -33,7 +33,7 @@ type Database
         { nodes : Dict ID Row
         , seed : Random.Seed
         , toPersist : Set ID
-        , syncs : Set Sync
+        , settings : Settings
         }
 
 
@@ -51,23 +51,23 @@ type alias Row =
     }
 
 
-empty : Random.Seed -> Database
-empty seed =
+empty : Settings -> Random.Seed -> Database
+empty settings seed =
     Database
         { nodes = Dict.empty ID.sorter
         , seed = seed
         , toPersist = Set.empty ID.sorter
-        , syncs = Set.empty Sync.sorter
+        , settings = settings
         }
 
 
-load : Random.Seed -> List Document -> Database
-load seed rows =
+load : Settings -> Random.Seed -> List Document -> Database
+load settings seed rows =
     List.foldl
         (\(DocumentRow row) (Database db) ->
             Database { db | nodes = Dict.insert row.id row db.nodes }
         )
-        (empty seed)
+        (empty settings seed)
         rows
 
 
@@ -108,10 +108,10 @@ insert created node (Database database) =
     in
     ( row
     , Database
-        { nodes = Dict.insert id row database.nodes
-        , seed = seed
-        , toPersist = Set.insert id database.toPersist
-        , syncs = Set.empty Sync.sorter
+        { database
+            | nodes = Dict.insert id row database.nodes
+            , seed = seed
+            , toPersist = Set.insert id database.toPersist
         }
     )
 
@@ -422,7 +422,7 @@ filter shouldInclude (Database database) =
 
 
 
--- UTILITY
+-- Utility
 
 
 insertAfter : a -> a -> List a -> List a
@@ -487,7 +487,7 @@ decoder =
                 Just other ->
                     Decode.fail ("I don't know how to handle documents in the " ++ other ++ " collection.")
         )
-        (Decode.field "collection" (Decode.maybe Decode.string))
+        (Decode.maybe (Decode.field "collection" Decode.string))
 
 
 rowDecoder : Decoder Row

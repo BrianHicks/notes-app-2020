@@ -11,6 +11,7 @@ import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
+import Database.Settings as Settings exposing (Settings)
 import Database.Sync as Sync exposing (Sync)
 import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
@@ -56,7 +57,7 @@ type alias Editing =
 init : Value -> Url -> key -> ( Model key, Effect )
 init flags url key =
     let
-        { seed, documents, now } =
+        { seed, documents, now, settings } =
             case Decode.decodeValue flagsDecoder flags of
                 Ok stuff ->
                     stuff
@@ -67,7 +68,7 @@ init flags url key =
         ( model, routingEffects ) =
             update
                 (UrlChanged url)
-                { database = Database.load seed documents
+                { database = Database.load settings seed documents
                 , url = url
                 , key = key
                 , route = Route.Root
@@ -82,17 +83,29 @@ init flags url key =
     ( model, routingEffects )
 
 
-flagsDecoder : Decoder { now : Posix, seed : Random.Seed, documents : List Database.Document }
+flagsDecoder :
+    Decoder
+        { now : Posix
+        , seed : Random.Seed
+        , documents : List Database.Document
+        , settings : Settings
+        }
 flagsDecoder =
-    Decode.map2
-        (\millis documents ->
+    Decode.map3
+        (\millis documents settings ->
             { now = Time.millisToPosix millis
             , seed = Random.initialSeed millis
             , documents = documents
+            , settings = settings
             }
         )
         (Decode.field "now" Decode.int)
         (Decode.field "documents" (Decode.list (Decode.field "doc" Database.decoder)))
+        (Decode.field "settings"
+            (Decode.nullable Settings.decoder
+                |> Decode.map (Maybe.withDefault Settings.init)
+            )
+        )
 
 
 type Msg

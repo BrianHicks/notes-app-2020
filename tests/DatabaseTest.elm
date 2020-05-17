@@ -4,6 +4,7 @@ import Array
 import Content exposing (Content)
 import Database exposing (..)
 import Database.ID as ID exposing (ID)
+import Database.Settings as Settings
 import Expect
 import Node exposing (Node)
 import Random
@@ -461,7 +462,7 @@ databaseTest =
 
 emptyFixture : Database
 emptyFixture =
-    empty (Random.initialSeed 0)
+    empty Settings.init (Random.initialSeed 0)
 
 
 plainContent : String -> Content

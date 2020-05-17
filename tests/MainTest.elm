@@ -35,6 +35,7 @@ start =
             (Encode.object
                 [ ( "now", Encode.int 0 )
                 , ( "documents", Encode.list identity [] )
+                , ( "settings", Encode.null )
                 ]
             )
 

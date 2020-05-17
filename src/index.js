@@ -35,12 +35,23 @@ import { PouchDB } from "./pouchdb.js";
 var db = new PouchDB("notes");
 // TODO: set up syncing
 
-db.allDocs({ include_docs: true }, function(err, allDocs) {
-  // initialize Elm
+(async function() {
+  let allDocs = await db.allDocs({ include_docs: true });
+
+  let settings = null;
+  try {
+    settings = await db.get("_local/settings");
+  } catch(err) {
+    if (err.status !== 404) {
+      throw(err)
+    }
+  }
+
   var app = Elm.Main.init({
     flags: {
       now: new Date().getTime(),
-      documents: allDocs.rows
+      documents: allDocs.rows,
+      settings: settings
     }
   });
 
@@ -50,4 +61,4 @@ db.allDocs({ include_docs: true }, function(err, allDocs) {
       .then(success => app.ports.putSuccessfully.send(success))
       .catch(err => console.error(err));
   });
-});
+})();
