@@ -188,7 +188,22 @@ update msg model =
             let
                 decoder =
                     Decode.map2 Tuple.pair
-                        (Decode.field "id" ID.decoder)
+                        (Decode.field "id"
+                            (Decode.oneOf
+                                [ Decode.map Database.RowID ID.decoder
+                                , -- TODO: this has too much knowledge, in particular this specific ID
+                                  Decode.andThen
+                                    (\string ->
+                                        if string == "_local/settings" then
+                                            Decode.succeed Database.SettingsID
+
+                                        else
+                                            Decode.fail ("Unknown ID " ++ string)
+                                    )
+                                    Decode.string
+                                ]
+                            )
+                        )
                         (Decode.field "rev" Decode.string)
             in
             case Decode.decodeValue decoder value of
@@ -202,11 +217,19 @@ update msg model =
 
         TimerTriggeredSave ->
             let
-                ( toPersist, database ) =
+                ( { settings, rows }, database ) =
                     Database.toPersist model.database
             in
             ( { model | database = database }
-            , Batch (List.map (Put << Database.encode) toPersist)
+            , Batch
+                [ case settings of
+                    Just newSettings ->
+                        Put (Settings.encode newSettings)
+
+                    Nothing ->
+                        NoEffect
+                , Batch (List.map (Put << Database.encode) rows)
+                ]
             )
 
         FocusedOnEditor ->
@@ -517,8 +540,10 @@ update msg model =
             case model.draftSync of
                 Just draftSync ->
                     if Sync.isValid draftSync then
-                        -- TODO: do something with this data and start a sync
-                        ( { model | draftSync = Nothing }
+                        ( { model
+                            | draftSync = Nothing
+                            , database = Database.updateSettings (Settings.insertSync draftSync) model.database
+                          }
                         , NoEffect
                         )
 

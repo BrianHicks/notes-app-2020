@@ -57,6 +57,7 @@ databaseTest =
                     database
                         |> toPersist
                         |> Tuple.first
+                        |> .rows
                         |> List.map .id
                         |> Expect.equal [ row.id ]
             ]
@@ -104,6 +105,7 @@ databaseTest =
                         |> moveInto parent.id child.id
                         |> toPersist
                         |> Tuple.first
+                        |> .rows
                         |> List.map .id
                         |> Expect.equal [ parent.id, child.id ]
             , test "shows the relationship in .parent" <|
@@ -227,6 +229,7 @@ databaseTest =
                         |> moveAfter first.id second.id
                         |> toPersist
                         |> Tuple.first
+                        |> .rows
                         |> List.map .id
                         |> Expect.equal [ second.id, parent.id ]
             ]
@@ -361,6 +364,7 @@ databaseTest =
                         |> update_ row.id (Node.setContent (plainContent "Hey!"))
                         |> toPersist
                         |> Tuple.first
+                        |> .rows
                         |> List.map .id
                         |> Expect.equal [ row.id ]
             , test "updating a title updates any links to that note as well" <|
@@ -443,6 +447,7 @@ databaseTest =
                     in
                     toPersist database
                         |> Tuple.first
+                        |> .rows
                         |> Expect.equal [ node ]
             , test "toPersist should clear the list of things to be persisted" <|
                 \_ ->
@@ -455,6 +460,7 @@ databaseTest =
                         |> Tuple.second
                         |> toPersist
                         |> Tuple.first
+                        |> .rows
                         |> Expect.equal []
             ]
         ]

@@ -1,4 +1,15 @@
-module Database.Settings exposing (Settings, decoder, encoder, init)
+module Database.Settings exposing
+    ( Settings, decoder, encode, init
+    , insertSync
+    )
+
+{-|
+
+@docs Settings, decoder, encode, init
+
+@docs insertSync
+
+-}
 
 import Database.Sync as Sync exposing (Sync)
 import Json.Decode as Decode exposing (Decoder)
@@ -19,6 +30,11 @@ init =
     }
 
 
+insertSync : Sync -> Settings -> Settings
+insertSync sync settings =
+    { settings | syncs = sync :: settings.syncs }
+
+
 decoder : Decoder Settings
 decoder =
     Decode.succeed Settings
@@ -26,8 +42,8 @@ decoder =
         |> required "syncs" (Decode.list Sync.decoder)
 
 
-encoder : Settings -> Encode.Value
-encoder settings =
+encode : Settings -> Encode.Value
+encode settings =
     Encode.object
         [ ( "_id", Encode.string "_local/settings" )
         , ( "_rev"
