@@ -764,16 +764,27 @@ viewSyncSettingsPage model =
                 let
                     field onInput label value =
                         Html.labelBefore
-                            [ Attrs.css [ Text.text ] ]
-                            (Html.text label)
+                            [ Attrs.css
+                                [ Text.text
+                                , Css.display Css.tableRow
+                                ]
+                            ]
+                            (Html.span [ Attrs.css [ Css.display Css.tableCell ] ] [ Html.text label ])
                             (Html.inputText label
                                 [ Attrs.value value
                                 , Events.onInput onInput
+                                , Attrs.css [ Css.display Css.tableCell ]
                                 ]
                             )
                 in
                 -- using onSubmit as a hook here since hitting enter needs to work
-                Inaccessible.form [ Events.onSubmit UserSubmittedSyncForm ]
+                Inaccessible.form
+                    [ Events.onSubmit UserSubmittedSyncForm
+                    , Attrs.css
+                        [ Css.display Css.table
+                        , Css.margin2 (Css.px 27) Css.zero
+                        ]
+                    ]
                     [ field UserTypedInDraftSyncHostField "Host" draftSync.host
                     , field UserTypedInDraftSyncDatabaseField "Database" draftSync.database
                     , field UserTypedInDraftSyncUsernameField "Username" draftSync.username
@@ -786,7 +797,7 @@ viewSyncSettingsPage model =
 
             Nothing ->
                 Button.button (Button.OnClick UserWantsToCreateNewSync)
-                    []
+                    [ Button.css [ Css.margin2 (Css.px 27) Css.zero ] ]
                     [ Html.text "Sync with a new CouchDB Server" ]
         , let
             th =
@@ -830,7 +841,7 @@ viewSyncSettingsPage model =
                             , Html.td []
                                 [ Button.button
                                     (Button.OnClick (UserWantsToDeleteSync sync))
-                                    []
+                                    [ Button.delete ]
                                     [ Html.text "Delete" ]
                                 ]
                             ]
