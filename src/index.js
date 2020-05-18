@@ -55,11 +55,15 @@ var db = new PouchDB("notes");
     }
   });
 
-  // set up ports
+  // saving
   app.ports.put.subscribe(item => {
-    console.log(item)
     db.put(item)
       .then(success => app.ports.putSuccessfully.send(success))
       .catch(err => console.error(err));
   });
+
+  // syncing
+  app.ports.startSyncing.subscribe(url => {
+    console.log(url)
+  })
 })();

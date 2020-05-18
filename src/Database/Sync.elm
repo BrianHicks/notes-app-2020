@@ -1,9 +1,10 @@
-module Database.Sync exposing (Sync, decoder, encode, isValid, sorter)
+module Database.Sync exposing (Sync, decoder, encode, isValid, sorter, toUrl)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline exposing (required)
 import Json.Encode as Encode
 import Sort exposing (Sorter)
+import Url
 
 
 type alias Sync =
@@ -16,7 +17,7 @@ type alias Sync =
 
 isValid : Sync -> Bool
 isValid { host, database, username, password } =
-    (host /= "")
+    (Url.fromString host /= Nothing)
         && (database /= "")
         && (username /= "")
         && (password /= "")
@@ -47,3 +48,21 @@ encode sync =
         , ( "username", Encode.string sync.username )
         , ( "password", Encode.string sync.password )
         ]
+
+
+toUrl : Sync -> Maybe String
+toUrl { host, database, username, password } =
+    Url.fromString host
+        |> Maybe.map
+            (\url ->
+                { url
+                    | host =
+                        if username /= "" || password /= "" then
+                            username ++ ":" ++ password ++ "@" ++ url.host
+
+                        else
+                            url.host
+                    , path = "/" ++ database
+                }
+            )
+        |> Maybe.map Url.toString

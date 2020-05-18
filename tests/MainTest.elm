@@ -65,6 +65,9 @@ testPerform effect =
         FocusOnEditor ->
             SCmd.none
 
+        StartSyncing _ ->
+            SCmd.none
+
 
 programTest : Test
 programTest =

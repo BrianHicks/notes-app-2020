@@ -82,7 +82,12 @@ init flags url key =
                 , draftSync = Nothing
                 }
     in
-    ( model, routingEffects )
+    ( model
+    , Batch
+        [ routingEffects
+        , Batch (List.map StartSyncing settings.syncs)
+        ]
+    )
 
 
 flagsDecoder :
@@ -150,6 +155,7 @@ type Effect
     | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
+    | StartSyncing Sync
 
 
 type UpdatedRevision
@@ -541,7 +547,10 @@ update msg model =
                                 Settings.insertSync draftSync model.settings
                         in
                         ( { model | draftSync = Nothing, settings = newSettings }
-                        , Put (Settings.encode newSettings)
+                        , Batch
+                            [ Put (Settings.encode newSettings)
+                            , StartSyncing draftSync
+                            ]
                         )
 
                     else
@@ -609,8 +618,19 @@ perform model effect =
                 (\_ -> FocusedOnEditor)
                 (Dom.focus "editor")
 
+        StartSyncing sync ->
+            case Sync.toUrl sync of
+                Just url ->
+                    startSyncing url
+
+                Nothing ->
+                    Cmd.none
+
 
 port put : Value -> Cmd msg
+
+
+port startSyncing : String -> Cmd msg
 
 
 port putSuccessfully : (Value -> msg) -> Sub msg
