@@ -1,13 +1,12 @@
 module Database exposing
-    ( Database, Row, empty, load, isEmpty, get, insert, update, RevisionID(..), updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
+    ( Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
     , moveInto, moveBefore, moveAfter
     , Document, decoder, encode, toPersist
-    , updateSettings
     )
 
 {-|
 
-@docs Database, Row, empty, load, isEmpty, get, insert, update, RevisionID, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
+@docs Database, Row, empty, load, isEmpty, get, insert, update, updateRevision, delete, filter, previousSibling, nextSibling, nextNode, backlinksTo
 
 @docs moveInto, moveBefore, moveAfter
 
@@ -19,7 +18,6 @@ module Database exposing
 
 import Content
 import Database.ID as ID exposing (ID)
-import Database.Settings as Settings exposing (Settings)
 import Database.Sync as Sync exposing (Sync)
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
@@ -36,11 +34,9 @@ type Database
     = Database
         { nodes : Dict ID Row
         , seed : Random.Seed
-        , settings : Settings
 
         -- persistence
         , toPersist : Set ID
-        , persistSettings : Bool
         }
 
 
@@ -58,24 +54,22 @@ type alias Row =
     }
 
 
-empty : Settings -> Random.Seed -> Database
-empty settings seed =
+empty : Random.Seed -> Database
+empty seed =
     Database
         { nodes = Dict.empty ID.sorter
         , seed = seed
-        , settings = settings
         , toPersist = Set.empty ID.sorter
-        , persistSettings = False
         }
 
 
-load : Settings -> Random.Seed -> List Document -> Database
-load settings seed rows =
+load : Random.Seed -> List Document -> Database
+load seed rows =
     List.foldl
         (\(DocumentRow row) (Database db) ->
             Database { db | nodes = Dict.insert row.id row db.nodes }
         )
-        (empty settings seed)
+        (empty seed)
         rows
 
 
@@ -191,29 +185,15 @@ backlinksTo id database =
             []
 
 
-type RevisionID
-    = RowID ID
-    | SettingsID
-
-
-updateRevision : RevisionID -> String -> Database -> Database
-updateRevision revisionID revision ((Database database) as db) =
-    case revisionID of
-        RowID id ->
-            Database
-                { database
-                    | nodes =
-                        Dict.update id
-                            (Maybe.map (\row -> { row | revision = Just revision }))
-                            database.nodes
-                }
-
-        SettingsID ->
-            let
-                settings =
-                    database.settings
-            in
-            Database { database | settings = { settings | revision = Just revision } }
+updateRevision : ID -> String -> Database -> Database
+updateRevision id revision ((Database database) as db) =
+    Database
+        { database
+            | nodes =
+                Dict.update id
+                    (Maybe.map (\row -> { row | revision = Just revision }))
+                    database.nodes
+        }
 
 
 delete : ID -> Database -> Database
@@ -444,23 +424,6 @@ filter shouldInclude (Database database) =
 
 
 
--- Settings
-
-
-updateSettings : (Settings -> Settings) -> Database -> Database
-updateSettings updater (Database database) =
-    let
-        newSettings =
-            updater database.settings
-    in
-    if newSettings == database.settings then
-        Database database
-
-    else
-        Database { database | settings = newSettings, persistSettings = True }
-
-
-
 -- Utility
 
 
@@ -578,16 +541,9 @@ encode row =
 
 {-| TODO: would it make more sense for this to return a set of IDs?
 -}
-toPersist : Database -> ( { settings : Maybe Settings, rows : List Row }, Database )
+toPersist : Database -> ( List Row, Database )
 toPersist ((Database database) as db) =
     ( -- not using `get` here since it removes deleted nodes
-      { settings =
-            if database.persistSettings then
-                Just database.settings
-
-            else
-                Nothing
-      , rows = List.filterMap (\id -> Dict.get id database.nodes) (Set.toList database.toPersist)
-      }
-    , Database { database | toPersist = Set.empty ID.sorter, persistSettings = False }
+      List.filterMap (\id -> Dict.get id database.nodes) (Set.toList database.toPersist)
+    , Database { database | toPersist = Set.empty ID.sorter }
     )

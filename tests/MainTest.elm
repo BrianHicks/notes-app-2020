@@ -297,7 +297,24 @@ programTest =
                     |> fillIn "" "Username" "brian"
                     |> fillIn "" "Password" "password"
                     |> clickButton "Start Syncing"
-                    |> done
+                    |> Expect.all
+                        [ expectView
+                            (Query.find [ Selector.tag "section" ]
+                                >> Query.has [ Selector.text "https://couch.bytes.zone" ]
+                            )
+                        , expectView
+                            (Query.find [ Selector.tag "section" ]
+                                >> Query.has [ Selector.text "notes" ]
+                            )
+                        , expectView
+                            (Query.find [ Selector.tag "section" ]
+                                >> Query.has [ Selector.text "brian" ]
+                            )
+                        , expectView
+                            (Query.find [ Selector.tag "section" ]
+                                >> Query.hasNot [ Selector.text "password" ]
+                            )
+                        ]
         ]
 
 

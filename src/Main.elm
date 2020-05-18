@@ -11,7 +11,6 @@ import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
-import Database.Settings as Settings exposing (Settings)
 import Database.Sync as Sync exposing (Sync)
 import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
@@ -23,6 +22,7 @@ import Node exposing (Node)
 import Random
 import Route exposing (Route)
 import Selection exposing (Selection)
+import Settings exposing (Settings)
 import Task
 import Time exposing (Posix)
 import Url exposing (Url)
@@ -39,6 +39,7 @@ type alias Model key =
     , key : key
     , route : Route
     , currentTime : Posix
+    , settings : Settings
 
     -- view state
     , editing : Maybe Editing
@@ -68,11 +69,12 @@ init flags url key =
         ( model, routingEffects ) =
             update
                 (UrlChanged url)
-                { database = Database.load settings seed documents
+                { database = Database.load seed documents
                 , url = url
                 , key = key
                 , route = Route.Root
                 , currentTime = now
+                , settings = settings
 
                 -- view state
                 , editing = Nothing
@@ -137,6 +139,7 @@ type Msg
     | UserTypedInDraftSyncPasswordField String
     | UserTypedInDraftSyncUsernameField String
     | UserSubmittedSyncForm
+    | UserWantsToDeleteSync Sync
 
 
 type Effect
@@ -147,6 +150,11 @@ type Effect
     | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
+
+
+type UpdatedRevision
+    = ForSettings
+    | ForRow ID
 
 
 update : Msg -> Model key -> ( Model key, Effect )
@@ -190,25 +198,21 @@ update msg model =
                     Decode.map2 Tuple.pair
                         (Decode.field "id"
                             (Decode.oneOf
-                                [ Decode.map Database.RowID ID.decoder
-                                , -- TODO: this has too much knowledge, in particular this specific ID
-                                  Decode.andThen
-                                    (\string ->
-                                        if string == "_local/settings" then
-                                            Decode.succeed Database.SettingsID
-
-                                        else
-                                            Decode.fail ("Unknown ID " ++ string)
-                                    )
-                                    Decode.string
+                                [ Decode.map ForRow ID.decoder
+                                , Decode.map (\_ -> ForSettings) Settings.idDecoder
                                 ]
                             )
                         )
                         (Decode.field "rev" Decode.string)
             in
             case Decode.decodeValue decoder value of
-                Ok ( id, rev ) ->
+                Ok ( ForRow id, rev ) ->
                     ( { model | database = Database.updateRevision id rev model.database }
+                    , NoEffect
+                    )
+
+                Ok ( ForSettings, rev ) ->
+                    ( { model | settings = Settings.updateRevision rev model.settings }
                     , NoEffect
                     )
 
@@ -217,19 +221,11 @@ update msg model =
 
         TimerTriggeredSave ->
             let
-                ( { settings, rows }, database ) =
+                ( rows, database ) =
                     Database.toPersist model.database
             in
             ( { model | database = database }
-            , Batch
-                [ case settings of
-                    Just newSettings ->
-                        Put (Settings.encode newSettings)
-
-                    Nothing ->
-                        NoEffect
-                , Batch (List.map (Put << Database.encode) rows)
-                ]
+            , Batch (List.map (Put << Database.encode) rows)
             )
 
         FocusedOnEditor ->
@@ -540,11 +536,12 @@ update msg model =
             case model.draftSync of
                 Just draftSync ->
                     if Sync.isValid draftSync then
-                        ( { model
-                            | draftSync = Nothing
-                            , database = Database.updateSettings (Settings.insertSync draftSync) model.database
-                          }
-                        , NoEffect
+                        let
+                            newSettings =
+                                Settings.insertSync draftSync model.settings
+                        in
+                        ( { model | draftSync = Nothing, settings = newSettings }
+                        , Put (Settings.encode newSettings)
                         )
 
                     else
@@ -552,6 +549,15 @@ update msg model =
 
                 Nothing ->
                     ( model, NoEffect )
+
+        UserWantsToDeleteSync sync ->
+            let
+                newSettings =
+                    Settings.removeSync sync model.settings
+            in
+            ( { model | settings = newSettings }
+            , Put (Settings.encode newSettings)
+            )
 
 
 {-| TODO: should this go in Database?
@@ -782,6 +788,56 @@ viewSyncSettingsPage model =
                 Button.button (Button.OnClick UserWantsToCreateNewSync)
                     []
                     [ Html.text "Sync with a new CouchDB Server" ]
+        , let
+            th =
+                Attrs.css
+                    [ Text.text
+                    , Css.fontWeight Css.bold
+                    , Css.textAlign Css.left
+                    ]
+
+            cell =
+                Attrs.css
+                    [ Text.text
+                    , Css.padding (Css.px 5)
+                    ]
+          in
+          Html.table
+            [ Attrs.css [ Css.width (Css.pct 100) ] ]
+            [ Html.thead []
+                [ Html.tr []
+                    [ Html.th [ th ] [ Html.text "Host" ]
+                    , Html.th [ th ] [ Html.text "Database" ]
+                    , Html.th [ th ] [ Html.text "Username" ]
+                    , Html.th [ th ] [ Html.text "Password" ]
+                    , Html.th [] []
+                    ]
+                ]
+            , Html.tbody []
+                (List.map
+                    (\sync ->
+                        Html.tr []
+                            [ Html.td [ cell ] [ Html.text sync.host ]
+                            , Html.td [ cell ] [ Html.text sync.database ]
+                            , Html.td [ cell ] [ Html.text sync.username ]
+                            , Html.td [ cell ]
+                                [ if sync.password /= "" then
+                                    Html.text "*****"
+
+                                  else
+                                    Html.text ""
+                                ]
+                            , Html.td []
+                                [ Button.button
+                                    (Button.OnClick (UserWantsToDeleteSync sync))
+                                    []
+                                    [ Html.text "Delete" ]
+                                ]
+                            ]
+                    )
+                    model.settings.syncs
+                )
+            ]
         ]
 
 
