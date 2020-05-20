@@ -4,12 +4,12 @@ class NodeInput extends HTMLTextAreaElement {
     var element = this;
 
     this.style.height = this.scrollHeight + "px";
-    this.addEventListener("input", function() {
+    this.addEventListener("input", function () {
       this.style.height = this.scrollHeight + "px";
     });
 
     // TODO: remove this in the disconnectedCallback (or whatever it's called)
-    document.addEventListener("selectionchange", function(event) {
+    document.addEventListener("selectionchange", function (event) {
       if (event.target.activeElement !== element) {
         return;
       }
@@ -18,8 +18,8 @@ class NodeInput extends HTMLTextAreaElement {
         new CustomEvent("note-input-selectionchange", {
           detail: {
             start: element.selectionStart,
-            end: element.selectionEnd
-          }
+            end: element.selectionEnd,
+          },
         })
       );
     });
@@ -35,15 +35,15 @@ import { PouchDB } from "./pouchdb.js";
 var db = new PouchDB("notes");
 // TODO: set up syncing
 
-(async function() {
+(async function () {
   let allDocs = await db.allDocs({ include_docs: true });
 
   let settings = null;
   try {
     settings = await db.get("_local/settings");
-  } catch(err) {
+  } catch (err) {
     if (err.status !== 404) {
-      throw(err)
+      throw err;
     }
   }
 
@@ -51,15 +51,15 @@ var db = new PouchDB("notes");
     flags: {
       now: new Date().getTime(),
       documents: allDocs.rows,
-      settings: settings
-    }
+      settings: settings,
+    },
   });
 
   // saving
-  app.ports.put.subscribe(item => {
+  app.ports.put.subscribe((item) => {
     db.put(item)
-      .then(success => app.ports.putSuccessfully.send(success))
-      .catch(err => console.error(err));
+      .then((success) => app.ports.putSuccessfully.send(success))
+      .catch((err) => console.error(err));
   });
 
   // syncing
