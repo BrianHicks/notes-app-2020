@@ -64,15 +64,14 @@ var db = new PouchDB("notes");
 
   // syncing
   app.ports.startSyncing.subscribe((url) => {
-    db.replicate.to(url);
-    // db.replicate.from(url).on("complete", (info) => {
-    //   db.sync(url, { live: true, retry: true })
-    //     .on("change", (info) => console.log("change", info))
-    //     .on("paused", (err) => console.log("paused", err))
-    //     .on("active", () => console.log("active"))
-    //     .on("denied", (err) => console.log("denied", err))
-    //     .on("complete", () => console.log("complete"))
-    //     .on("error", (err) => console.log("error", err));
-    // });
+    db.replicate.from(url).on("complete", (info) => {
+      db.sync(url, { live: true, retry: true })
+        .on("change", (info) => console.log("change", info))
+        .on("paused", (err) => console.log("paused", err))
+        .on("active", () => console.log("active"))
+        .on("denied", (err) => console.log("denied", err))
+        .on("complete", () => console.log("complete"))
+        .on("error", (err) => console.log("error", err));
+    });
   });
 })();
