@@ -20,6 +20,9 @@ stdenv.mkDerivation {
     # elmPackages.elm-json
     # elmPackages.elm-review
 
+    # js
+    nodePackages.prettier
+
     # building
     ninja
     nodePackages.uglify-js
