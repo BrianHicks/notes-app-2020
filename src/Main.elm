@@ -958,9 +958,13 @@ viewRow id model =
                             ]
 
                     else
+                        -- TODO: extract this list item to a widget or something
                         Html.li
-                            -- TODO: extract this list item to a widget or something
-                            [ Attrs.css [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ] ] ]
+                            [ Attrs.css
+                                [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ]
+                                , Css.marginBottom (Css.px 5.333)
+                                ]
+                            ]
             in
             tag
                 [ case model.editing of
