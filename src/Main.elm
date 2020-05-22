@@ -1083,7 +1083,7 @@ viewRow id model =
                             , Css.position Css.absolute
                             , Css.left (Css.px -15)
                             , Css.top Text.textLineHeight
-                            , Css.backgroundColor (Colors.toCss Colors.greyLight)
+                            , Css.backgroundColor (Colors.toCss Colors.whiteDark)
                             ]
                         ]
                         []
