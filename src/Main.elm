@@ -772,7 +772,7 @@ viewSyncSettingsPage model =
     -- TODO: pull this out to a widget and remove the duplication
     Html.section
         [ Attrs.css
-            [ Css.maxWidth (Css.em 40)
+            [ Css.maxWidth (Css.em 50)
             , Css.padding2 Css.zero (Css.px 27)
             , Css.margin2 Css.zero Css.auto
             ]
@@ -951,7 +951,7 @@ viewRow id model =
                         -- TODO: pull this out to a widget and remove the duplication
                         Html.section
                             [ Attrs.css
-                                [ Css.maxWidth (Css.em 40)
+                                [ Css.maxWidth (Css.em 50)
                                 , Css.padding2 Css.zero (Css.px 27)
                                 , Css.margin2 Css.zero Css.auto
                                 ]
