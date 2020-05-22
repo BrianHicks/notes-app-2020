@@ -289,6 +289,15 @@ programTest =
                         (Query.find [ Selector.tag "aside" ]
                             >> Query.has [ Selector.text "also discussed in" ]
                         )
+        , test "you don't see incoming links for a node with a note's title" <|
+            \_ ->
+                start
+                    |> addNoteAndChildren "Note" [ "also discussed in [[notes]]" ]
+                    |> addNoteAndChildren "another note" [ "notes" ]
+                    |> expectNote
+                        (Query.find [ Selector.tag "aside" ]
+                            >> Query.hasNot [ Selector.text "also discussed in" ]
+                        )
         , test "you can click the status at the bottom to go to the sync settings screen" <|
             \_ ->
                 start

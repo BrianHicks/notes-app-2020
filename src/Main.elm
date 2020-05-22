@@ -1026,47 +1026,51 @@ viewRow id model =
                                 , Css.listStyleType Css.disc
                                 ]
                             ]
-                , case Database.backlinksTo row.id model.database of
-                    [] ->
-                        Html.text ""
+                , if Node.isTitle row.node then
+                    case Database.backlinksTo row.id model.database of
+                        [] ->
+                            Html.text ""
 
-                    backlinks ->
-                        Html.aside
-                            [ Attrs.css
-                                [ Css.padding (Css.px 18)
-                                , Css.marginTop (Css.px 40.5)
-                                , Css.backgroundColor (Colors.toCss Colors.whiteLight)
-                                ]
-                            ]
-                            [ Html.h2
-                                [ Attrs.css [ Text.h2, Css.color (Colors.toCss Colors.blackLight) ] ]
-                                [ Html.text "Incoming Links" ]
-
-                            -- TODO: extract this list to a widget or something
-                            , Html.ul
+                        backlinks ->
+                            Html.aside
                                 [ Attrs.css
-                                    [ Css.paddingLeft (Css.px 27)
-                                    , Css.listStylePosition Css.outside
-                                    , Css.listStyleType Css.disc
+                                    [ Css.padding (Css.px 18)
+                                    , Css.marginTop (Css.px 40.5)
+                                    , Css.backgroundColor (Colors.toCss Colors.whiteLight)
                                     ]
                                 ]
-                                (List.map
-                                    (\linkingRow ->
-                                        -- TODO: extract this list item to a widget or something
-                                        Html.li
-                                            [ Attrs.css [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ] ] ]
-                                            [ Content.toHtml
-                                                { activate = Nothing
-                                                , navigate = UserWantsToOpenNoteWithTitle
-                                                , navigateUrl = Route.toString << Route.NodeByTitle
-                                                }
-                                                [ Attrs.css [ Text.text ] ]
-                                                (Node.content linkingRow.node)
-                                            ]
+                                [ Html.h2
+                                    [ Attrs.css [ Text.h2, Css.color (Colors.toCss Colors.blackLight) ] ]
+                                    [ Html.text "Incoming Links" ]
+
+                                -- TODO: extract this list to a widget or something
+                                , Html.ul
+                                    [ Attrs.css
+                                        [ Css.paddingLeft (Css.px 27)
+                                        , Css.listStylePosition Css.outside
+                                        , Css.listStyleType Css.disc
+                                        ]
+                                    ]
+                                    (List.map
+                                        (\linkingRow ->
+                                            -- TODO: extract this list item to a widget or something
+                                            Html.li
+                                                [ Attrs.css [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ] ] ]
+                                                [ Content.toHtml
+                                                    { activate = Nothing
+                                                    , navigate = UserWantsToOpenNoteWithTitle
+                                                    , navigateUrl = Route.toString << Route.NodeByTitle
+                                                    }
+                                                    [ Attrs.css [ Text.text ] ]
+                                                    (Node.content linkingRow.node)
+                                                ]
+                                        )
+                                        backlinks
                                     )
-                                    backlinks
-                                )
-                            ]
+                                ]
+
+                  else
+                    Html.text ""
                 ]
 
 
