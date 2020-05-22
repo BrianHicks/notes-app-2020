@@ -963,6 +963,7 @@ viewRow id model =
                             [ Attrs.css
                                 [ Css.pseudoElement "marker" [ Css.color (Colors.toCss Colors.greenDark) ]
                                 , Css.marginBottom (Css.px 5.333)
+                                , Css.position Css.relative
                                 ]
                             ]
             in
@@ -1074,7 +1075,18 @@ viewRow id model =
                                 ]
 
                   else
-                    Html.text ""
+                    Html.div
+                        [ Attrs.css
+                            [ Css.display Css.block
+                            , Css.width (Css.px 2)
+                            , Css.height (Css.calc (Css.pct 100) Css.minus Text.textLineHeight)
+                            , Css.position Css.absolute
+                            , Css.left (Css.px -15)
+                            , Css.top Text.textLineHeight
+                            , Css.backgroundColor (Colors.toCss Colors.greyLight)
+                            ]
+                        ]
+                        []
                 ]
 
 
