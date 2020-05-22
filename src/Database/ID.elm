@@ -8,34 +8,34 @@ import UUID exposing (UUID)
 
 
 type ID
-    = ID UUID
+    = ID String
 
 
 fromInt : Int -> ID
 fromInt seed =
     Random.initialSeed seed
-        |> Random.step (Random.map ID UUID.generator)
+        |> Random.step (Random.map (ID << UUID.toString) UUID.generator)
         |> Tuple.first
 
 
 fromString : String -> Result UUID.Error ID
 fromString string =
-    Result.map ID (UUID.fromString string)
+    Result.map (ID << UUID.toString) (UUID.fromString string)
 
 
 toString : ID -> String
 toString (ID id) =
-    UUID.toString id
+    id
 
 
 sorter : Sorter ID
 sorter =
-    Sort.by (\(ID id) -> UUID.toString id) Sort.alphabetical
+    Sort.by (\(ID id) -> id) Sort.alphabetical
 
 
 generator : Generator ID
 generator =
-    Random.map ID UUID.generator
+    Random.map (ID << UUID.toString) UUID.generator
 
 
 encode : ID -> Encode.Value
