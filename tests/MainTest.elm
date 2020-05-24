@@ -65,7 +65,10 @@ testPerform effect =
         FocusOnEditor ->
             SCmd.none
 
-        StartSyncing _ ->
+        SyncOnce _ ->
+            SCmd.none
+
+        Compact ->
             SCmd.none
 
 

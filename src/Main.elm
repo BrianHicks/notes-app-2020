@@ -122,6 +122,7 @@ type Msg
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
     | TimerTriggeredSyncAll
+    | TimerTriggeredCompaction
     | FocusedOnEditor
     | UserClickedNewNote
     | UserEditedNode String
@@ -157,6 +158,7 @@ type Effect
     | Put Value
     | FocusOnEditor
     | SyncOnce Sync
+    | Compact
 
 
 type UpdatedRevision
@@ -239,6 +241,9 @@ update msg model =
             ( model
             , Batch (List.map SyncOnce model.settings.syncs)
             )
+
+        TimerTriggeredCompaction ->
+            ( model, Compact )
 
         FocusedOnEditor ->
             ( model, NoEffect )
@@ -632,11 +637,17 @@ perform model effect =
                 Nothing ->
                     Cmd.none
 
+        Compact ->
+            compact ()
+
 
 port put : Value -> Cmd msg
 
 
 port syncOnce : String -> Cmd msg
+
+
+port compact : () -> Cmd msg
 
 
 port putSuccessfully : (Value -> msg) -> Sub msg
@@ -647,7 +658,8 @@ subscriptions model =
     Sub.batch
         [ putSuccessfully PouchDBPutSuccessfully
         , Time.every 1000 (\_ -> TimerTriggeredSave)
-        , Time.every 10000 (\_ -> TimerTriggeredSyncAll)
+        , Time.every 60000 (\_ -> TimerTriggeredSyncAll)
+        , Time.every 120000 (\_ -> TimerTriggeredCompaction)
 
         -- Using a 1-second resolution is more than enough for most UI
         -- concerns. If it needs to be more precise, crank this down! But
