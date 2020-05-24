@@ -66,8 +66,8 @@ var db = new PouchDB("notes");
   app.ports.compact.subscribe(() => {
     db.compact()
       .then(() => console.log("compaction success"))
-      .catch(err) => console.error(err));
-  })
+      .catch((err) => console.error(err));
+  });
 
   // syncing
   app.ports.syncOnce.subscribe((url) => {
