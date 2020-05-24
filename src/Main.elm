@@ -85,7 +85,7 @@ init flags url key =
     ( model
     , Batch
         [ routingEffects
-        , Batch (List.map StartSyncing settings.syncs)
+        , Batch (List.map SyncOnce settings.syncs)
         ]
     )
 
@@ -121,6 +121,7 @@ type Msg
     | GotCurrentTime Posix
     | PouchDBPutSuccessfully Value
     | TimerTriggeredSave
+    | TimerTriggeredSyncAll
     | FocusedOnEditor
     | UserClickedNewNote
     | UserEditedNode String
@@ -155,7 +156,7 @@ type Effect
     | ReplaceUrl Route
     | Put Value
     | FocusOnEditor
-    | StartSyncing Sync
+    | SyncOnce Sync
 
 
 type UpdatedRevision
@@ -232,6 +233,11 @@ update msg model =
             in
             ( { model | database = database }
             , Batch (List.map (Put << Database.encode) rows)
+            )
+
+        TimerTriggeredSyncAll ->
+            ( model
+            , Batch (List.map SyncOnce model.settings.syncs)
             )
 
         FocusedOnEditor ->
@@ -549,7 +555,7 @@ update msg model =
                         ( { model | draftSync = Nothing, settings = newSettings }
                         , Batch
                             [ Put (Settings.encode newSettings)
-                            , StartSyncing draftSync
+                            , SyncOnce draftSync
                             ]
                         )
 
@@ -618,10 +624,10 @@ perform model effect =
                 (\_ -> FocusedOnEditor)
                 (Dom.focus "editor")
 
-        StartSyncing sync ->
+        SyncOnce sync ->
             case Sync.toUrl sync of
                 Just url ->
-                    startSyncing url
+                    syncOnce url
 
                 Nothing ->
                     Cmd.none
@@ -630,7 +636,7 @@ perform model effect =
 port put : Value -> Cmd msg
 
 
-port startSyncing : String -> Cmd msg
+port syncOnce : String -> Cmd msg
 
 
 port putSuccessfully : (Value -> msg) -> Sub msg
@@ -641,6 +647,7 @@ subscriptions model =
     Sub.batch
         [ putSuccessfully PouchDBPutSuccessfully
         , Time.every 1000 (\_ -> TimerTriggeredSave)
+        , Time.every 10000 (\_ -> TimerTriggeredSyncAll)
 
         -- Using a 1-second resolution is more than enough for most UI
         -- concerns. If it needs to be more precise, crank this down! But

@@ -63,9 +63,9 @@ var db = new PouchDB("notes");
   });
 
   // syncing
-  app.ports.startSyncing.subscribe((url) => {
+  app.ports.syncOnce.subscribe((url) => {
     db.replicate.from(url).on("complete", (info) => {
-      db.sync(url, { live: true, retry: true })
+      db.sync(url, { retry: true })
         .on("change", (info) => console.log("change", info))
         .on("paused", (err) => console.log("paused", err))
         .on("active", () => console.log("active"))
