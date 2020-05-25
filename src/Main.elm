@@ -779,12 +779,19 @@ viewNav attrs activeId now rows =
 
 viewSync : List (Attribute Never) -> Html Msg
 viewSync attrs =
-    Html.div attrs
+    Html.div
+        (Attrs.css
+            [ Css.borderTop3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            , Css.borderRight3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
+            , Text.text
+            ]
+            :: attrs
+        )
         [ Inaccessible.a
             [ Attrs.href (Route.toString Route.SyncSettings)
             , onClickPreventDefaultForLinkWithHref (UserWantsToNavigate Route.SyncSettings)
             ]
-            [ Html.text "Sync" ]
+            [ Html.text "Sync Settings" ]
         ]
 
 
