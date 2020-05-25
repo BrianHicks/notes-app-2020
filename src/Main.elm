@@ -717,7 +717,9 @@ viewApplication model =
                     Html.text "Not found!"
 
                 Route.Root ->
-                    Html.text "Select or create a note!"
+                    Html.p
+                        [ Attrs.css [ Text.text ] ]
+                        [ Html.text "Select or create a note!" ]
 
                 Route.NodeById id ->
                     viewRow id model
