@@ -12,6 +12,7 @@ import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
 import Database.Sync as Sync exposing (Sync)
+import Database.Sync.Status as SyncStatus
 import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
@@ -40,6 +41,7 @@ type alias Model key =
     , route : Route
     , currentTime : Posix
     , settings : Settings
+    , syncStatus : SyncStatus.Status
 
     -- view state
     , editing : Maybe Editing
@@ -75,6 +77,7 @@ init flags url key =
                 , route = Route.Root
                 , currentTime = now
                 , settings = settings
+                , syncStatus = SyncStatus.Idle
 
                 -- view state
                 , editing = Nothing
@@ -120,6 +123,7 @@ type Msg
     | UrlChanged Url
     | GotCurrentTime Posix
     | PouchDBPutSuccessfully Value
+    | PouchDBUpdatedSyncStatus Value
     | TimerTriggeredSave
     | TimerTriggeredSyncAll
     | TimerTriggeredCompaction
@@ -222,6 +226,16 @@ update msg model =
 
                 Ok ( ForSettings, rev ) ->
                     ( { model | settings = Settings.updateRevision rev model.settings }
+                    , NoEffect
+                    )
+
+                Err err ->
+                    Debug.todo (Debug.toString err)
+
+        PouchDBUpdatedSyncStatus statusValue ->
+            case Decode.decodeValue SyncStatus.decoder statusValue of
+                Ok status ->
+                    ( { model | syncStatus = status }
                     , NoEffect
                     )
 
@@ -653,10 +667,14 @@ port compact : () -> Cmd msg
 port putSuccessfully : (Value -> msg) -> Sub msg
 
 
+port syncStatus : (Value -> msg) -> Sub msg
+
+
 subscriptions : Model key -> Sub Msg
 subscriptions model =
     Sub.batch
         [ putSuccessfully PouchDBPutSuccessfully
+        , syncStatus PouchDBUpdatedSyncStatus
         , Time.every 1000 (\_ -> TimerTriggeredSave)
         , Time.every 60000 (\_ -> TimerTriggeredSyncAll)
         , Time.every 120000 (\_ -> TimerTriggeredCompaction)
@@ -710,7 +728,7 @@ viewApplication model =
             )
             model.currentTime
             (Database.filter Node.isTitle model.database)
-        , viewSync [ css [ Css.property "grid-area" "sync" ] ]
+        , viewSync [ css [ Css.property "grid-area" "sync" ] ] model.syncStatus
         , Html.div [ css [ Css.property "grid-area" "note" ] ]
             [ case model.route of
                 Route.NotFound ->
@@ -777,21 +795,38 @@ viewNav attrs activeId now rows =
         ]
 
 
-viewSync : List (Attribute Never) -> Html Msg
-viewSync attrs =
+viewSync : List (Attribute Never) -> SyncStatus.Status -> Html Msg
+viewSync attrs status =
     Html.div
         (Attrs.css
             [ Css.borderTop3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
             , Css.borderRight3 (Css.px 1) Css.solid (Colors.toCss Colors.greyLight)
-            , Text.text
             ]
             :: attrs
         )
         [ Inaccessible.a
             [ Attrs.href (Route.toString Route.SyncSettings)
             , onClickPreventDefaultForLinkWithHref (UserWantsToNavigate Route.SyncSettings)
+            , Attrs.css
+                [ Text.text
+                , Css.color (Colors.toCss Colors.greenDark)
+                , Css.textDecoration Css.none
+                , Css.padding (Css.px 8)
+                , Css.display Css.block
+                ]
             ]
-            [ Html.text "Sync Settings" ]
+            [ Html.text "Sync" ]
+        , Html.p [ Attrs.css [ Text.text ] ]
+            [ case status of
+                SyncStatus.Active ->
+                    Html.text "Syncing"
+
+                SyncStatus.Idle ->
+                    Html.text ""
+
+                SyncStatus.Error message ->
+                    Html.text ("Error: " ++ message)
+            ]
         ]
 
 

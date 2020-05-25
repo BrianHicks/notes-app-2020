@@ -74,11 +74,15 @@ var db = new PouchDB("notes");
     db.replicate.from(url).on("complete", (info) => {
       db.sync(url, { retry: true })
         .on("change", (info) => console.log("change", info))
-        .on("paused", (err) => console.log("paused", err))
-        .on("active", () => console.log("active"))
-        .on("denied", (err) => console.log("denied", err))
-        .on("complete", () => console.log("complete"))
-        .on("error", (err) => console.log("error", err));
+        .on("active", () => app.ports.syncStatus.send({ event: "active" }))
+        .on("paused", () => app.ports.syncStatus.send({ event: "paused" }))
+        .on("denied", (err) =>
+          app.ports.syncStatus.send({ event: "error", message: err })
+        )
+        .on("error", (err) =>
+          app.ports.syncStatus.send({ event: "error", message: err })
+        )
+        .on("complete", () => app.ports.syncStatus.send({ event: "complete" }));
     });
   });
 })();
