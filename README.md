@@ -86,6 +86,8 @@ This is my implementation of a note-taking app, organized around the following p
 - [ ] automatically create notes when they're first linked?
 - [ ] only show incoming links for notes, not nodes
 - [ ] profile some large notes and try to make them much faster
+- [ ] brackets are valid syntax for non-link reasons. Don't block that!
+- [ ] don't discard content as easily when something's invalid ] ]
 - [ ] tree editing
    - [ ] moving edit focus around
        - [ ] hitting alt-up and alt-down should go to the previous/next sibling
