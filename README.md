@@ -71,7 +71,7 @@ This is my implementation of a note-taking app, organized around the following p
 - [x] links to a note should change if you change the title
 - [x] backlinking
 - [x] syncing with CouchDB / PouchDB servers
-- [ ] the module layout reflects some old design ideas (`Node.Content`, `Node` being separate from `Database.Row`)
+- [x] the module layout reflects some old design ideas (`Node.Content`, `Node` being separate from `Database.Row`)
 - [ ] too many things are named `Node`. There's `Node`, `Node.Content.Node`, and I think a few others
 - [ ] there aren't any inline formats. I'd like *italic*, **bold**, and `inline code` at a minimum. Possibly `:highlights:` or `~strikethrough~` too?
 - [ ] I'd like a few more block formats too... `>` for blockquotes in particular
