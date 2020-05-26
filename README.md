@@ -74,7 +74,18 @@ This is my implementation of a note-taking app, organized around the following p
 - [x] the module layout reflects some old design ideas (`Node.Content`, `Node` being separate from `Database.Row`)
 - [x] too many things are named `Node`. There's `Node`, `Node.Content.Node`, and I think a few others
 - [ ] there aren't any inline formats. I'd like *italic*, **bold**, and `inline code` at a minimum. Possibly `:highlights:` or `~strikethrough~` too?
-- [ ] I'd like a few more block formats too... `>` for blockquotes in particular
+   - [ ] I'd like a few more block formats too... `>` for blockquotes in particular
+- [ ] default selection to the end of the text box
+- [ ] show the incoming links along with their titles
+- [ ] fix encoding issue on notes.bytes.zone serving
+- [ ] make it possible to edit an empty node
+- [ ] get rid of onBlur handler (just use esc)
+- [ ] I'd really like some level of autocomplete for note titles in notes
+- [ ] auto-link URLs
+- [ ] hitting backspace at the beginning of a non-empty node should not delete it
+- [ ] automatically create notes when they're first linked?
+- [ ] only show incoming links for notes, not nodes
+- [ ] profile some large notes and try to make them much faster
 - [ ] tree editing
    - [ ] moving edit focus around
        - [ ] hitting alt-up and alt-down should go to the previous/next sibling
