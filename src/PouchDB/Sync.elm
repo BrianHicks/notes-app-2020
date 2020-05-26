@@ -1,4 +1,4 @@
-module Database.Sync exposing (Sync, decoder, encode, isValid, sorter, toUrl)
+module PouchDB.Sync exposing (Sync, decoder, encode, isValid, sorter, toUrl)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline exposing (required)

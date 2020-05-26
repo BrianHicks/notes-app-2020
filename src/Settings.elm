@@ -14,7 +14,7 @@ module Settings exposing
 
 -}
 
-import Database.Sync as Sync exposing (Sync)
+import PouchDB.Sync as Sync exposing (Sync)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline exposing (required)
 import Json.Encode as Encode

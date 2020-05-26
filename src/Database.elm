@@ -18,12 +18,12 @@ module Database exposing
 
 import Content
 import Database.ID as ID exposing (ID)
-import Database.Sync as Sync exposing (Sync)
 import Iso8601
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode as Encode
 import Node exposing (Node)
+import PouchDB.Sync as Sync exposing (Sync)
 import Random
 import Sort.Dict as Dict exposing (Dict)
 import Sort.Set as Set exposing (Set)

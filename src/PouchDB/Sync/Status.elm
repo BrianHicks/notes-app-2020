@@ -1,4 +1,4 @@
-module Database.Sync.Status exposing (Status(..), decoder)
+module PouchDB.Sync.Status exposing (Status(..), decoder)
 
 import Json.Decode as Decode exposing (Decoder)
 

@@ -11,8 +11,6 @@ import Css.Global
 import Css.Reset
 import Database exposing (Database)
 import Database.ID as ID exposing (ID)
-import Database.Sync as Sync exposing (Sync)
-import Database.Sync.Status as SyncStatus
 import Html.Styled as Inaccessible
 import Html.Styled.Attributes as Attrs exposing (css)
 import Html.Styled.Events as Events
@@ -20,6 +18,8 @@ import Html.Styled.Events.Extra exposing (onClickPreventDefaultForLinkWithHref)
 import Json.Decode as Decode exposing (Decoder, Value)
 import Maybe.Extra
 import Node exposing (Node)
+import PouchDB.Sync as Sync exposing (Sync)
+import PouchDB.Sync.Status as SyncStatus
 import Random
 import Route exposing (Route)
 import Selection exposing (Selection)
